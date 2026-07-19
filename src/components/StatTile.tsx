@@ -4,7 +4,7 @@ export default function StatTile({
   note,
 }: {
   label: string;
-  value: string;
+  value: React.ReactNode;
   note?: string;
 }) {
   return (

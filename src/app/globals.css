@@ -30,3 +30,38 @@ body {
     @apply text-2xl md:text-3xl font-semibold;
   }
 }
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.anim-rise {
+  animation: rise 0.35s ease both;
+}
+
+@keyframes dot-in {
+  from {
+    opacity: 0;
+    transform: scale(0.3);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+.dot-in {
+  animation: dot-in 0.25s ease both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .anim-rise,
+  .dot-in {
+    animation: none;
+  }
+}
