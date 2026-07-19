@@ -135,8 +135,8 @@ export default function SourcesPage() {
             <thead>
               <tr className="text-left text-ink-secondary border-b border-line">
                 <th className="px-4 py-3 font-medium">School year</th>
-                <th className="px-4 py-3 font-medium">Dataset</th>
-                <th className="px-4 py-3 font-medium">API query used</th>
+                <th className="px-4 py-3 font-medium">Browse the dataset</th>
+                <th className="px-4 py-3 font-medium">Check our numbers</th>
               </tr>
             </thead>
             <tbody>
@@ -144,13 +144,15 @@ export default function SourcesPage() {
                 <tr key={id} className="border-t border-line">
                   <td className="px-4 py-2.5 whitespace-nowrap">{year}</td>
                   <td className="px-4 py-2.5 whitespace-nowrap">
-                    <Ext href={`https://data.wa.gov/d/${id}`}>{id}</Ext>
+                    <Ext href={`https://data.wa.gov/d/${id}`}>
+                      Report Card Enrollment {year} ↗
+                    </Ext>
                   </td>
-                  <td className="px-4 py-2.5 text-ink-secondary">
+                  <td className="px-4 py-2.5 whitespace-nowrap">
                     <Ext
-                      href={`https://data.wa.gov/resource/${id}.json?organizationlevel=District&gradelevel=All%20Grades`}
+                      href={`https://data.wa.gov/resource/${id}.csv?organizationlevel=District&gradelevel=All%20Grades&%24limit=2000`}
                     >
-                      /resource/{id}.json · District · All Grades
+                      download the exact rows we use (CSV) ↓
                     </Ext>
                   </td>
                 </tr>
@@ -158,6 +160,12 @@ export default function SourcesPage() {
             </tbody>
           </table>
         </div>
+        <p className="mt-3 text-sm text-ink-muted max-w-2xl">
+          &ldquo;The exact rows we use&rdquo; = each district&apos;s one
+          district-total row (all grades combined) — the same filter our data
+          script applies. Open it in any spreadsheet app and compare against
+          this site&apos;s numbers directly.
+        </p>
       </section>
 
       <section className="mt-10">
@@ -248,7 +256,26 @@ export default function SourcesPage() {
       </section>
 
       <section className="mt-10">
-        <h2 className="text-2xl font-bold">3 · Law, court records & bills</h2>
+        <h2 className="text-2xl font-bold">3 · District boundaries (the map)</h2>
+        <p className="mt-2 max-w-2xl text-ink-secondary">
+          The map on the District Explorer uses OSPI&apos;s official{' '}
+          <Ext href="https://geo.wa.gov/datasets/72ad21c67ecf4f21bc794d4d21485d86_0">
+            Washington School Districts boundary layer
+          </Ext>{' '}
+          from the state geoportal (geo.wa.gov), fetched from its public{' '}
+          <Ext href="https://services9.arcgis.com/fWunDXKkvCx1CM4b/arcgis/rest/services/Washington_School_Districts/FeatureServer/0">
+            ArcGIS FeatureServer
+          </Ext>
+          . Shapes are simplified to ~200&nbsp;m tolerance for fast loading and
+          joined to funding data by each district&apos;s 5-digit OSPI code
+          (script: <code className="text-ink">scripts/fetch-boundaries.mjs</code>).
+          Boundaries are OSPI&apos;s best interpretation of legal descriptions —
+          confirm edge cases with the district itself.
+        </p>
+      </section>
+
+      <section className="mt-10">
+        <h2 className="text-2xl font-bold">4 · Law, court records & bills</h2>
         <div className="mt-4 card overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
@@ -272,7 +299,7 @@ export default function SourcesPage() {
       </section>
 
       <section className="mt-10 mb-4">
-        <h2 className="text-2xl font-bold">4 · Known caveats</h2>
+        <h2 className="text-2xl font-bold">5 · Known caveats</h2>
         <ul className="mt-3 max-w-2xl space-y-2 text-ink-secondary text-sm md:text-base list-disc pl-5">
           <li>
             Per-student figures divide general-fund revenues by October

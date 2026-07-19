@@ -78,7 +78,25 @@ county-district code (`County District Code` ↔ `districtcode`, zero-padded).
 Each year, roughly 10–14 enrollment rows (mostly tribal-compact schools) have
 no F-196 match and are dropped for that year.
 
-## 3. The prototypical school model (explainer & School Builder)
+## 3. District boundaries (the map)
+
+**Source:** OSPI's official "Washington School Districts" boundary layer on the
+Washington State Geospatial Open Data Portal:
+
+- Dataset page: https://geo.wa.gov/datasets/72ad21c67ecf4f21bc794d4d21485d86_0
+- Public ArcGIS FeatureServer (what our script queries):
+  https://services9.arcgis.com/fWunDXKkvCx1CM4b/arcgis/rest/services/Washington_School_Districts/FeatureServer/0
+
+The script [`scripts/fetch-boundaries.mjs`](scripts/fetch-boundaries.mjs)
+requests the layer as GeoJSON with ~200 m simplification
+(`maxAllowableOffset=0.002`), projects it to Web Mercator, and writes
+`public/wa-districts-map.json` as SVG paths keyed by the layer's `LEACode_1`
+field — the same 5-digit OSPI district code used by the enrollment and F-196
+data, so the map joins to funding data exactly. Per OSPI, boundaries are their
+best interpretation of legal descriptions; confirm edge cases with the
+district.
+
+## 4. The prototypical school model (explainer & School Builder)
 
 - **RCW 28A.150.260** — the statute containing prototypical school sizes
   (400 / 432 / 600), funded class sizes (K-3 ≈ 17, grade 4 ≈ 27, 5-6 ≈ 27,
@@ -96,7 +114,7 @@ no F-196 match and are dropped for that year.
 - **HB 1664 (2022)** — increased counselor/nurse/social-worker allocations:
   https://app.leg.wa.gov/billsummary?BillNumber=1664&Year=2021
 
-## 4. Recent legislation (Take Action tab)
+## 5. Recent legislation (Take Action tab)
 
 - **SB 5263 (2025)** — special education funding:
   https://app.leg.wa.gov/billsummary?BillNumber=5263&Year=2025
@@ -105,7 +123,7 @@ no F-196 match and are dropped for that year.
 - **HB 2049 (2025)** — local levy authority:
   https://app.leg.wa.gov/billsummary?BillNumber=2049&Year=2025
 
-## 5. Known caveats
+## 6. Known caveats
 
 - **Per-student figures** divide general-fund revenues by October headcount.
   OSPI's official per-pupil statistics use annual average FTE (AAFTE), so our

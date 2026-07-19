@@ -15,6 +15,7 @@ import StatTile from '@/components/StatTile';
 import SourceShareBar from '@/components/charts/SourceShareBar';
 import CompareBar from '@/components/charts/CompareBar';
 import TrendChart from '@/components/charts/TrendChart';
+import WaMap from '@/components/charts/WaMap';
 import { fmtInt, fmtMoney, fmtMoneyFull, pct } from '@/lib/format';
 
 type SortKey = 'name' | 'county' | 'enrollment' | 'total' | 'perPupil' | 'statePct' | 'localPct';
@@ -114,20 +115,23 @@ function DistrictTable({
   onYearChange: (y: string) => void;
   onSelect: (code: string) => void;
 }) {
-  const [query, setQuery] = useState('');
   const [sortKey, setSortKey] = useState<SortKey>('enrollment');
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
   const data = yearData(year);
 
+  const byCounty = useMemo(() => {
+    const groups = new Map<string, District[]>();
+    for (const d of data.districts) {
+      if (!groups.has(d.county)) groups.set(d.county, []);
+      groups.get(d.county)!.push(d);
+    }
+    return Array.from(groups.entries())
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([county, ds]) => [county, [...ds].sort((a, b) => a.name.localeCompare(b.name))] as const);
+  }, [data]);
+
   const rows = useMemo(() => {
-    const q = query.trim().toLowerCase();
-    const filtered = q
-      ? data.districts.filter(
-          (d) =>
-            d.name.toLowerCase().includes(q) || d.county.toLowerCase().includes(q)
-        )
-      : data.districts;
-    return [...filtered].sort((a, b) => {
+    return [...data.districts].sort((a, b) => {
       const av = sortValue(a, sortKey);
       const bv = sortValue(b, sortKey);
       const cmp =
@@ -136,7 +140,7 @@ function DistrictTable({
           : (av as number) - (bv as number);
       return sortDir === 'asc' ? cmp : -cmp;
     });
-  }, [data, query, sortKey, sortDir]);
+  }, [data, sortKey, sortDir]);
 
   const s = data.statewide;
 
@@ -188,18 +192,35 @@ function DistrictTable({
         </div>
       </div>
 
+      <div className="mt-6 card p-5">
+        <h2 className="font-semibold">Find your district on the map</h2>
+        <p className="mt-0.5 mb-4 text-sm text-ink-secondary">
+          Colored by funding per student. Zoom in (scroll, pinch, or the +
+          button), hover for details, click a district to open its profile.
+        </p>
+        <WaMap year={year} onSelect={onSelect} />
+      </div>
+
       <div className="mt-6 flex flex-wrap items-center gap-4">
-        <label htmlFor="district-search" className="sr-only">
-          Search districts
+        <label className="inline-flex items-center gap-2 text-sm text-ink-secondary">
+          Jump to a district
+          <select
+            value=""
+            onChange={(e) => e.target.value && onSelect(e.target.value)}
+            className="card px-3 py-2 text-base font-medium text-ink cursor-pointer max-w-[16rem] md:max-w-xs"
+          >
+            <option value="">Choose from {data.districts.length} districts…</option>
+            {byCounty.map(([county, ds]) => (
+              <optgroup key={county} label={`${county} County`}>
+                {ds.map((d) => (
+                  <option key={d.code} value={d.code}>
+                    {d.name}
+                  </option>
+                ))}
+              </optgroup>
+            ))}
+          </select>
         </label>
-        <input
-          id="district-search"
-          type="search"
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          placeholder="Search by district or county…"
-          className="w-full md:w-96 px-4 py-2.5 card rounded-lg text-base placeholder:text-ink-muted"
-        />
         <YearSelect year={year} onChange={onYearChange} />
       </div>
 
@@ -248,13 +269,6 @@ function DistrictTable({
                 <td className="px-3 md:px-4 py-2.5 text-right tabular-nums">{pct(d.rev.local, d.rev.total)}</td>
               </tr>
             ))}
-            {rows.length === 0 && (
-              <tr>
-                <td colSpan={COLUMNS.length} className="px-4 py-8 text-center text-ink-muted">
-                  No districts match &ldquo;{query}&rdquo;
-                </td>
-              </tr>
-            )}
           </tbody>
         </table>
       </div>
