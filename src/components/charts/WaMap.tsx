@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { yearData } from '@/lib/data';
-import { fmtInt, fmtMoneyFull } from '@/lib/format';
+import { fmtInt, fmtMoney } from '@/lib/format';
 
 type MapFile = {
   w: number;
@@ -10,11 +10,23 @@ type MapFile = {
   districts: { code: string; name: string; d: string }[];
 };
 
-// Sequential blue ramp (light -> dark) for per-student funding quintiles
+// Sequential blue ramp (light -> dark) for total-funding quintiles
 const RAMP = ['#cde2fb', '#9ec5f4', '#5598e7', '#256abf', '#104281'];
 const NO_DATA = '#e1e0d9';
 
 let mapCache: MapFile | null = null;
+
+function pathBounds(d: string) {
+  const nums = d.match(/-?\d+(\.\d+)?/g)?.map(Number) ?? [];
+  let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+  for (let i = 0; i + 1 < nums.length; i += 2) {
+    if (nums[i] < minX) minX = nums[i];
+    if (nums[i] > maxX) maxX = nums[i];
+    if (nums[i + 1] < minY) minY = nums[i + 1];
+    if (nums[i + 1] > maxY) maxY = nums[i + 1];
+  }
+  return { minX, maxX, minY, maxY };
+}
 
 export default function WaMap({
   year,
@@ -25,12 +37,12 @@ export default function WaMap({
 }) {
   const [map, setMap] = useState<MapFile | null>(mapCache);
   const [view, setView] = useState<{ x: number; y: number; w: number; h: number } | null>(null);
-  const [hovered, setHovered] = useState<string | null>(null);
-  const [tip, setTip] = useState<{ x: number; y: number } | null>(null);
+  const [query, setQuery] = useState('');
+  const [selected, setSelected] = useState<string | null>(null);
   const svgRef = useRef<SVGSVGElement>(null);
-  const wrapRef = useRef<HTMLDivElement>(null);
   const pointers = useRef(new Map<number, { x: number; y: number }>());
-  const dragged = useRef(false);
+  const viewRef = useRef(view);
+  viewRef.current = view;
 
   useEffect(() => {
     if (mapCache) return;
@@ -51,11 +63,11 @@ export default function WaMap({
   const { fills, info, breaks } = useMemo(() => {
     const yd = yearData(year);
     const byCode = new Map(yd.districts.map((d) => [d.code, d]));
-    const values = yd.districts.map((d) => d.perPupil).sort((a, b) => a - b);
+    const values = yd.districts.map((d) => d.rev.total).sort((a, b) => a - b);
     const q = (p: number) => values[Math.min(values.length - 1, Math.floor(p * values.length))];
     const cuts = [q(0.2), q(0.4), q(0.6), q(0.8)];
     const fills = new Map<string, string>();
-    const info = new Map<string, { name: string; perPupil: number; enrollment: number }>();
+    const info = new Map<string, { name: string; total: number; enrollment: number }>();
     if (map) {
       for (const d of map.districts) {
         const data = byCode.get(d.code);
@@ -64,27 +76,26 @@ export default function WaMap({
           continue;
         }
         let i = 0;
-        while (i < 4 && data.perPupil > cuts[i]) i++;
+        while (i < 4 && data.rev.total > cuts[i]) i++;
         fills.set(d.code, RAMP[i]);
         info.set(d.code, {
           name: data.name,
-          perPupil: data.perPupil,
+          total: data.rev.total,
           enrollment: data.enrollment,
         });
       }
     }
-    return { fills, info, breaks: [values[0], ...cuts, values[values.length - 1]] };
+    return { fills, info, breaks: cuts };
   }, [map, year]);
 
-  if (!map || !view) {
-    return (
-      <div className="h-64 flex items-center justify-center text-sm text-ink-muted">
-        Loading map…
-      </div>
-    );
-  }
-
-  const zoomLevel = map.w / view.w;
+  const matches = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    if (!map || q.length < 2 || selected) return [];
+    const yd = yearData(year);
+    return yd.districts
+      .filter((d) => d.name.toLowerCase().includes(q) || d.county.toLowerCase().includes(q))
+      .slice(0, 7);
+  }, [map, query, year, selected]);
 
   function clampView(v: { x: number; y: number; w: number; h: number }) {
     if (!map) return v;
@@ -95,170 +106,248 @@ export default function WaMap({
     return { x, y, w, h };
   }
 
-  function svgPoint(clientX: number, clientY: number) {
-    const rect = svgRef.current!.getBoundingClientRect();
-    return {
-      x: view!.x + ((clientX - rect.left) / rect.width) * view!.w,
-      y: view!.y + ((clientY - rect.top) / rect.height) * view!.h,
-    };
-  }
-
   function zoomAt(clientX: number, clientY: number, factor: number) {
-    setView((v) => {
-      if (!v) return v;
-      const p = svgPoint(clientX, clientY);
-      const w = v.w / factor;
-      const h = v.h / factor;
-      return clampView({
+    const v = viewRef.current;
+    const svg = svgRef.current;
+    if (!v || !svg) return;
+    const rect = svg.getBoundingClientRect();
+    const p = {
+      x: v.x + ((clientX - rect.left) / rect.width) * v.w,
+      y: v.y + ((clientY - rect.top) / rect.height) * v.h,
+    };
+    const w = v.w / factor;
+    const h = v.h / factor;
+    setView(
+      clampView({
         x: p.x - ((p.x - v.x) / v.w) * w,
         y: p.y - ((p.y - v.y) / v.h) * h,
         w,
         h,
-      });
-    });
+      })
+    );
   }
 
+  // Native wheel listener so we can preventDefault ONLY for pinch/Ctrl+scroll.
+  // A normal two-finger scroll keeps scrolling the page.
+  useEffect(() => {
+    const svg = svgRef.current;
+    if (!svg) return;
+    const onWheel = (e: WheelEvent) => {
+      if (!e.ctrlKey && !e.metaKey) return; // regular scroll -> page scrolls
+      e.preventDefault();
+      zoomAt(e.clientX, e.clientY, Math.pow(1.003, -e.deltaY));
+    };
+    svg.addEventListener('wheel', onWheel, { passive: false });
+    return () => svg.removeEventListener('wheel', onWheel);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [map, view === null]);
+
   function zoomCenter(factor: number) {
-    const rect = svgRef.current!.getBoundingClientRect();
+    const svg = svgRef.current;
+    if (!svg) return;
+    const rect = svg.getBoundingClientRect();
     zoomAt(rect.left + rect.width / 2, rect.top + rect.height / 2, factor);
   }
 
-  return (
-    <div ref={wrapRef} className="relative select-none">
-      <svg
-        ref={svgRef}
-        viewBox={`${view.x} ${view.y} ${view.w} ${view.h}`}
-        className="w-full rounded-lg bg-accent-wash/40 touch-none"
-        style={{ cursor: 'grab', aspectRatio: `${map.w} / ${map.h}` }}
-        role="img"
-        aria-label={`Map of Washington school districts, colored by funding per student in ${year}. Click a district to open its profile.`}
-        onWheel={(e) => {
-          e.preventDefault();
-          zoomAt(e.clientX, e.clientY, Math.pow(1.0015, -e.deltaY));
-        }}
-        onPointerDown={(e) => {
-          (e.target as Element).setPointerCapture?.(e.pointerId);
-          pointers.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
-          dragged.current = false;
-        }}
-        onPointerMove={(e) => {
-          const prev = pointers.current.get(e.pointerId);
-          if (!prev) {
-            // plain hover
-            setTip({ x: e.clientX, y: e.clientY });
-            return;
-          }
-          const pts = pointers.current;
-          if (pts.size === 1) {
-            const dx = e.clientX - prev.x;
-            const dy = e.clientY - prev.y;
-            if (Math.abs(dx) + Math.abs(dy) > 3) dragged.current = true;
-            const rect = svgRef.current!.getBoundingClientRect();
-            setView((v) =>
-              v
-                ? clampView({
-                    ...v,
-                    x: v.x - (dx / rect.width) * v.w,
-                    y: v.y - (dy / rect.height) * v.h,
-                  })
-                : v
-            );
-            pts.set(e.pointerId, { x: e.clientX, y: e.clientY });
-          } else if (pts.size === 2) {
-            const [a, b] = Array.from(pts.values());
-            const distBefore = Math.hypot(a.x - b.x, a.y - b.y);
-            pts.set(e.pointerId, { x: e.clientX, y: e.clientY });
-            const [a2, b2] = Array.from(pts.values());
-            const distAfter = Math.hypot(a2.x - b2.x, a2.y - b2.y);
-            if (distBefore > 0) {
-              dragged.current = true;
-              zoomAt((a2.x + b2.x) / 2, (a2.y + b2.y) / 2, distAfter / distBefore);
-            }
-          }
-        }}
-        onPointerUp={(e) => pointers.current.delete(e.pointerId)}
-        onPointerCancel={(e) => pointers.current.delete(e.pointerId)}
-        onPointerLeave={() => {
-          setHovered(null);
-          setTip(null);
-        }}
-        onDoubleClick={(e) => zoomAt(e.clientX, e.clientY, 2)}
-      >
-        {map.districts.map((d) => (
-          <path
-            key={d.code}
-            d={d.d}
-            fill={fills.get(d.code) ?? NO_DATA}
-            stroke={hovered === d.code ? '#0b0b0b' : '#fcfcfb'}
-            strokeWidth={hovered === d.code ? 1.5 : 0.7}
-            vectorEffect="non-scaling-stroke"
-            onPointerEnter={() => setHovered(d.code)}
-            onClick={() => {
-              if (!dragged.current) onSelect(d.code);
-            }}
-            style={{ cursor: 'pointer' }}
-          >
-            <title>{info.get(d.code)?.name ?? d.name}</title>
-          </path>
-        ))}
-      </svg>
+  function zoomToDistrict(code: string) {
+    if (!map) return;
+    const d = map.districts.find((x) => x.code === code);
+    if (!d) return;
+    const b = pathBounds(d.d);
+    const pad = Math.max(b.maxX - b.minX, b.maxY - b.minY) * 0.9 + 12;
+    const cx = (b.minX + b.maxX) / 2;
+    const cy = (b.minY + b.maxY) / 2;
+    const w = Math.min(map.w, (b.maxX - b.minX) + pad);
+    const h = (w / map.w) * map.h;
+    setView(clampView({ x: cx - w / 2, y: cy - (h / 2), w, h }));
+  }
 
-      {/* zoom controls */}
-      <div className="absolute top-2 right-2 flex flex-col gap-1">
-        {[
-          ['+', () => zoomCenter(1.6), 'Zoom in'],
-          ['−', () => zoomCenter(1 / 1.6), 'Zoom out'],
-          ['⟲', () => setView({ x: 0, y: 0, w: map.w, h: map.h }), 'Reset view'],
-        ].map(([label, fn, title]) => (
-          <button
-            key={label as string}
-            onClick={fn as () => void}
-            title={title as string}
-            className="w-8 h-8 card flex items-center justify-center text-lg font-semibold text-ink-secondary hover:border-accent hover:text-accent"
-          >
-            {label as string}
-          </button>
-        ))}
+  if (!map || !view) {
+    return (
+      <div className="h-64 flex items-center justify-center text-sm text-ink-muted">
+        Loading map…
+      </div>
+    );
+  }
+
+  const selectedInfo = selected ? info.get(selected) : null;
+  const selectedShape = selected ? map.districts.find((d) => d.code === selected) : null;
+
+  return (
+    <div className="relative select-none">
+      {/* Search on the map */}
+      <div className="relative max-w-md mb-3">
+        <input
+          type="search"
+          value={query}
+          onChange={(e) => {
+            setQuery(e.target.value);
+            setSelected(null);
+          }}
+          placeholder="Search a district to highlight it on the map…"
+          aria-label="Search for a district on the map"
+          className="w-full px-4 py-2.5 card rounded-lg text-base placeholder:text-ink-muted"
+        />
+        {matches.length > 0 && (
+          <ul className="absolute z-20 mt-1 w-full card shadow-lg overflow-hidden">
+            {matches.map((d) => (
+              <li key={d.code}>
+                <button
+                  onClick={() => {
+                    setSelected(d.code);
+                    setQuery(d.name);
+                    zoomToDistrict(d.code);
+                  }}
+                  className="w-full text-left px-4 py-2.5 text-sm hover:bg-accent-wash"
+                >
+                  <span className="font-medium">{d.name}</span>
+                  <span className="text-ink-muted"> · {d.county} County</span>
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
       </div>
 
-      {/* tooltip */}
-      {hovered && tip && (
-        <div
-          className="pointer-events-none absolute z-10 card px-3 py-2 text-xs shadow-md whitespace-nowrap"
-          style={{
-            left: Math.min(
-              tip.x - (wrapRef.current?.getBoundingClientRect().left ?? 0) + 12,
-              (wrapRef.current?.clientWidth ?? 300) - 170
-            ),
-            top: tip.y - (wrapRef.current?.getBoundingClientRect().top ?? 0) + 12,
+      <div className="relative">
+        <svg
+          ref={svgRef}
+          viewBox={`${view.x} ${view.y} ${view.w} ${view.h}`}
+          className="w-full rounded-lg bg-accent-wash/40"
+          style={{ touchAction: 'pan-y', aspectRatio: `${map.w} / ${map.h}` }}
+          role="img"
+          aria-label={`Map of Washington school districts, colored by total funding in ${year}. Use the search box to highlight a district.`}
+          onPointerDown={(e) => {
+            (e.currentTarget as Element).setPointerCapture?.(e.pointerId);
+            pointers.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
           }}
+          onPointerMove={(e) => {
+            const pts = pointers.current;
+            const prev = pts.get(e.pointerId);
+            if (!prev) return;
+            if (pts.size === 2) {
+              // two-finger pinch -> zoom
+              const [a, b] = Array.from(pts.values());
+              const before = Math.hypot(a.x - b.x, a.y - b.y);
+              pts.set(e.pointerId, { x: e.clientX, y: e.clientY });
+              const [a2, b2] = Array.from(pts.values());
+              const after = Math.hypot(a2.x - b2.x, a2.y - b2.y);
+              if (before > 0) zoomAt((a2.x + b2.x) / 2, (a2.y + b2.y) / 2, after / before);
+            } else if (pts.size === 1 && e.pointerType === 'mouse') {
+              // mouse drag -> pan (touch drag is left to the page for scrolling)
+              const dx = e.clientX - prev.x;
+              const dy = e.clientY - prev.y;
+              const rect = svgRef.current!.getBoundingClientRect();
+              setView((v) =>
+                v
+                  ? clampView({
+                      ...v,
+                      x: v.x - (dx / rect.width) * v.w,
+                      y: v.y - (dy / rect.height) * v.h,
+                    })
+                  : v
+              );
+              pts.set(e.pointerId, { x: e.clientX, y: e.clientY });
+            }
+          }}
+          onPointerUp={(e) => pointers.current.delete(e.pointerId)}
+          onPointerCancel={(e) => pointers.current.delete(e.pointerId)}
+          onDoubleClick={(e) => zoomAt(e.clientX, e.clientY, 2)}
         >
-          <div className="font-semibold text-sm">
-            {info.get(hovered)?.name ?? map.districts.find((d) => d.code === hovered)?.name}
-          </div>
-          {info.get(hovered) ? (
-            <div className="text-ink-secondary mt-0.5">
-              {fmtMoneyFull(info.get(hovered)!.perPupil)} per student ·{' '}
-              {fmtInt(info.get(hovered)!.enrollment)} students
-            </div>
-          ) : (
-            <div className="text-ink-muted mt-0.5">No data for {year}</div>
+          {map.districts.map((d) => (
+            <path
+              key={d.code}
+              d={d.d}
+              fill={fills.get(d.code) ?? NO_DATA}
+              stroke="#fcfcfb"
+              strokeWidth={0.7}
+              vectorEffect="non-scaling-stroke"
+              pointerEvents="none"
+              opacity={selected && selected !== d.code ? 0.55 : 1}
+            />
+          ))}
+          {selectedShape && (
+            <path
+              d={selectedShape.d}
+              fill="none"
+              stroke="#0b0b0b"
+              strokeWidth={2}
+              vectorEffect="non-scaling-stroke"
+              pointerEvents="none"
+            />
           )}
-          <div className="text-accent mt-0.5">Click to open →</div>
+        </svg>
+
+        {/* zoom controls */}
+        <div className="absolute top-2 right-2 flex flex-col gap-1">
+          {[
+            ['+', () => zoomCenter(1.6), 'Zoom in'],
+            ['−', () => zoomCenter(1 / 1.6), 'Zoom out'],
+            ['⟲', () => { setView({ x: 0, y: 0, w: map.w, h: map.h }); }, 'Reset view'],
+          ].map(([label, fn, title]) => (
+            <button
+              key={label as string}
+              onClick={fn as () => void}
+              title={title as string}
+              className="w-8 h-8 card flex items-center justify-center text-lg font-semibold text-ink-secondary hover:border-accent hover:text-accent"
+            >
+              {label as string}
+            </button>
+          ))}
         </div>
-      )}
+
+        {/* selected district card */}
+        {selected && (
+          <div className="anim-rise absolute left-2 bottom-2 card px-4 py-3 shadow-md max-w-[85%]">
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <div className="font-semibold text-sm md:text-base">
+                  {selectedInfo?.name ?? selectedShape?.name}
+                </div>
+                {selectedInfo ? (
+                  <div className="text-xs md:text-sm text-ink-secondary mt-0.5">
+                    {fmtMoney(selectedInfo.total)} total funding ·{' '}
+                    {fmtInt(selectedInfo.enrollment)} students
+                  </div>
+                ) : (
+                  <div className="text-xs text-ink-muted mt-0.5">No data for {year}</div>
+                )}
+                {selectedInfo && (
+                  <button
+                    onClick={() => onSelect(selected)}
+                    className="mt-1.5 text-sm font-medium text-accent hover:underline"
+                  >
+                    Open full profile →
+                  </button>
+                )}
+              </div>
+              <button
+                onClick={() => {
+                  setSelected(null);
+                  setQuery('');
+                  setView({ x: 0, y: 0, w: map.w, h: map.h });
+                }}
+                aria-label="Clear selection"
+                className="text-ink-muted hover:text-ink text-lg leading-none"
+              >
+                ×
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
 
       {/* legend */}
       <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-xs text-ink-secondary">
-        <span className="font-medium text-ink">Funding per student ({year}):</span>
+        <span className="font-medium text-ink">Total funding ({year}):</span>
         {RAMP.map((c, i) => (
           <span key={c} className="flex items-center gap-1.5">
             <span className="inline-block w-3 h-3 rounded-sm" style={{ background: c }} />
             {i === 0
-              ? `under ${fmtMoneyFull(breaks[1])}`
+              ? `under ${fmtMoney(breaks[0])}`
               : i === RAMP.length - 1
-                ? `over ${fmtMoneyFull(breaks[4])}`
-                : `${fmtMoneyFull(breaks[i])}–${fmtMoneyFull(breaks[i + 1])}`}
+                ? `over ${fmtMoney(breaks[3])}`
+                : `${fmtMoney(breaks[i - 1])}–${fmtMoney(breaks[i])}`}
           </span>
         ))}
         <span className="flex items-center gap-1.5">
@@ -266,7 +355,7 @@ export default function WaMap({
           no data
         </span>
         <span className="text-ink-muted">
-          scroll or pinch to zoom{zoomLevel > 1.05 ? ` · ${zoomLevel.toFixed(1)}×` : ''}
+          pinch or Ctrl+scroll to zoom · drag to pan
         </span>
       </div>
     </div>

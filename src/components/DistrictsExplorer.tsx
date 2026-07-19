@@ -195,8 +195,8 @@ function DistrictTable({
       <div className="mt-6 card p-5">
         <h2 className="font-semibold">Find your district on the map</h2>
         <p className="mt-0.5 mb-4 text-sm text-ink-secondary">
-          Colored by funding per student. Zoom in (scroll, pinch, or the +
-          button), hover for details, click a district to open its profile.
+          Colored by total funding. Search to highlight your district, then open
+          its profile from the card. Pinch (or Ctrl+scroll) to zoom.
         </p>
         <WaMap year={year} onSelect={onSelect} />
       </div>
