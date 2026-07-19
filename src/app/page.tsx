@@ -4,7 +4,6 @@ import StatTile from '@/components/StatTile';
 import SourceShareBar from '@/components/charts/SourceShareBar';
 import CountUp from '@/components/interactive/CountUp';
 import DistrictQuickFind from '@/components/interactive/DistrictQuickFind';
-import GuessQuiz from '@/components/interactive/GuessQuiz';
 import SchoolBuilder from '@/components/interactive/SchoolBuilder';
 import ClassSizeViz from '@/components/interactive/ClassSizeViz';
 import McClearyTimeline from '@/components/interactive/McClearyTimeline';
@@ -63,7 +62,7 @@ export default function HomePage() {
           <StatTile
             label="This year's funding"
             value={<CountUp value={s.revenues.total} kind="money" />}
-            note="general fund, 2024–25"
+            note="entire Washington state general-fund total, 2024–25"
           />
           <StatTile
             label="Students"
@@ -101,34 +100,37 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Quiz -> builder */}
+      {/* Model explainer -> builder */}
       <section className="py-6">
         <h2 className="text-2xl md:text-3xl font-bold max-w-2xl">
           The formula decides who works at your school
         </h2>
         <p className="mt-2 max-w-2xl text-ink-secondary">
-          The prototypical model turns student counts into staff. Before you try
-          it — a quick bet:
+          Washington does not start with each school&apos;s actual payroll. Instead,
+          it uses one statewide recipe — the prototypical school model — to
+          estimate the staff and operating dollars a district should receive.
         </p>
         <div className="mt-5 grid gap-5">
-          <GuessQuiz
-            question="How much school-nurse time does the state fund for a 400-student elementary school?"
-            options={[
-              'Two full-time nurses',
-              'One full-time nurse',
-              'About half a nurse',
-              '8% of one nurse',
-            ]}
-            correctIndex={3}
-            reveal={
-              <p>
-                The base formula funds <strong>0.076 of a nurse</strong> — about
-                3 hours a week for 400 kids. Districts that want a real school
-                nurse pay for the rest with local levy dollars. Try it yourself
-                below. ↓
-              </p>
-            }
-          />
+          <div className="card p-5 md:p-6 bg-accent-wash border-accent-soft">
+            <h3 className="text-lg font-bold">How the model actually works</h3>
+            <div className="mt-4 grid md:grid-cols-3 gap-4 text-sm text-ink-secondary">
+              <div>
+                <p className="font-semibold text-ink">1. Start with enrollment</p>
+                <p className="mt-1">The state counts students by grade span, then converts those counts into shares of model elementary, middle, and high schools.</p>
+              </div>
+              <div>
+                <p className="font-semibold text-ink">2. Generate a staffing allocation</p>
+                <p className="mt-1">Each model school is assigned teacher ratios and fractional positions for principals, counselors, librarians, office staff, custodians, and nurses.</p>
+              </div>
+              <div>
+                <p className="font-semibold text-ink">3. Turn positions into dollars</p>
+                <p className="mt-1">The state applies salary and benefit assumptions, regionalization, materials and operating costs, then adds funding for students with additional needs.</p>
+              </div>
+            </div>
+            <p className="mt-4 text-sm text-ink-secondary">
+              These are funding allocations, not a required staffing plan. Districts can organize schools differently, but must cover anything beyond the formula with other available revenue.
+            </p>
+          </div>
           <SchoolBuilder />
           <ClassSizeViz />
         </div>
@@ -190,25 +192,7 @@ export default function HomePage() {
             else. No other state says it this bluntly.
           </p>
         </div>
-        <div className="mt-5 grid gap-5">
-          <GuessQuiz
-            question="When the Legislature moved too slowly on school funding, what did the state Supreme Court do?"
-            options={[
-              'Sent a strongly worded letter',
-              'Nothing — courts can’t touch budgets',
-              'Fined the state $100,000 per day',
-              'Shut down the schools',
-            ]}
-            correctIndex={2}
-            reveal={
-              <p>
-                Starting in 2015 the court fined Washington{' '}
-                <strong>$100,000 every single day</strong> — over $100 million
-                total — until lawmakers rebuilt the funding system. Step through
-                the whole saga below.
-              </p>
-            }
-          />
+        <div className="mt-5">
           <McClearyTimeline />
         </div>
       </section>

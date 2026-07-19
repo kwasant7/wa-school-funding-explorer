@@ -75,9 +75,9 @@ export default function DistrictQuickFind() {
             </div>
           </div>
           <div className="card px-4 py-3">
-            <div className="text-xs text-ink-secondary">Students</div>
+            <div className="text-xs text-ink-secondary">School district students</div>
             <div className="text-2xl font-bold">{fmtInt(picked.enrollment)}</div>
-            <div className="text-xs text-ink-muted mt-0.5">{picked.county} County</div>
+            <div className="text-xs text-ink-muted mt-0.5">{picked.name}</div>
           </div>
           <Link
             href={`/districts?d=${picked.code}`}

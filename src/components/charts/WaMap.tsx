@@ -2,16 +2,18 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { yearData } from '@/lib/data';
-import { fmtInt, fmtMoney } from '@/lib/format';
+import { fmtInt, fmtMoneyFull } from '@/lib/format';
 
 type MapFile = {
   w: number;
   h: number;
   districts: { code: string; name: string; d: string }[];
+  water?: { name: string; d: string }[];
+  rivers?: { name: string; d: string }[];
 };
 
 // Sequential blue ramp (light -> dark); districts are colored on a continuous
-// gradient by their percentile rank of total funding.
+// gradient by their percentile rank of per-student funding.
 const RAMP = ['#cde2fb', '#9ec5f4', '#5598e7', '#256abf', '#104281'];
 const NO_DATA = '#e1e0d9';
 
@@ -98,10 +100,10 @@ export default function WaMap({
   const { fills, info } = useMemo(() => {
     const yd = yearData(year);
     const byCode = new Map(yd.districts.map((d) => [d.code, d]));
-    const sorted = [...yd.districts].sort((a, b) => a.rev.total - b.rev.total);
+    const sorted = [...yd.districts].sort((a, b) => a.perPupil - b.perPupil);
     const rank = new Map(sorted.map((d, i) => [d.code, i / Math.max(1, sorted.length - 1)]));
     const fills = new Map<string, string>();
-    const info = new Map<string, { name: string; total: number; enrollment: number }>();
+    const info = new Map<string, { name: string; perPupil: number; enrollment: number }>();
     if (map) {
       for (const d of map.districts) {
         const data = byCode.get(d.code);
@@ -112,7 +114,7 @@ export default function WaMap({
         fills.set(d.code, rampColor(rank.get(d.code) ?? 0));
         info.set(d.code, {
           name: data.name,
-          total: data.rev.total,
+          perPupil: data.perPupil,
           enrollment: data.enrollment,
         });
       }
@@ -254,10 +256,14 @@ export default function WaMap({
         <svg
           ref={svgRef}
           viewBox={`${view.x} ${view.y} ${view.w} ${view.h}`}
-          className="w-full rounded-lg bg-accent-wash/40"
-          style={{ touchAction: 'pan-y', aspectRatio: `${map.w} / ${map.h}` }}
+          className="w-full rounded-lg"
+          style={{
+            touchAction: 'pan-y',
+            aspectRatio: `${map.w} / ${map.h}`,
+            backgroundColor: '#e2f3f8',
+          }}
           role="img"
-          aria-label={`Map of Washington school districts, colored by total funding in ${year}. Click a district or use the search box to select one.`}
+          aria-label={`Map of Washington school districts, colored by funding per student in ${year}. Click a district or use the search box to select one.`}
           onPointerDown={(e) => {
             // Capture on the original target so click still fires on the path
             (e.target as Element).setPointerCapture?.(e.pointerId);
@@ -301,6 +307,13 @@ export default function WaMap({
           onPointerCancel={(e) => pointers.current.delete(e.pointerId)}
           onDoubleClick={(e) => zoomAt(e.clientX, e.clientY, 2)}
         >
+          <defs>
+            <clipPath id="wa-district-extent">
+              {map.districts.map((district) => (
+                <path key={`clip-${district.code}`} d={district.d} />
+              ))}
+            </clipPath>
+          </defs>
           {map.districts.map((d) => (
             <path
               key={d.code}
@@ -322,6 +335,40 @@ export default function WaMap({
               <title>{info.get(d.code)?.name ?? d.name}</title>
             </path>
           ))}
+          <g pointerEvents="none" aria-label="Major Washington waterbodies">
+            {(map.water ?? []).map((water, index) => (
+              <path
+                key={`${water.name}-${index}`}
+                d={water.d}
+                fill="#9fd4ef"
+                stroke="#7fc3e6"
+                strokeWidth={0.8}
+                vectorEffect="non-scaling-stroke"
+              >
+                <title>{water.name}</title>
+              </path>
+            ))}
+          </g>
+          <g
+            pointerEvents="none"
+            aria-label="Major Washington rivers"
+            clipPath="url(#wa-district-extent)"
+          >
+            {(map.rivers ?? []).map((river, index) => (
+              <path
+                key={`${river.name}-${index}`}
+                d={river.d}
+                fill="none"
+                stroke="#79bee3"
+                strokeWidth={1.4}
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                vectorEffect="non-scaling-stroke"
+              >
+                <title>{river.name}</title>
+              </path>
+            ))}
+          </g>
           {selectedShape && (
             <path
               d={selectedShape.d}
@@ -362,7 +409,7 @@ export default function WaMap({
                 </div>
                 {selectedInfo ? (
                   <div className="text-xs md:text-sm text-ink-secondary mt-0.5">
-                    {fmtMoney(selectedInfo.total)} total funding ·{' '}
+                    {fmtMoneyFull(selectedInfo.perPupil)} per student ·{' '}
                     {fmtInt(selectedInfo.enrollment)} students
                   </div>
                 ) : (
@@ -395,19 +442,26 @@ export default function WaMap({
 
       {/* legend */}
       <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-xs text-ink-secondary">
-        <span className="font-medium text-ink">Total funding ({year}):</span>
+        <span className="font-medium text-ink">Funding per student ({year}):</span>
         <span className="flex items-center gap-2">
-          less funded
+          lower per student
           <span
             className="inline-block h-3 w-32 md:w-44 rounded-sm"
             style={{ background: `linear-gradient(to right, ${RAMP.join(', ')})` }}
             aria-hidden
           />
-          more funded
+          higher per student
         </span>
         <span className="flex items-center gap-1.5">
           <span className="inline-block w-3 h-3 rounded-sm" style={{ background: NO_DATA }} />
           no data
+        </span>
+        <span className="flex items-center gap-1.5">
+          <span
+            className="inline-block w-3 h-3 rounded-sm border border-[#63abc4]"
+            style={{ background: '#bfe7f1' }}
+          />
+          water
         </span>
         <span className="text-ink-muted">
           click a district · pinch or Ctrl+scroll to zoom · drag to pan
