@@ -14,6 +14,10 @@ type MapFile = {
 // gradient by their percentile rank of total funding.
 const RAMP = ['#cde2fb', '#9ec5f4', '#5598e7', '#256abf', '#104281'];
 const NO_DATA = '#e1e0d9';
+// Quiet uniform look before funding colors are switched on
+const PLAIN_FILL = '#e9eff8';
+const PLAIN_STROKE = '#c9d4e4';
+const HIGHLIGHT_FILL = '#2a78d6';
 
 // How far past the state extent you can zoom out (breathing room around WA)
 const MAX_OUT = 1.45;
@@ -64,6 +68,7 @@ export default function WaMap({
   const [view, setView] = useState<{ x: number; y: number; w: number; h: number } | null>(null);
   const [query, setQuery] = useState('');
   const [selected, setSelected] = useState<string | null>(null);
+  const [showColors, setShowColors] = useState(false);
   const svgRef = useRef<SVGSVGElement>(null);
   const pointers = useRef(new Map<number, { x: number; y: number }>());
   const viewRef = useRef(view);
@@ -122,8 +127,17 @@ export default function WaMap({
     const q = query.trim().toLowerCase();
     if (!map || q.length < 2 || selected) return [];
     const yd = yearData(year);
+    // Name matches outrank county-only matches; earlier name hits rank higher
+    const score = (d: (typeof yd.districts)[number]) => {
+      const name = d.name.toLowerCase();
+      if (name.startsWith(q)) return 0;
+      if (name.includes(q)) return 1;
+      if (d.county.toLowerCase().includes(q)) return 2;
+      return 3;
+    };
     return yd.districts
-      .filter((d) => d.name.toLowerCase().includes(q) || d.county.toLowerCase().includes(q))
+      .filter((d) => score(d) < 3)
+      .sort((a, b) => score(a) - score(b) || a.name.localeCompare(b.name))
       .slice(0, 7);
   }, [map, query, year, selected]);
 
@@ -288,12 +302,20 @@ export default function WaMap({
             <path
               key={d.code}
               d={d.d}
-              fill={fills.get(d.code) ?? NO_DATA}
-              stroke="#fcfcfb"
-              strokeWidth={0.7}
+              fill={
+                selected === d.code
+                  ? showColors
+                    ? (fills.get(d.code) ?? NO_DATA)
+                    : HIGHLIGHT_FILL
+                  : showColors
+                    ? (fills.get(d.code) ?? NO_DATA)
+                    : PLAIN_FILL
+              }
+              stroke={showColors ? '#fcfcfb' : PLAIN_STROKE}
+              strokeWidth={showColors ? 0.7 : 0.5}
               vectorEffect="non-scaling-stroke"
               pointerEvents="none"
-              opacity={selected && selected !== d.code ? 0.55 : 1}
+              opacity={selected && selected !== d.code ? (showColors ? 0.55 : 1) : 1}
             />
           ))}
           {selectedShape && (
@@ -367,22 +389,37 @@ export default function WaMap({
         )}
       </div>
 
-      {/* legend */}
+      {/* legend + color toggle */}
       <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-xs text-ink-secondary">
-        <span className="font-medium text-ink">Total funding ({year}):</span>
-        <span className="flex items-center gap-2">
-          less funded
-          <span
-            className="inline-block h-3 w-32 md:w-44 rounded-sm"
-            style={{ background: `linear-gradient(to right, ${RAMP.join(', ')})` }}
-            aria-hidden
+        <label className="flex items-center gap-2 cursor-pointer text-sm">
+          <input
+            type="checkbox"
+            checked={showColors}
+            onChange={(e) => setShowColors(e.target.checked)}
+            className="w-4 h-4 cursor-pointer"
+            style={{ accentColor: '#256abf' }}
           />
-          more funded
-        </span>
-        <span className="flex items-center gap-1.5">
-          <span className="inline-block w-3 h-3 rounded-sm" style={{ background: NO_DATA }} />
-          no data
-        </span>
+          <span className="font-medium text-ink">
+            Color districts by total funding ({year})
+          </span>
+        </label>
+        {showColors && (
+          <>
+            <span className="anim-rise flex items-center gap-2">
+              less funded
+              <span
+                className="inline-block h-3 w-32 md:w-44 rounded-sm"
+                style={{ background: `linear-gradient(to right, ${RAMP.join(', ')})` }}
+                aria-hidden
+              />
+              more funded
+            </span>
+            <span className="anim-rise flex items-center gap-1.5">
+              <span className="inline-block w-3 h-3 rounded-sm" style={{ background: NO_DATA }} />
+              no data
+            </span>
+          </>
+        )}
         <span className="text-ink-muted">
           pinch or Ctrl+scroll to zoom · drag to pan
         </span>
