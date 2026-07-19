@@ -3,51 +3,13 @@
 import { useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
-import {
-  District,
-  LATEST,
-  YEARS,
-  districtSeries,
-  statewideSeries,
-  yearData,
-} from '@/lib/data';
+import { District, LATEST, YEARS, districtSeries, statewideSeries, yearData } from '@/lib/data';
 import StatTile from '@/components/StatTile';
 import SourceShareBar from '@/components/charts/SourceShareBar';
 import CompareBar from '@/components/charts/CompareBar';
 import TrendChart from '@/components/charts/TrendChart';
 import WaMap from '@/components/charts/WaMap';
 import { fmtInt, fmtMoney, fmtMoneyFull, pct } from '@/lib/format';
-
-type SortKey = 'name' | 'county' | 'enrollment' | 'total' | 'perPupil' | 'statePct' | 'localPct';
-
-const COLUMNS: { key: SortKey; label: string; numeric?: boolean }[] = [
-  { key: 'name', label: 'District' },
-  { key: 'county', label: 'County' },
-  { key: 'enrollment', label: 'Students', numeric: true },
-  { key: 'total', label: 'Total funding', numeric: true },
-  { key: 'perPupil', label: '$ / student', numeric: true },
-  { key: 'statePct', label: 'State %', numeric: true },
-  { key: 'localPct', label: 'Local %', numeric: true },
-];
-
-function sortValue(d: District, key: SortKey): string | number {
-  switch (key) {
-    case 'name':
-      return d.name;
-    case 'county':
-      return d.county;
-    case 'enrollment':
-      return d.enrollment;
-    case 'total':
-      return d.rev.total;
-    case 'perPupil':
-      return d.perPupil;
-    case 'statePct':
-      return d.rev.state / d.rev.total;
-    case 'localPct':
-      return d.rev.local / d.rev.total;
-  }
-}
 
 function YearSelect({ year, onChange }: { year: string; onChange: (y: string) => void }) {
   return (
@@ -86,7 +48,7 @@ export default function DistrictsExplorer() {
     return (
       <div className="max-w-site mx-auto px-4 md:px-6 pt-10">
         <Link href="/districts" className="text-sm text-accent hover:underline">
-          ← All districts
+          ← District Explorer
         </Link>
         <p className="mt-6 text-ink-secondary">
           No data for this district in {year}.{' '}
@@ -98,7 +60,7 @@ export default function DistrictsExplorer() {
     );
   }
   return (
-    <DistrictTable
+    <DistrictOverview
       year={year}
       onYearChange={setYear}
       onSelect={(code) => router.push(`/districts?d=${code}`)}
@@ -106,7 +68,7 @@ export default function DistrictsExplorer() {
   );
 }
 
-function DistrictTable({
+function DistrictOverview({
   year,
   onYearChange,
   onSelect,
@@ -115,9 +77,8 @@ function DistrictTable({
   onYearChange: (y: string) => void;
   onSelect: (code: string) => void;
 }) {
-  const [sortKey, setSortKey] = useState<SortKey>('enrollment');
-  const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
   const data = yearData(year);
+  const s = data.statewide;
 
   const byCounty = useMemo(() => {
     const groups = new Map<string, District[]>();
@@ -130,38 +91,15 @@ function DistrictTable({
       .map(([county, ds]) => [county, [...ds].sort((a, b) => a.name.localeCompare(b.name))] as const);
   }, [data]);
 
-  const rows = useMemo(() => {
-    return [...data.districts].sort((a, b) => {
-      const av = sortValue(a, sortKey);
-      const bv = sortValue(b, sortKey);
-      const cmp =
-        typeof av === 'string'
-          ? av.localeCompare(bv as string)
-          : (av as number) - (bv as number);
-      return sortDir === 'asc' ? cmp : -cmp;
-    });
-  }, [data, sortKey, sortDir]);
-
-  const s = data.statewide;
-
-  function toggleSort(key: SortKey) {
-    if (key === sortKey) {
-      setSortDir((d) => (d === 'asc' ? 'desc' : 'asc'));
-    } else {
-      setSortKey(key);
-      setSortDir(key === 'name' || key === 'county' ? 'asc' : 'desc');
-    }
-  }
-
   return (
     <div className="max-w-site mx-auto px-4 md:px-6 pt-10">
       <h1 className="text-3xl md:text-4xl font-bold tracking-tight">
         District Explorer
       </h1>
       <p className="mt-3 max-w-2xl text-ink-secondary">
-        Every school district and charter school in Washington, with general
-        fund revenues from the F-196 financial reports for any year since
-        2019–20. Click a district for its full profile and trends.
+        Funding for every school district and charter school in Washington,
+        from the F-196 financial reports, any year since 2019–20. Pick your
+        district on the map — its full profile opens on this page.
       </p>
 
       <div className="mt-6 grid lg:grid-cols-[1fr,22rem] gap-4 items-stretch">
@@ -195,15 +133,15 @@ function DistrictTable({
       <div className="mt-6 card p-5">
         <h2 className="font-semibold">Find your district on the map</h2>
         <p className="mt-0.5 mb-4 text-sm text-ink-secondary">
-          Search to highlight your district and open its profile. Pinch (or
-          Ctrl+scroll) to zoom — or flip on the funding colors below the map.
+          Click your district (or search for it), then open its profile from
+          the card. Pinch (or Ctrl+scroll) to zoom.
         </p>
         <WaMap year={year} onSelect={onSelect} />
       </div>
 
       <div className="mt-6 flex flex-wrap items-center gap-4">
         <label className="inline-flex items-center gap-2 text-sm text-ink-secondary">
-          Jump to a district
+          Or jump straight to one
           <select
             value=""
             onChange={(e) => e.target.value && onSelect(e.target.value)}
@@ -223,59 +161,10 @@ function DistrictTable({
         </label>
         <YearSelect year={year} onChange={onYearChange} />
       </div>
-
-      <div className="mt-4 card overflow-x-auto">
-        <table className="w-full text-sm whitespace-nowrap">
-          <thead>
-            <tr className="text-left text-ink-secondary border-b border-line">
-              {COLUMNS.map((col) => {
-                const active = sortKey === col.key;
-                return (
-                  <th key={col.key} className={col.numeric ? 'text-right' : 'text-left'}>
-                    <button
-                      onClick={() => toggleSort(col.key)}
-                      className={`w-full px-3 md:px-4 py-3 font-medium hover:text-ink ${
-                        col.numeric ? 'text-right' : 'text-left'
-                      } ${active ? 'text-ink' : ''}`}
-                      aria-sort={
-                        active ? (sortDir === 'asc' ? 'ascending' : 'descending') : undefined
-                      }
-                    >
-                      {col.label}
-                      <span className="inline-block w-3 text-accent">
-                        {active ? (sortDir === 'asc' ? '↑' : '↓') : ''}
-                      </span>
-                    </button>
-                  </th>
-                );
-              })}
-            </tr>
-          </thead>
-          <tbody>
-            {rows.map((d) => (
-              <tr
-                key={d.code}
-                onClick={() => onSelect(d.code)}
-                onKeyDown={(e) => e.key === 'Enter' && onSelect(d.code)}
-                tabIndex={0}
-                className="border-t border-line cursor-pointer hover:bg-accent-wash transition-colors"
-              >
-                <td className="px-3 md:px-4 py-2.5 font-medium text-accent">{d.name}</td>
-                <td className="px-3 md:px-4 py-2.5 text-ink-secondary">{d.county}</td>
-                <td className="px-3 md:px-4 py-2.5 text-right tabular-nums">{fmtInt(d.enrollment)}</td>
-                <td className="px-3 md:px-4 py-2.5 text-right tabular-nums">{fmtMoney(d.rev.total)}</td>
-                <td className="px-3 md:px-4 py-2.5 text-right tabular-nums">{fmtMoneyFull(d.perPupil)}</td>
-                <td className="px-3 md:px-4 py-2.5 text-right tabular-nums">{pct(d.rev.state, d.rev.total)}</td>
-                <td className="px-3 md:px-4 py-2.5 text-right tabular-nums">{pct(d.rev.local, d.rev.total)}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-      <p className="mt-3 text-xs text-ink-muted">
+      <p className="mt-3 text-xs text-ink-muted max-w-2xl">
         Per-student figures divide general fund revenues by October headcount
-        enrollment; official OSPI per-pupil statistics use annual average FTE and
-        will differ slightly.
+        enrollment; official OSPI per-pupil statistics use annual average FTE
+        and will differ slightly.
       </p>
     </div>
   );
@@ -304,7 +193,7 @@ function DistrictDetail({
     <div className="max-w-site mx-auto px-4 md:px-6 pt-8">
       <div className="flex items-center justify-between gap-4 flex-wrap">
         <Link href="/districts" className="text-sm text-accent hover:underline">
-          ← All districts
+          ← District Explorer
         </Link>
         <YearSelect year={year} onChange={onYearChange} />
       </div>

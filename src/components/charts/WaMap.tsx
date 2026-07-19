@@ -14,10 +14,6 @@ type MapFile = {
 // gradient by their percentile rank of total funding.
 const RAMP = ['#cde2fb', '#9ec5f4', '#5598e7', '#256abf', '#104281'];
 const NO_DATA = '#e1e0d9';
-// Quiet uniform look before funding colors are switched on
-const PLAIN_FILL = '#e9eff8';
-const PLAIN_STROKE = '#c9d4e4';
-const HIGHLIGHT_FILL = '#2a78d6';
 
 // How far past the state extent you can zoom out (breathing room around WA)
 const MAX_OUT = 1.45;
@@ -68,7 +64,8 @@ export default function WaMap({
   const [view, setView] = useState<{ x: number; y: number; w: number; h: number } | null>(null);
   const [query, setQuery] = useState('');
   const [selected, setSelected] = useState<string | null>(null);
-  const [showColors, setShowColors] = useState(false);
+  const [hovered, setHovered] = useState<string | null>(null);
+  const dragged = useRef(false);
   const svgRef = useRef<SVGSVGElement>(null);
   const pointers = useRef(new Map<number, { x: number; y: number }>());
   const viewRef = useRef(view);
@@ -260,10 +257,12 @@ export default function WaMap({
           className="w-full rounded-lg bg-accent-wash/40"
           style={{ touchAction: 'pan-y', aspectRatio: `${map.w} / ${map.h}` }}
           role="img"
-          aria-label={`Map of Washington school districts, colored by total funding in ${year}. Use the search box to highlight a district.`}
+          aria-label={`Map of Washington school districts, colored by total funding in ${year}. Click a district or use the search box to select one.`}
           onPointerDown={(e) => {
-            (e.currentTarget as Element).setPointerCapture?.(e.pointerId);
+            // Capture on the original target so click still fires on the path
+            (e.target as Element).setPointerCapture?.(e.pointerId);
             pointers.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
+            dragged.current = false;
           }}
           onPointerMove={(e) => {
             const pts = pointers.current;
@@ -276,11 +275,15 @@ export default function WaMap({
               pts.set(e.pointerId, { x: e.clientX, y: e.clientY });
               const [a2, b2] = Array.from(pts.values());
               const after = Math.hypot(a2.x - b2.x, a2.y - b2.y);
-              if (before > 0) zoomAt((a2.x + b2.x) / 2, (a2.y + b2.y) / 2, after / before);
+              if (before > 0) {
+                dragged.current = true;
+                zoomAt((a2.x + b2.x) / 2, (a2.y + b2.y) / 2, after / before);
+              }
             } else if (pts.size === 1 && e.pointerType === 'mouse') {
               // mouse drag -> pan (touch drag is left to the page for scrolling)
               const dx = e.clientX - prev.x;
               const dy = e.clientY - prev.y;
+              if (Math.abs(dx) + Math.abs(dy) > 2) dragged.current = true;
               const rect = svgRef.current!.getBoundingClientRect();
               setView((v) =>
                 v
@@ -302,21 +305,22 @@ export default function WaMap({
             <path
               key={d.code}
               d={d.d}
-              fill={
-                selected === d.code
-                  ? showColors
-                    ? (fills.get(d.code) ?? NO_DATA)
-                    : HIGHLIGHT_FILL
-                  : showColors
-                    ? (fills.get(d.code) ?? NO_DATA)
-                    : PLAIN_FILL
-              }
-              stroke={showColors ? '#fcfcfb' : PLAIN_STROKE}
-              strokeWidth={showColors ? 0.7 : 0.5}
+              fill={fills.get(d.code) ?? NO_DATA}
+              stroke={hovered === d.code ? '#0b0b0b' : '#fcfcfb'}
+              strokeWidth={hovered === d.code ? 1.2 : 0.7}
               vectorEffect="non-scaling-stroke"
-              pointerEvents="none"
-              opacity={selected && selected !== d.code ? (showColors ? 0.55 : 1) : 1}
-            />
+              opacity={selected && selected !== d.code ? 0.55 : 1}
+              style={{ cursor: 'pointer' }}
+              onPointerEnter={() => setHovered(d.code)}
+              onPointerLeave={() => setHovered((h) => (h === d.code ? null : h))}
+              onClick={() => {
+                if (dragged.current) return;
+                setSelected(d.code);
+                setQuery(info.get(d.code)?.name ?? d.name);
+              }}
+            >
+              <title>{info.get(d.code)?.name ?? d.name}</title>
+            </path>
           ))}
           {selectedShape && (
             <path
@@ -389,39 +393,24 @@ export default function WaMap({
         )}
       </div>
 
-      {/* legend + color toggle */}
+      {/* legend */}
       <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-xs text-ink-secondary">
-        <label className="flex items-center gap-2 cursor-pointer text-sm">
-          <input
-            type="checkbox"
-            checked={showColors}
-            onChange={(e) => setShowColors(e.target.checked)}
-            className="w-4 h-4 cursor-pointer"
-            style={{ accentColor: '#256abf' }}
+        <span className="font-medium text-ink">Total funding ({year}):</span>
+        <span className="flex items-center gap-2">
+          less funded
+          <span
+            className="inline-block h-3 w-32 md:w-44 rounded-sm"
+            style={{ background: `linear-gradient(to right, ${RAMP.join(', ')})` }}
+            aria-hidden
           />
-          <span className="font-medium text-ink">
-            Color districts by total funding ({year})
-          </span>
-        </label>
-        {showColors && (
-          <>
-            <span className="anim-rise flex items-center gap-2">
-              less funded
-              <span
-                className="inline-block h-3 w-32 md:w-44 rounded-sm"
-                style={{ background: `linear-gradient(to right, ${RAMP.join(', ')})` }}
-                aria-hidden
-              />
-              more funded
-            </span>
-            <span className="anim-rise flex items-center gap-1.5">
-              <span className="inline-block w-3 h-3 rounded-sm" style={{ background: NO_DATA }} />
-              no data
-            </span>
-          </>
-        )}
+          more funded
+        </span>
+        <span className="flex items-center gap-1.5">
+          <span className="inline-block w-3 h-3 rounded-sm" style={{ background: NO_DATA }} />
+          no data
+        </span>
         <span className="text-ink-muted">
-          pinch or Ctrl+scroll to zoom · drag to pan
+          click a district · pinch or Ctrl+scroll to zoom · drag to pan
         </span>
       </div>
     </div>
