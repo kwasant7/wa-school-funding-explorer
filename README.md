@@ -30,8 +30,12 @@ Rebuilds `src/data/districts.json` from:
 - **Finances** — OSPI F-196 General Fund revenue actuals 2024-25,
   [SAFS data files](https://ospi.k12.wa.us/safs-data-files)
 
-To move to a newer school year, update the two URLs at the top of
-`scripts/fetch-data.mjs`.
+To add a newer school year, add its enrollment dataset ID and F-196 CSV URL to
+the `YEARS`/`REVENUE_FILES` tables at the top of `scripts/fetch-data.mjs`.
+
+Full source list with direct, cross-verifiable links (every dataset ID, CSV
+URL, statute, and court record): [DATA_SOURCES.md](DATA_SOURCES.md), also
+published on the site at `/sources`.
 
 ## Deploy to GitHub Pages
 

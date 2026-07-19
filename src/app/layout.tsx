@@ -54,7 +54,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               >
                 OSPI SAFS data files
               </a>
-              .
+              . Every dataset and statute is listed with direct links on the{' '}
+              <Link href="/sources" className="text-accent hover:underline">
+                Sources &amp; Methodology
+              </Link>{' '}
+              page.
             </p>
             <p className="text-ink-muted">
               An independent civic education project. Not affiliated with OSPI or
