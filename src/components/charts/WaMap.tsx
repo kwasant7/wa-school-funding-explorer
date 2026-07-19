@@ -10,9 +10,34 @@ type MapFile = {
   districts: { code: string; name: string; d: string }[];
 };
 
-// Sequential blue ramp (light -> dark) for total-funding quintiles
+// Sequential blue ramp (light -> dark); districts are colored on a continuous
+// gradient by their percentile rank of total funding.
 const RAMP = ['#cde2fb', '#9ec5f4', '#5598e7', '#256abf', '#104281'];
 const NO_DATA = '#e1e0d9';
+
+// How far past the state extent you can zoom out (breathing room around WA)
+const MAX_OUT = 1.45;
+
+function lerpColor(a: string, b: string, t: number) {
+  const pa = [1, 3, 5].map((i) => parseInt(a.slice(i, i + 2), 16));
+  const pb = [1, 3, 5].map((i) => parseInt(b.slice(i, i + 2), 16));
+  return (
+    '#' +
+    pa
+      .map((v, i) =>
+        Math.round(v + (pb[i] - v) * t)
+          .toString(16)
+          .padStart(2, '0')
+      )
+      .join('')
+  );
+}
+
+function rampColor(t: number) {
+  const scaled = Math.min(0.9999, Math.max(0, t)) * (RAMP.length - 1);
+  const i = Math.floor(scaled);
+  return lerpColor(RAMP[i], RAMP[i + 1], scaled - i);
+}
 
 let mapCache: MapFile | null = null;
 
@@ -56,16 +81,23 @@ export default function WaMap({
       .catch(() => {});
   }, []);
 
-  useEffect(() => {
-    if (map && !view) setView({ x: 0, y: 0, w: map.w, h: map.h });
-  }, [map, view]);
+  const homeView = useMemo(() => {
+    if (!map) return null;
+    // Rest state: whole state with a little breathing room
+    const w = map.w * 1.08;
+    const h = (w / map.w) * map.h;
+    return { x: -(w - map.w) / 2, y: -(h - map.h) / 2, w, h };
+  }, [map]);
 
-  const { fills, info, breaks } = useMemo(() => {
+  useEffect(() => {
+    if (map && homeView && !view) setView(homeView);
+  }, [map, homeView, view]);
+
+  const { fills, info } = useMemo(() => {
     const yd = yearData(year);
     const byCode = new Map(yd.districts.map((d) => [d.code, d]));
-    const values = yd.districts.map((d) => d.rev.total).sort((a, b) => a - b);
-    const q = (p: number) => values[Math.min(values.length - 1, Math.floor(p * values.length))];
-    const cuts = [q(0.2), q(0.4), q(0.6), q(0.8)];
+    const sorted = [...yd.districts].sort((a, b) => a.rev.total - b.rev.total);
+    const rank = new Map(sorted.map((d, i) => [d.code, i / Math.max(1, sorted.length - 1)]));
     const fills = new Map<string, string>();
     const info = new Map<string, { name: string; total: number; enrollment: number }>();
     if (map) {
@@ -75,9 +107,7 @@ export default function WaMap({
           fills.set(d.code, NO_DATA);
           continue;
         }
-        let i = 0;
-        while (i < 4 && data.rev.total > cuts[i]) i++;
-        fills.set(d.code, RAMP[i]);
+        fills.set(d.code, rampColor(rank.get(d.code) ?? 0));
         info.set(d.code, {
           name: data.name,
           total: data.rev.total,
@@ -85,7 +115,7 @@ export default function WaMap({
         });
       }
     }
-    return { fills, info, breaks: cuts };
+    return { fills, info };
   }, [map, year]);
 
   const matches = useMemo(() => {
@@ -99,10 +129,10 @@ export default function WaMap({
 
   function clampView(v: { x: number; y: number; w: number; h: number }) {
     if (!map) return v;
-    const w = Math.min(Math.max(v.w, map.w / 40), map.w);
+    const w = Math.min(Math.max(v.w, map.w / 40), map.w * MAX_OUT);
     const h = (w / map.w) * map.h;
-    const x = Math.min(Math.max(v.x, -w * 0.25), map.w - w * 0.75);
-    const y = Math.min(Math.max(v.y, -h * 0.25), map.h - h * 0.75);
+    const x = Math.min(Math.max(v.x, -w * 0.35), map.w - w * 0.65);
+    const y = Math.min(Math.max(v.y, -h * 0.35), map.h - h * 0.65);
     return { x, y, w, h };
   }
 
@@ -283,7 +313,7 @@ export default function WaMap({
           {[
             ['+', () => zoomCenter(1.6), 'Zoom in'],
             ['−', () => zoomCenter(1 / 1.6), 'Zoom out'],
-            ['⟲', () => { setView({ x: 0, y: 0, w: map.w, h: map.h }); }, 'Reset view'],
+            ['⟲', () => { if (homeView) setView(homeView); }, 'Reset view'],
           ].map(([label, fn, title]) => (
             <button
               key={label as string}
@@ -325,7 +355,7 @@ export default function WaMap({
                 onClick={() => {
                   setSelected(null);
                   setQuery('');
-                  setView({ x: 0, y: 0, w: map.w, h: map.h });
+                  if (homeView) setView(homeView);
                 }}
                 aria-label="Clear selection"
                 className="text-ink-muted hover:text-ink text-lg leading-none"
@@ -340,16 +370,15 @@ export default function WaMap({
       {/* legend */}
       <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-xs text-ink-secondary">
         <span className="font-medium text-ink">Total funding ({year}):</span>
-        {RAMP.map((c, i) => (
-          <span key={c} className="flex items-center gap-1.5">
-            <span className="inline-block w-3 h-3 rounded-sm" style={{ background: c }} />
-            {i === 0
-              ? `under ${fmtMoney(breaks[0])}`
-              : i === RAMP.length - 1
-                ? `over ${fmtMoney(breaks[3])}`
-                : `${fmtMoney(breaks[i - 1])}–${fmtMoney(breaks[i])}`}
-          </span>
-        ))}
+        <span className="flex items-center gap-2">
+          less funded
+          <span
+            className="inline-block h-3 w-32 md:w-44 rounded-sm"
+            style={{ background: `linear-gradient(to right, ${RAMP.join(', ')})` }}
+            aria-hidden
+          />
+          more funded
+        </span>
         <span className="flex items-center gap-1.5">
           <span className="inline-block w-3 h-3 rounded-sm" style={{ background: NO_DATA }} />
           no data
