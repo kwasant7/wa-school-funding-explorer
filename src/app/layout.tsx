@@ -25,7 +25,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                 </span>
               </Link>
               <span className="text-xs text-ink-muted">
-                OSPI data · 2024–25 school year
+                OSPI data · 2019–20 to 2024–25
               </span>
             </div>
             <TabNav />
@@ -35,8 +35,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <footer className="border-t border-line bg-surface mt-16">
           <div className="max-w-site mx-auto px-4 md:px-6 py-8 text-sm text-ink-secondary space-y-2">
             <p>
-              Data: OSPI Report Card enrollment (2024–25) and F-196 general fund
-              revenue actuals (2024–25), via{' '}
+              Data: OSPI Report Card enrollment and F-196 general fund revenue
+              actuals, school years 2019–20 through 2024–25, via{' '}
               <a
                 className="text-accent hover:underline"
                 href="https://data.wa.gov"

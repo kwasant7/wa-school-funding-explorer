@@ -3,13 +3,19 @@
 import { useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
-import data from '@/data/districts.json';
+import {
+  District,
+  LATEST,
+  YEARS,
+  districtSeries,
+  statewideSeries,
+  yearData,
+} from '@/lib/data';
 import StatTile from '@/components/StatTile';
 import SourceShareBar from '@/components/charts/SourceShareBar';
 import CompareBar from '@/components/charts/CompareBar';
+import TrendChart from '@/components/charts/TrendChart';
 import { fmtInt, fmtMoney, fmtMoneyFull, pct } from '@/lib/format';
-
-type District = (typeof data.districts)[number];
 
 type SortKey = 'name' | 'county' | 'enrollment' | 'total' | 'perPupil' | 'statePct' | 'localPct';
 
@@ -42,23 +48,76 @@ function sortValue(d: District, key: SortKey): string | number {
   }
 }
 
+function YearSelect({ year, onChange }: { year: string; onChange: (y: string) => void }) {
+  return (
+    <label className="inline-flex items-center gap-2 text-sm text-ink-secondary">
+      School year
+      <select
+        value={year}
+        onChange={(e) => onChange(e.target.value)}
+        className="card px-3 py-2 text-base font-medium text-ink cursor-pointer"
+      >
+        {YEARS.map((y) => (
+          <option key={y} value={y}>
+            {y}
+          </option>
+        ))}
+      </select>
+    </label>
+  );
+}
+
 export default function DistrictsExplorer() {
   const router = useRouter();
   const params = useSearchParams();
+  const [year, setYear] = useState(LATEST);
   const selectedCode = params.get('d');
   const selected = useMemo(
-    () => data.districts.find((d) => d.code === selectedCode) ?? null,
-    [selectedCode]
+    () => yearData(year).districts.find((d) => d.code === selectedCode) ?? null,
+    [selectedCode, year]
   );
 
-  if (selected) return <DistrictDetail district={selected} />;
-  return <DistrictTable onSelect={(code) => router.push(`/districts?d=${code}`)} />;
+  if (selectedCode && selected) {
+    return <DistrictDetail district={selected} year={year} onYearChange={setYear} />;
+  }
+  if (selectedCode) {
+    // District exists in another year but not this one
+    return (
+      <div className="max-w-site mx-auto px-4 md:px-6 pt-10">
+        <Link href="/districts" className="text-sm text-accent hover:underline">
+          ← All districts
+        </Link>
+        <p className="mt-6 text-ink-secondary">
+          No data for this district in {year}.{' '}
+          <button className="text-accent hover:underline" onClick={() => setYear(LATEST)}>
+            Switch to {LATEST}
+          </button>
+        </p>
+      </div>
+    );
+  }
+  return (
+    <DistrictTable
+      year={year}
+      onYearChange={setYear}
+      onSelect={(code) => router.push(`/districts?d=${code}`)}
+    />
+  );
 }
 
-function DistrictTable({ onSelect }: { onSelect: (code: string) => void }) {
+function DistrictTable({
+  year,
+  onYearChange,
+  onSelect,
+}: {
+  year: string;
+  onYearChange: (y: string) => void;
+  onSelect: (code: string) => void;
+}) {
   const [query, setQuery] = useState('');
   const [sortKey, setSortKey] = useState<SortKey>('enrollment');
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
+  const data = yearData(year);
 
   const rows = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -77,7 +136,7 @@ function DistrictTable({ onSelect }: { onSelect: (code: string) => void }) {
           : (av as number) - (bv as number);
       return sortDir === 'asc' ? cmp : -cmp;
     });
-  }, [query, sortKey, sortDir]);
+  }, [data, query, sortKey, sortDir]);
 
   const s = data.statewide;
 
@@ -96,23 +155,40 @@ function DistrictTable({ onSelect }: { onSelect: (code: string) => void }) {
         District Explorer
       </h1>
       <p className="mt-3 max-w-2xl text-ink-secondary">
-        Every school district and charter school in Washington, with 2024–25
-        general fund revenues from the F-196 financial reports. Click a district
-        for its full profile.
+        Every school district and charter school in Washington, with general
+        fund revenues from the F-196 financial reports for any year since
+        2019–20. Click a district for its full profile and trends.
       </p>
 
-      <div className="mt-6 grid grid-cols-2 lg:grid-cols-4 gap-3">
-        <StatTile label="Districts & charters" value={String(s.districts)} />
-        <StatTile label="Students statewide" value={fmtInt(s.enrollment)} />
-        <StatTile label="Total funding" value={fmtMoney(s.revenues.total)} />
-        <StatTile
-          label="Median per student"
-          value={fmtMoneyFull(s.medianPerPupil)}
-          note={`average ${fmtMoneyFull(s.avgPerPupil)}`}
-        />
+      <div className="mt-6 grid lg:grid-cols-[1fr,22rem] gap-4 items-stretch">
+        <div className="grid grid-cols-2 gap-3">
+          <StatTile label={`Districts & charters (${year})`} value={String(s.districts)} />
+          <StatTile label="Students statewide" value={fmtInt(s.enrollment)} />
+          <StatTile label="Total funding" value={fmtMoney(s.revenues.total)} />
+          <StatTile
+            label="Median per student"
+            value={fmtMoneyFull(s.medianPerPupil)}
+            note={`average ${fmtMoneyFull(s.avgPerPupil)}`}
+          />
+        </div>
+        <div className="card p-4">
+          <h2 className="text-sm text-ink-secondary">
+            Statewide funding per student
+          </h2>
+          <div className="mt-2">
+            <TrendChart
+              points={statewideSeries((sw) => sw.avgPerPupil)}
+              format={(v) => `$${Math.round(v / 100) / 10}K`}
+              ariaLabel="Statewide average funding per student by year"
+            />
+          </div>
+          <p className="mt-1 text-xs text-ink-muted">
+            Nominal dollars, not adjusted for inflation.
+          </p>
+        </div>
       </div>
 
-      <div className="mt-6">
+      <div className="mt-6 flex flex-wrap items-center gap-4">
         <label htmlFor="district-search" className="sr-only">
           Search districts
         </label>
@@ -124,6 +200,7 @@ function DistrictTable({ onSelect }: { onSelect: (code: string) => void }) {
           placeholder="Search by district or county…"
           className="w-full md:w-96 px-4 py-2.5 card rounded-lg text-base placeholder:text-ink-muted"
         />
+        <YearSelect year={year} onChange={onYearChange} />
       </div>
 
       <div className="mt-4 card overflow-x-auto">
@@ -190,7 +267,16 @@ function DistrictTable({ onSelect }: { onSelect: (code: string) => void }) {
   );
 }
 
-function DistrictDetail({ district: d }: { district: District }) {
+function DistrictDetail({
+  district: d,
+  year,
+  onYearChange,
+}: {
+  district: District;
+  year: string;
+  onYearChange: (y: string) => void;
+}) {
+  const data = yearData(year);
   const s = data.statewide;
   const rank =
     [...data.districts].sort((a, b) => b.perPupil - a.perPupil).findIndex((x) => x.code === d.code) + 1;
@@ -202,9 +288,12 @@ function DistrictDetail({ district: d }: { district: District }) {
 
   return (
     <div className="max-w-site mx-auto px-4 md:px-6 pt-8">
-      <Link href="/districts" className="text-sm text-accent hover:underline">
-        ← All districts
-      </Link>
+      <div className="flex items-center justify-between gap-4 flex-wrap">
+        <Link href="/districts" className="text-sm text-accent hover:underline">
+          ← All districts
+        </Link>
+        <YearSelect year={year} onChange={onYearChange} />
+      </div>
       <div className="mt-3 flex items-baseline gap-3 flex-wrap">
         <h1 className="text-3xl md:text-4xl font-bold tracking-tight">{d.name}</h1>
       </div>
@@ -213,7 +302,7 @@ function DistrictDetail({ district: d }: { district: District }) {
       </p>
 
       <div className="mt-6 grid grid-cols-2 lg:grid-cols-4 gap-3">
-        <StatTile label="Students (2024–25)" value={fmtInt(d.enrollment)} />
+        <StatTile label={`Students (${year})`} value={fmtInt(d.enrollment)} />
         <StatTile label="Total funding" value={fmtMoney(d.rev.total)} note="general fund revenues" />
         <StatTile
           label="Per student"
@@ -225,7 +314,30 @@ function DistrictDetail({ district: d }: { district: District }) {
 
       <div className="mt-6 grid lg:grid-cols-2 gap-4 items-start">
         <div className="card p-5">
-          <h2 className="font-semibold mb-3">Where {d.name.replace(/ School District.*$/, '')}&apos;s money comes from</h2>
+          <h2 className="font-semibold mb-1">Funding per student since 2019–20</h2>
+          <p className="text-xs text-ink-muted mb-3">Nominal dollars · hover for values</p>
+          <TrendChart
+            points={districtSeries(d.code, (x) => x.perPupil)}
+            format={(v) => `$${fmtInt(Math.round(v))}`}
+            ariaLabel={`${d.name} funding per student by year`}
+          />
+        </div>
+        <div className="card p-5">
+          <h2 className="font-semibold mb-1">Enrollment since 2019–20</h2>
+          <p className="text-xs text-ink-muted mb-3">October headcount · hover for values</p>
+          <TrendChart
+            points={districtSeries(d.code, (x) => x.enrollment)}
+            format={(v) => fmtInt(Math.round(v))}
+            ariaLabel={`${d.name} enrollment by year`}
+          />
+        </div>
+      </div>
+
+      <div className="mt-4 grid lg:grid-cols-2 gap-4 items-start">
+        <div className="card p-5">
+          <h2 className="font-semibold mb-3">
+            Where {d.name.replace(/ School District.*$/, '')}&apos;s money comes from ({year})
+          </h2>
           <SourceShareBar slices={d.rev} />
           <table className="mt-4 w-full text-sm">
             <caption className="sr-only">Revenues by source</caption>
@@ -251,7 +363,7 @@ function DistrictDetail({ district: d }: { district: District }) {
         </div>
 
         <div className="card p-5">
-          <h2 className="font-semibold mb-1">Who the students are</h2>
+          <h2 className="font-semibold mb-1">Who the students are ({year})</h2>
           <p className="text-xs text-ink-muted mb-4">
             Share of enrolled students · dark tick = state average
           </p>
@@ -272,7 +384,7 @@ function DistrictDetail({ district: d }: { district: District }) {
         dollars follow need. Small rural districts also cost more per student to
         run. That&apos;s why per-student funding ranges from{' '}
         {fmtMoneyFull(s.minPerPupil)} to {fmtMoneyFull(s.maxPerPupil)} across the
-        state.
+        state in {year}.
       </p>
     </div>
   );
