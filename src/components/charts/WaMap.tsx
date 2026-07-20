@@ -42,6 +42,42 @@ function rampColor(t: number) {
   return lerpColor(RAMP[i], RAMP[i + 1], scaled - i);
 }
 
+/**
+ * Reserve ratio uses a diverging red -> amber -> green scale anchored on values
+ * that actually mean something: 0% (no cushion at all) and 5% (the minimum
+ * experts recommend). Lightness also rises across the ramp so the scale stays
+ * readable for red/green color blindness; exact values are in the tooltip.
+ */
+const RESERVE_STOPS: [number, string][] = [
+  [-5, '#7f1d1d'], // deeply negative - insolvent
+  [0, '#d03b3b'], // no cushion
+  [2.5, '#eb6834'], // well below the recommended floor
+  [5, '#eda100'], // right at the 4-5% minimum
+  [10, '#5faa4a'], // comfortable
+  [20, '#0b7a28'], // strong reserves
+];
+
+function reserveColor(rr: number) {
+  const stops = RESERVE_STOPS;
+  if (rr <= stops[0][0]) return stops[0][1];
+  if (rr >= stops[stops.length - 1][0]) return stops[stops.length - 1][1];
+  for (let i = 0; i < stops.length - 1; i++) {
+    const [v0, c0] = stops[i];
+    const [v1, c1] = stops[i + 1];
+    if (rr >= v0 && rr <= v1) {
+      return lerpColor(c0, c1, (rr - v0) / (v1 - v0));
+    }
+  }
+  return stops[stops.length - 1][1];
+}
+
+type Metric = 'perPupil' | 'reserveRatio';
+
+const METRICS: { id: Metric; label: string }[] = [
+  { id: 'perPupil', label: 'Funding per student' },
+  { id: 'reserveRatio', label: 'Reserve ratio' },
+];
+
 let mapCache: MapFile | null = null;
 
 export default function WaMap({
@@ -53,6 +89,7 @@ export default function WaMap({
 }) {
   const [map, setMap] = useState<MapFile | null>(mapCache);
   const [view, setView] = useState<{ x: number; y: number; w: number; h: number } | null>(null);
+  const [metric, setMetric] = useState<Metric>('perPupil');
   const [hovered, setHovered] = useState<string | null>(null);
   const [hoverPoint, setHoverPoint] = useState<{ x: number; y: number; below: boolean } | null>(null);
   const dragged = useRef(false);
@@ -92,7 +129,13 @@ export default function WaMap({
     const fills = new Map<string, string>();
     const info = new Map<
       string,
-      { name: string; county: string; perPupil: number; enrollment: number }
+      {
+        name: string;
+        county: string;
+        perPupil: number;
+        enrollment: number;
+        reserveRatio: number | null;
+      }
     >();
     if (map) {
       for (const d of map.districts) {
@@ -101,17 +144,27 @@ export default function WaMap({
           fills.set(d.code, NO_DATA);
           continue;
         }
-        fills.set(d.code, rampColor(rank.get(d.code) ?? 0));
+        if (metric === 'reserveRatio') {
+          // Absolute scale - the 0% and 5% thresholds carry real meaning, so
+          // don't rank-normalize the way per-student funding does.
+          fills.set(
+            d.code,
+            data.reserveRatio == null ? NO_DATA : reserveColor(data.reserveRatio)
+          );
+        } else {
+          fills.set(d.code, rampColor(rank.get(d.code) ?? 0));
+        }
         info.set(d.code, {
           name: data.name,
           county: data.county,
           perPupil: data.perPupil,
           enrollment: data.enrollment,
+          reserveRatio: data.reserveRatio,
         });
       }
     }
     return { fills, info };
-  }, [map, year]);
+  }, [map, year, metric]);
 
   // Flat district list for the searchable picker
   const comboDistricts = useMemo(
@@ -206,6 +259,28 @@ export default function WaMap({
         </span>
       </div>
 
+      {/* Metric selector: what the map colors represent */}
+      <div className="mb-3 flex flex-wrap items-center gap-2">
+        <span className="text-sm text-ink-secondary">Color the map by</span>
+        <div className="inline-flex rounded-lg border border-line overflow-hidden">
+          {METRICS.map((m) => (
+            <button
+              key={m.id}
+              type="button"
+              onClick={() => setMetric(m.id)}
+              aria-pressed={metric === m.id}
+              className={`px-3.5 py-2 text-sm font-medium transition-colors ${
+                metric === m.id
+                  ? 'bg-accent text-white'
+                  : 'bg-surface text-ink-secondary hover:bg-accent-wash'
+              }`}
+            >
+              {m.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
       <div className="relative">
         <svg
           ref={svgRef}
@@ -213,7 +288,9 @@ export default function WaMap({
           className="w-full rounded-lg"
           style={{ touchAction: 'pan-y', aspectRatio: `${map.w} / ${map.h}`, backgroundColor: '#e2f3f8' }}
           role="img"
-          aria-label={`Map of Washington school districts, colored by funding per student in ${year}. Click a district to open its profile.`}
+          aria-label={`Map of Washington school districts, colored by ${
+            metric === 'perPupil' ? 'funding per student' : 'reserve ratio'
+          } in ${year}. Click a district to open its profile.`}
           onPointerDown={(e) => {
             (e.target as Element).setPointerCapture?.(e.pointerId);
             pointers.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
@@ -330,6 +407,24 @@ export default function WaMap({
                   {fmtMoneyFull(info.get(hovered)!.perPupil)} per funding FTE ·{' '}
                   {fmtInt(info.get(hovered)!.enrollment)} students
                 </p>
+                <p className="mt-0.5 text-xs text-ink-secondary">
+                  Reserve ratio:{' '}
+                  {info.get(hovered)!.reserveRatio == null ? (
+                    <span className="text-ink-muted">not reported</span>
+                  ) : (
+                    <strong
+                      className={
+                        info.get(hovered)!.reserveRatio! < 0
+                          ? 'text-critical'
+                          : info.get(hovered)!.reserveRatio! < 5
+                            ? 'text-amber-600'
+                            : 'text-good'
+                      }
+                    >
+                      {info.get(hovered)!.reserveRatio!.toFixed(1)}%
+                    </strong>
+                  )}
+                </p>
                 <p className="mt-1 text-xs font-medium text-accent">Click to open →</p>
               </>
             ) : (
@@ -359,16 +454,46 @@ export default function WaMap({
 
       {/* legend */}
       <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-xs text-ink-secondary">
-        <span className="font-medium text-ink">Funding per student ({year}):</span>
-        <span className="flex items-center gap-2">
-          lower per student
-          <span
-            className="inline-block h-3 w-32 md:w-44 rounded-sm"
-            style={{ background: `linear-gradient(to right, ${RAMP.join(', ')})` }}
-            aria-hidden
-          />
-          higher per student
-        </span>
+        {metric === 'perPupil' ? (
+          <>
+            <span className="font-medium text-ink">Funding per student ({year}):</span>
+            <span className="flex items-center gap-2">
+              lower per student
+              <span
+                className="inline-block h-3 w-32 md:w-44 rounded-sm"
+                style={{ background: `linear-gradient(to right, ${RAMP.join(', ')})` }}
+                aria-hidden
+              />
+              higher per student
+            </span>
+          </>
+        ) : (
+          <>
+            <span className="font-medium text-ink">Reserve ratio ({year}):</span>
+            <span className="flex items-center gap-2">
+              <span className="text-critical font-medium">no cushion</span>
+              <span className="relative inline-block h-3 w-40 md:w-56 rounded-sm" aria-hidden>
+                <span
+                  className="absolute inset-0 rounded-sm"
+                  style={{
+                    background: `linear-gradient(to right, ${RESERVE_STOPS.map(
+                      ([v, c]) => `${c} ${((v + 5) / 25) * 100}%`
+                    ).join(', ')})`,
+                  }}
+                />
+                {/* marker at the 5% recommended minimum */}
+                <span
+                  className="absolute -top-1 -bottom-1 w-px bg-ink"
+                  style={{ left: `${((5 + 5) / 25) * 100}%` }}
+                />
+              </span>
+              <span className="text-good font-medium">strong savings</span>
+            </span>
+            <span className="text-ink-muted">
+              | tick = the 4-5% minimum experts recommend
+            </span>
+          </>
+        )}
         <span className="flex items-center gap-1.5">
           <span className="inline-block w-3 h-3 rounded-sm" style={{ background: NO_DATA }} />
           no data
