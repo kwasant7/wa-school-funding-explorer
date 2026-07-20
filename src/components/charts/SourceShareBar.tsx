@@ -15,7 +15,7 @@ const SEGMENTS: { key: keyof SourceSlices; label: string; color: string; blurb: 
     key: 'state',
     label: 'State',
     color: '#2a78d6',
-    blurb: 'Apportionment from the state general fund — the prototypical model plus categorical programs',
+    blurb: 'Apportionment from the state general fund - the prototypical model plus categorical programs',
   },
   {
     key: 'local',

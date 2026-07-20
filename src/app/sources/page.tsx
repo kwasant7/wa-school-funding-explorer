@@ -43,7 +43,7 @@ const REVENUE_CODES: [string, string, string][] = [
   ['6000', 'Federal, special purpose (Title I, IDEA…)', 'Federal'],
   ['7000', 'Revenues from other school districts', 'Other'],
   ['8000', 'Revenues from other agencies', 'Other'],
-  ['9000', 'Other financing sources (bonds, transfers)', 'Excluded'],
+  ['9000', 'Other financing sources (transfers and other inflows)', 'Other'],
 ];
 
 const LAW_LINKS: [string, string, string][] = [
@@ -58,7 +58,7 @@ const LAW_LINKS: [string, string, string][] = [
     'https://leg.wa.gov/CodeReviser/Pages/WAConstitution.aspx',
   ],
   [
-    'McCleary v. State — court records',
+    'McCleary v. State - court records',
     'All orders in the case: 2012 decision, 2014 contempt, 2015 sanctions, 2018 termination',
     'https://www.courts.wa.gov/appellate_trial_courts/supremecourt/?fa=supremecourt.mccleary_education',
   ],
@@ -112,7 +112,7 @@ export default function SourcesPage() {
         Every number on this site comes from public data published by
         Washington&apos;s Office of Superintendent of Public Instruction (OSPI)
         or from state law. This page lists the exact sources so you can verify
-        anything yourself — no number here is hand-entered or estimated except
+        anything yourself - no number here is hand-entered or estimated except
         where labeled.
       </p>
 
@@ -162,10 +162,40 @@ export default function SourcesPage() {
         </div>
         <p className="mt-3 text-sm text-ink-muted max-w-2xl">
           &ldquo;The exact rows we use&rdquo; = each district&apos;s one
-          district-total row (all grades combined) — the same filter our data
+          district-total row (all grades combined) - the same filter our data
           script applies. Open it in any spreadsheet app and compare against
           this site&apos;s numbers directly.
         </p>
+        <div className="mt-5 card p-5 max-w-2xl">
+          <h3 className="font-semibold">Why two enrollment numbers?</h3>
+          <p className="mt-2 text-sm text-ink-secondary">
+            The student total shown throughout the site remains the Report
+            Card&apos;s October headcount. For per-student funding, we use
+            OSPI&apos;s final annual-average funding FTE from the P-223/P-223RS
+            system. That means part-time participation - including Running
+            Start - is counted at its reported FTE instead of automatically as
+            one full student.
+          </p>
+          <p className="mt-2 text-sm text-ink-secondary">
+            The denominator is the workbook&apos;s K-12 FTE (including ALE)
+            plus separately reported Running Start-at-college FTE. See the{' '}
+            <Ext href="https://ospi.k12.wa.us/sites/default/files/2024-11/historical-enrollment-summary-2001-02.xlsx">
+              Final Enrollment Summary workbook
+            </Ext>{' '}
+            and OSPI&apos;s{' '}
+            <Ext href="https://ospi.k12.wa.us/policy-funding/school-apportionment/guidance-and-tools/enrollment-reporting">
+              enrollment reporting guidance
+            </Ext>
+            .
+          </p>
+          <p className="mt-2 text-sm text-ink-secondary">
+            We also retain the K-3, grades 4-6, grades 7-8, and grades
+            9-12 subtotals to personalize the prototypical-school explainer
+            for the district selected on the How It Works page. Running Start
+            college FTE is displayed separately rather than treated as an
+            on-campus model school.
+          </p>
+        </div>
       </section>
 
       <section className="mt-10">
@@ -176,7 +206,7 @@ export default function SourcesPage() {
           <Ext href="https://ospi.k12.wa.us/safs-data-files">
             SAFS Data Files page
           </Ext>{' '}
-          (&ldquo;Actuals — General Fund Revenues&rdquo;). Revenue account codes
+          (&ldquo;Actuals - General Fund Revenues&rdquo;). Revenue account codes
           are defined in the official{' '}
           <Ext href="https://ospi.k12.wa.us/sites/default/files/2025-03/f-196_item_map_and_dictionary.pdf">
             F-196 item map & dictionary (PDF)
@@ -225,9 +255,7 @@ export default function SourcesPage() {
                   <tr key={code} className="border-t border-line">
                     <td className="px-4 py-2 tabular-nums">{code}</td>
                     <td className="px-4 py-2 text-ink-secondary">{meaning}</td>
-                    <td className={`px-4 py-2 ${cat === 'Excluded' ? 'text-ink-muted' : ''}`}>
-                      {cat}
-                    </td>
+                    <td className="px-4 py-2">{cat}</td>
                   </tr>
                 ))}
               </tbody>
@@ -236,22 +264,51 @@ export default function SourcesPage() {
           <div className="card p-5 text-sm text-ink-secondary space-y-2">
             <p className="font-semibold text-ink">Processing rules</p>
             <p>
-              Total revenues = codes 1000–8000, general fund only. Code 9000
-              (bonds, transfers) is excluded because it isn&apos;t operating
-              revenue.
+              Total funding = codes 1000-9000, general fund only. Code 9000
+              is included in “Other” so totals reconcile to OSPI&apos;s full
+              general-fund revenue and other-financing-source presentation.
             </p>
             <p>
-              Finances join to enrollment on the 5-digit county-district code.
-              Each year ~10–14 enrollment rows (mostly tribal-compact schools)
-              have no F-196 filing and are omitted for that year.
+              Finances, October headcount, and funding FTE join on the 5-digit
+              county-district code. Each year ~10-14 enrollment rows (mostly
+              tribal-compact schools) have no F-196 filing and are omitted.
             </p>
             <p>
-              The whole pipeline is one open-source script —{' '}
+              The whole pipeline is one open-source script -{' '}
               <code className="text-ink">scripts/fetch-data.mjs</code> in the
-              site&apos;s repository — that downloads the files above and
+              site&apos;s repository - that downloads the files above and
               re-derives everything.
             </p>
           </div>
+        </div>
+
+        <div className="mt-4 card p-5 text-sm text-ink-secondary space-y-2">
+          <p className="font-semibold text-ink">
+            Expenditures, fund balance & reserve ratio
+          </p>
+          <p>
+            Total spending comes from the parallel &ldquo;Actuals - General Fund
+            Expenditures&rdquo; CSVs on the same{' '}
+            <Ext href="https://ospi.k12.wa.us/safs-data-files">SAFS page</Ext>.
+            The yearly surplus / (deficit) shown on each district is simply
+            revenue minus spending - the change in the fund balance.
+          </p>
+          <p>
+            The <strong className="text-ink">ending fund balance</strong> (a
+            district&apos;s savings on hand) and the{' '}
+            <strong className="text-ink">reserve ratio</strong> (fund balance ÷
+            spending) are not in OSPI&apos;s bulk revenue/expenditure CSVs, so
+            they come from the state&apos;s own statewide school-finance workbook,{' '}
+            <Ext href="https://fiscal.wa.gov/K12/WSFCurrent.xlsm">
+              WSFCurrent.xlsm
+            </Ext>{' '}
+            (the download behind{' '}
+            <Ext href="https://fiscal.wa.gov/K12/K12FinanceDistrict">
+              fiscal.wa.gov&apos;s K-12 finance page
+            </Ext>
+            ), joined by district code. Reserve ratios below the 4-5% experts
+            treat as a safe minimum are flagged on each district profile.
+          </p>
         </div>
       </section>
 
@@ -269,7 +326,7 @@ export default function SourcesPage() {
           . Shapes are simplified to ~200&nbsp;m tolerance for fast loading and
           joined to funding data by each district&apos;s 5-digit OSPI code
           (script: <code className="text-ink">scripts/fetch-boundaries.mjs</code>).
-          Boundaries are OSPI&apos;s best interpretation of legal descriptions —
+          Boundaries are OSPI&apos;s best interpretation of legal descriptions -
           confirm edge cases with the district itself.
         </p>
       </section>
@@ -302,13 +359,12 @@ export default function SourcesPage() {
         <h2 className="text-2xl font-bold">5 · Known caveats</h2>
         <ul className="mt-3 max-w-2xl space-y-2 text-ink-secondary text-sm md:text-base list-disc pl-5">
           <li>
-            Per-student figures divide general-fund revenues by October
-            headcount; OSPI&apos;s official per-pupil statistics use annual
-            average FTE, so ours run slightly lower but are consistent across
-            districts.
+            Two enrollment measures are intentional: “Students” is October
+            headcount, while per-student funding uses final annual-average
+            K-12 plus Running Start funding FTE.
           </li>
           <li>
-            General fund only — capital projects, debt service, transportation
+            General fund only - capital projects, debt service, transportation
             vehicle, and ASB funds are excluded everywhere.
           </li>
           <li>Trend charts show nominal dollars, not inflation-adjusted.</li>

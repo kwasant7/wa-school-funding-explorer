@@ -30,7 +30,7 @@ export default function CopyBlock({ title, text }: { title: string; text: string
     if (ok) {
       setState('copied');
     } else if (preRef.current) {
-      // Clipboard blocked — select the text so the user can copy manually
+      // Clipboard blocked - select the text so the user can copy manually
       const range = document.createRange();
       range.selectNodeContents(preRef.current);
       const sel = window.getSelection();

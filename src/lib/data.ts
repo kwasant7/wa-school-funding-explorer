@@ -6,6 +6,16 @@ export type District = {
   county: string;
   esd: string;
   enrollment: number;
+  fundingEnrollment: number;
+  fundingFte: {
+    elementary: number;
+    k3: number;
+    grades46: number;
+    middle: number;
+    high: number;
+    runningStart: number;
+    openDoors: number;
+  };
   demo: {
     lowIncome: number;
     ell: number;
@@ -21,13 +31,33 @@ export type District = {
     other: number;
     total: number;
   };
+  /** Total general fund expenditures */
+  exp: number;
+  /** Revenues − expenditures: the year's change in fund balance (+/−) */
+  surplus: number;
+  /** Ending total fund balance (savings carried forward); null if unavailable */
+  fundBalance: number | null;
+  /** Fund balance as a % of expenditures (reserve ratio); null if unavailable */
+  reserveRatio: number | null;
   perPupil: number;
 };
 
 export type Statewide = {
   districts: number;
   enrollment: number;
-  revenues: { enrollment?: number; local: number; state: number; federal: number; other: number; total: number };
+  fundingEnrollment: number;
+  revenues: {
+    enrollment?: number;
+    fundingEnrollment?: number;
+    local: number;
+    state: number;
+    federal: number;
+    other: number;
+    total: number;
+    expenditures?: number;
+  };
+  expenditures: number;
+  surplus: number;
   avgPerPupil: number;
   medianPerPupil: number;
   minPerPupil: number;

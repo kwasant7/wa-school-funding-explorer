@@ -3,10 +3,10 @@
 import { useState } from 'react';
 
 const BANDS = [
-  { label: 'K–3', size: 17, note: 'Smallest — early grades benefit most from attention.' },
-  { label: 'Grades 4–6', size: 27, note: 'Ten more students per teacher than 3rd grade.' },
-  { label: 'Grades 7–8', size: 28.5, note: 'Rounded from the statutory 28.53.' },
-  { label: 'Grades 9–12', size: 28.7, note: 'Rounded from the statutory 28.74.' },
+  { label: 'K-3', size: 17, note: 'Smallest - early grades benefit most from attention.' },
+  { label: 'Grades 4-6', size: 27, note: 'Ten more students per teacher than 3rd grade.' },
+  { label: 'Grades 7-8', size: 28.5, note: 'Rounded from the statutory 28.53.' },
+  { label: 'Grades 9-12', size: 28.7, note: 'Rounded from the statutory 28.74.' },
   { label: 'Career & tech ed', size: 23, note: 'Lower because labs and shops need space.' },
 ];
 
@@ -19,7 +19,7 @@ export default function ClassSizeViz() {
     <div className="card p-5 md:p-6">
       <h3 className="font-bold text-lg">One teacher, how many students?</h3>
       <p className="mt-1 text-sm text-ink-secondary">
-        Tap a grade band — these are the class sizes the state pays for (not a
+        Tap a grade band - these are the class sizes the state pays for (not a
         legal cap on real classes).
       </p>
       <div className="mt-4 flex flex-wrap gap-2">

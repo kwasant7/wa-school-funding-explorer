@@ -1,0 +1,2320 @@
+{
+  "generated": "2026-07-20",
+  "methodology": "Uses the legislative district containing each OSPI school district polygon's official centroid. School and legislative boundaries do not match, so users should verify representation with a home address.",
+  "sources": {
+    "schoolDistricts": "https://services9.arcgis.com/fWunDXKkvCx1CM4b/arcgis/rest/services/Washington_School_Districts/FeatureServer/0",
+    "legislativeDistricts": "https://services.arcgis.com/bCYnGqM4FMTBSjd1/arcgis/rest/services/Washington_State_Legislative_Districts_2024/FeatureServer/0",
+    "roster": "https://leg.wa.gov/legislators/?activeView=DistrictsAndCounties"
+  },
+  "schoolDistricts": {
+    "10003": {
+      "name": "Keller School District",
+      "legislativeDistrict": 7
+    },
+    "10050": {
+      "name": "Curlew School District",
+      "legislativeDistrict": 7
+    },
+    "10065": {
+      "name": "Orient School District",
+      "legislativeDistrict": 7
+    },
+    "10070": {
+      "name": "Inchelium School District",
+      "legislativeDistrict": 7
+    },
+    "10309": {
+      "name": "Republic School District",
+      "legislativeDistrict": 7
+    },
+    "11001": {
+      "name": "Pasco School District",
+      "legislativeDistrict": 16
+    },
+    "11051": {
+      "name": "North Franklin School District",
+      "legislativeDistrict": 16
+    },
+    "11054": {
+      "name": "Star School District No. 054",
+      "legislativeDistrict": 16
+    },
+    "11056": {
+      "name": "Kahlotus School District",
+      "legislativeDistrict": 16
+    },
+    "12110": {
+      "name": "Pomeroy School District",
+      "legislativeDistrict": 9
+    },
+    "13073": {
+      "name": "Wahluke School District",
+      "legislativeDistrict": 16
+    },
+    "13144": {
+      "name": "Quincy School District",
+      "legislativeDistrict": 13
+    },
+    "13146": {
+      "name": "Warden School District",
+      "legislativeDistrict": 13
+    },
+    "13151": {
+      "name": "Coulee-Hartline School District",
+      "legislativeDistrict": 13
+    },
+    "13156": {
+      "name": "Soap Lake School District",
+      "legislativeDistrict": 13
+    },
+    "13160": {
+      "name": "Royal School District",
+      "legislativeDistrict": 13
+    },
+    "13161": {
+      "name": "Moses Lake School District",
+      "legislativeDistrict": 13
+    },
+    "13165": {
+      "name": "Ephrata School District",
+      "legislativeDistrict": 13
+    },
+    "13167": {
+      "name": "Wilson Creek School District",
+      "legislativeDistrict": 13
+    },
+    "13301": {
+      "name": "Grand Coulee Dam School District",
+      "legislativeDistrict": 7
+    },
+    "14005": {
+      "name": "Aberdeen School District",
+      "legislativeDistrict": 19
+    },
+    "14028": {
+      "name": "Hoquiam School District",
+      "legislativeDistrict": 24
+    },
+    "14064": {
+      "name": "North Beach School District",
+      "legislativeDistrict": 24
+    },
+    "14065": {
+      "name": "McCleary School District",
+      "legislativeDistrict": 19
+    },
+    "14066": {
+      "name": "Montesano School District",
+      "legislativeDistrict": 24
+    },
+    "14068": {
+      "name": "Elma School District",
+      "legislativeDistrict": 24
+    },
+    "14077": {
+      "name": "Taholah School District",
+      "legislativeDistrict": 24
+    },
+    "14097": {
+      "name": "Lake Quinault School District",
+      "legislativeDistrict": 24
+    },
+    "14099": {
+      "name": "Cosmopolis School District",
+      "legislativeDistrict": 19
+    },
+    "14104": {
+      "name": "Satsop School District",
+      "legislativeDistrict": 24
+    },
+    "14117": {
+      "name": "Wishkah Valley School District",
+      "legislativeDistrict": 24
+    },
+    "14172": {
+      "name": "Ocosta School District",
+      "legislativeDistrict": 19
+    },
+    "14400": {
+      "name": "Oakville School District",
+      "legislativeDistrict": 19
+    },
+    "15201": {
+      "name": "Oak Harbor School District",
+      "legislativeDistrict": 10
+    },
+    "15204": {
+      "name": "Coupeville School District",
+      "legislativeDistrict": 10
+    },
+    "15206": {
+      "name": "South Whidbey School District",
+      "legislativeDistrict": 10
+    },
+    "16020": {
+      "name": "Queets-Clearwater School District",
+      "legislativeDistrict": 24
+    },
+    "16046": {
+      "name": "Brinnon School District",
+      "legislativeDistrict": 24
+    },
+    "16048": {
+      "name": "Quilcene School District",
+      "legislativeDistrict": 24
+    },
+    "16049": {
+      "name": "Chimacum School District",
+      "legislativeDistrict": 24
+    },
+    "16050": {
+      "name": "Port Townsend School District",
+      "legislativeDistrict": 24
+    },
+    "17001": {
+      "name": "Seattle Public Schools",
+      "legislativeDistrict": 36
+    },
+    "17210": {
+      "name": "Federal Way School District",
+      "legislativeDistrict": 30
+    },
+    "17216": {
+      "name": "Enumclaw School District",
+      "legislativeDistrict": 5
+    },
+    "17400": {
+      "name": "Mercer Island School District",
+      "legislativeDistrict": 41
+    },
+    "17401": {
+      "name": "Highline School District",
+      "legislativeDistrict": 33
+    },
+    "17402": {
+      "name": "Vashon Island School District",
+      "legislativeDistrict": 34
+    },
+    "17403": {
+      "name": "Renton School District",
+      "legislativeDistrict": 11
+    },
+    "17404": {
+      "name": "Skykomish School District",
+      "legislativeDistrict": 12
+    },
+    "17405": {
+      "name": "Bellevue School District",
+      "legislativeDistrict": 48
+    },
+    "17406": {
+      "name": "Tukwila School District",
+      "legislativeDistrict": 11
+    },
+    "17407": {
+      "name": "Riverview School District",
+      "legislativeDistrict": 12
+    },
+    "17408": {
+      "name": "Auburn School District",
+      "legislativeDistrict": 31
+    },
+    "17409": {
+      "name": "Tahoma School District",
+      "legislativeDistrict": 5
+    },
+    "17410": {
+      "name": "Snoqualmie Valley School District",
+      "legislativeDistrict": 12
+    },
+    "17411": {
+      "name": "Issaquah School District",
+      "legislativeDistrict": 5
+    },
+    "17412": {
+      "name": "Shoreline School District",
+      "legislativeDistrict": 32
+    },
+    "17414": {
+      "name": "Lake Washington School District",
+      "legislativeDistrict": 48
+    },
+    "17415": {
+      "name": "Kent School District",
+      "legislativeDistrict": 47
+    },
+    "17417": {
+      "name": "Northshore School District",
+      "legislativeDistrict": 1
+    },
+    "18100": {
+      "name": "Bremerton School District",
+      "legislativeDistrict": 23
+    },
+    "18303": {
+      "name": "Bainbridge Island School District",
+      "legislativeDistrict": 23
+    },
+    "18400": {
+      "name": "North Kitsap School District",
+      "legislativeDistrict": 23
+    },
+    "18401": {
+      "name": "Central Kitsap School District",
+      "legislativeDistrict": 35
+    },
+    "18402": {
+      "name": "South Kitsap School District",
+      "legislativeDistrict": 26
+    },
+    "19007": {
+      "name": "Damman School District",
+      "legislativeDistrict": 13
+    },
+    "19028": {
+      "name": "Easton School District",
+      "legislativeDistrict": 13
+    },
+    "19400": {
+      "name": "Thorp School District",
+      "legislativeDistrict": 13
+    },
+    "19401": {
+      "name": "Ellensburg School District",
+      "legislativeDistrict": 13
+    },
+    "19403": {
+      "name": "Kittitas School District",
+      "legislativeDistrict": 13
+    },
+    "19404": {
+      "name": "Cle Elum-Roslyn School District",
+      "legislativeDistrict": 13
+    },
+    "20094": {
+      "name": "Wishram School District",
+      "legislativeDistrict": 14
+    },
+    "20203": {
+      "name": "Bickleton School District",
+      "legislativeDistrict": 14
+    },
+    "20215": {
+      "name": "Centerville School District",
+      "legislativeDistrict": 14
+    },
+    "20400": {
+      "name": "Trout Lake School District",
+      "legislativeDistrict": 17
+    },
+    "20401": {
+      "name": "Glenwood School District",
+      "legislativeDistrict": 14
+    },
+    "20402": {
+      "name": "Klickitat School District",
+      "legislativeDistrict": 14
+    },
+    "20403": {
+      "name": "Roosevelt School District",
+      "legislativeDistrict": 14
+    },
+    "20404": {
+      "name": "Goldendale School District",
+      "legislativeDistrict": 17
+    },
+    "20405": {
+      "name": "White Salmon Valley School District",
+      "legislativeDistrict": 17
+    },
+    "20406": {
+      "name": "Lyle School District",
+      "legislativeDistrict": 14
+    },
+    "21014": {
+      "name": "Napavine School District",
+      "legislativeDistrict": 19
+    },
+    "21036": {
+      "name": "Evaline School District",
+      "legislativeDistrict": 19
+    },
+    "21206": {
+      "name": "Mossyrock School District",
+      "legislativeDistrict": 20
+    },
+    "21214": {
+      "name": "Morton School District",
+      "legislativeDistrict": 20
+    },
+    "21226": {
+      "name": "Adna School District",
+      "legislativeDistrict": 19
+    },
+    "21232": {
+      "name": "Winlock School District",
+      "legislativeDistrict": 19
+    },
+    "21234": {
+      "name": "Boistfort School District",
+      "legislativeDistrict": 19
+    },
+    "21237": {
+      "name": "Toledo School District",
+      "legislativeDistrict": 20
+    },
+    "21300": {
+      "name": "Onalaska School District",
+      "legislativeDistrict": 20
+    },
+    "21301": {
+      "name": "Pe Ell School District",
+      "legislativeDistrict": 19
+    },
+    "21302": {
+      "name": "Chehalis School District",
+      "legislativeDistrict": 20
+    },
+    "21303": {
+      "name": "White Pass School District",
+      "legislativeDistrict": 20
+    },
+    "21401": {
+      "name": "Centralia School District",
+      "legislativeDistrict": 20
+    },
+    "22008": {
+      "name": "Sprague School District",
+      "legislativeDistrict": 9
+    },
+    "22009": {
+      "name": "Reardan-Edwall School District",
+      "legislativeDistrict": 9
+    },
+    "22017": {
+      "name": "Almira School District",
+      "legislativeDistrict": 9
+    },
+    "22073": {
+      "name": "Creston School District",
+      "legislativeDistrict": 9
+    },
+    "22105": {
+      "name": "Odessa School District",
+      "legislativeDistrict": 9
+    },
+    "22200": {
+      "name": "Wilbur School District",
+      "legislativeDistrict": 9
+    },
+    "22204": {
+      "name": "Harrington School District",
+      "legislativeDistrict": 9
+    },
+    "22207": {
+      "name": "Davenport School District",
+      "legislativeDistrict": 9
+    },
+    "23042": {
+      "name": "Southside School District",
+      "legislativeDistrict": 35
+    },
+    "23054": {
+      "name": "Grapeview School District",
+      "legislativeDistrict": 35
+    },
+    "23309": {
+      "name": "Shelton School District",
+      "legislativeDistrict": 35
+    },
+    "23311": {
+      "name": "Mary M Knight School District",
+      "legislativeDistrict": 35
+    },
+    "23402": {
+      "name": "Pioneer School District",
+      "legislativeDistrict": 35
+    },
+    "23403": {
+      "name": "North Mason School District",
+      "legislativeDistrict": 35
+    },
+    "23404": {
+      "name": "Hood Canal School District",
+      "legislativeDistrict": 35
+    },
+    "24014": {
+      "name": "Nespelem School District #14",
+      "legislativeDistrict": 7
+    },
+    "24019": {
+      "name": "Omak School District",
+      "legislativeDistrict": 7
+    },
+    "24105": {
+      "name": "Okanogan School District",
+      "legislativeDistrict": 7
+    },
+    "24111": {
+      "name": "Brewster School District",
+      "legislativeDistrict": 7
+    },
+    "24122": {
+      "name": "Pateros School District",
+      "legislativeDistrict": 7
+    },
+    "24350": {
+      "name": "Methow Valley School District",
+      "legislativeDistrict": 7
+    },
+    "24404": {
+      "name": "Tonasket School District",
+      "legislativeDistrict": 7
+    },
+    "24410": {
+      "name": "Oroville School District",
+      "legislativeDistrict": 7
+    },
+    "25101": {
+      "name": "Ocean Beach School District",
+      "legislativeDistrict": 19
+    },
+    "25116": {
+      "name": "Raymond School District",
+      "legislativeDistrict": 19
+    },
+    "25118": {
+      "name": "South Bend School District",
+      "legislativeDistrict": 19
+    },
+    "25155": {
+      "name": "Naselle-Grays River Valley School District",
+      "legislativeDistrict": 19
+    },
+    "25160": {
+      "name": "Willapa Valley School District",
+      "legislativeDistrict": 19
+    },
+    "25200": {
+      "name": "North River School District",
+      "legislativeDistrict": 19
+    },
+    "26056": {
+      "name": "Newport School District",
+      "legislativeDistrict": 7
+    },
+    "26059": {
+      "name": "Cusick School District",
+      "legislativeDistrict": 7
+    },
+    "26070": {
+      "name": "Selkirk School District",
+      "legislativeDistrict": 7
+    },
+    "27001": {
+      "name": "Steilacoom Historical School District",
+      "legislativeDistrict": 28
+    },
+    "27003": {
+      "name": "Puyallup School District",
+      "legislativeDistrict": 25
+    },
+    "27010": {
+      "name": "Tacoma School District",
+      "legislativeDistrict": 27
+    },
+    "27019": {
+      "name": "Carbonado School District",
+      "legislativeDistrict": 2
+    },
+    "27083": {
+      "name": "University Place School District",
+      "legislativeDistrict": 28
+    },
+    "27320": {
+      "name": "Sumner School District",
+      "legislativeDistrict": 31
+    },
+    "27343": {
+      "name": "Dieringer School District",
+      "legislativeDistrict": 31
+    },
+    "27344": {
+      "name": "Orting School District",
+      "legislativeDistrict": 31
+    },
+    "27400": {
+      "name": "Clover Park School District",
+      "legislativeDistrict": 28
+    },
+    "27401": {
+      "name": "Peninsula School District",
+      "legislativeDistrict": 26
+    },
+    "27402": {
+      "name": "Franklin Pierce School District",
+      "legislativeDistrict": 25
+    },
+    "27403": {
+      "name": "Bethel School District",
+      "legislativeDistrict": 28
+    },
+    "27404": {
+      "name": "Eatonville School District",
+      "legislativeDistrict": 2
+    },
+    "27416": {
+      "name": "White River School District",
+      "legislativeDistrict": 31
+    },
+    "27417": {
+      "name": "Fife School District",
+      "legislativeDistrict": 31
+    },
+    "28010": {
+      "name": "Shaw Island School District",
+      "legislativeDistrict": 40
+    },
+    "28137": {
+      "name": "Orcas Island School District",
+      "legislativeDistrict": 40
+    },
+    "28144": {
+      "name": "Lopez School District",
+      "legislativeDistrict": 40
+    },
+    "28149": {
+      "name": "San Juan Island School District",
+      "legislativeDistrict": 40
+    },
+    "29011": {
+      "name": "Concrete School District",
+      "legislativeDistrict": 42
+    },
+    "29100": {
+      "name": "Burlington-Edison School District",
+      "legislativeDistrict": 40
+    },
+    "29101": {
+      "name": "Sedro-Woolley School District",
+      "legislativeDistrict": 39
+    },
+    "29103": {
+      "name": "Anacortes School District",
+      "legislativeDistrict": 40
+    },
+    "29311": {
+      "name": "La Conner School District",
+      "legislativeDistrict": 10
+    },
+    "29317": {
+      "name": "Conway School District",
+      "legislativeDistrict": 10
+    },
+    "29320": {
+      "name": "Mount Vernon School District",
+      "legislativeDistrict": 10
+    },
+    "30002": {
+      "name": "Skamania School District",
+      "legislativeDistrict": 17
+    },
+    "30029": {
+      "name": "Mount Pleasant School District",
+      "legislativeDistrict": 17
+    },
+    "30031": {
+      "name": "Mill A School District",
+      "legislativeDistrict": 17
+    },
+    "30303": {
+      "name": "Stevenson-Carson School District",
+      "legislativeDistrict": 17
+    },
+    "31002": {
+      "name": "Everett School District",
+      "legislativeDistrict": 38
+    },
+    "31004": {
+      "name": "Lake Stevens School District",
+      "legislativeDistrict": 39
+    },
+    "31006": {
+      "name": "Mukilteo School District",
+      "legislativeDistrict": 21
+    },
+    "31015": {
+      "name": "Edmonds School District",
+      "legislativeDistrict": 32
+    },
+    "31016": {
+      "name": "Arlington School District",
+      "legislativeDistrict": 39
+    },
+    "31025": {
+      "name": "Marysville School District",
+      "legislativeDistrict": 38
+    },
+    "31063": {
+      "name": "Index School District",
+      "legislativeDistrict": 12
+    },
+    "31103": {
+      "name": "Monroe School District",
+      "legislativeDistrict": 12
+    },
+    "31201": {
+      "name": "Snohomish School District",
+      "legislativeDistrict": 39
+    },
+    "31306": {
+      "name": "Lakewood School District",
+      "legislativeDistrict": 10
+    },
+    "31311": {
+      "name": "Sultan School District",
+      "legislativeDistrict": 12
+    },
+    "31330": {
+      "name": "Darrington School District",
+      "legislativeDistrict": 39
+    },
+    "31332": {
+      "name": "Granite Falls School District",
+      "legislativeDistrict": 39
+    },
+    "31401": {
+      "name": "Stanwood-Camano School District",
+      "legislativeDistrict": 10
+    },
+    "32081": {
+      "name": "Spokane School District",
+      "legislativeDistrict": 3
+    },
+    "32123": {
+      "name": "Orchard Prairie School District",
+      "legislativeDistrict": 4
+    },
+    "32312": {
+      "name": "Great Northern School District",
+      "legislativeDistrict": 6
+    },
+    "32325": {
+      "name": "Nine Mile Falls School District",
+      "legislativeDistrict": 7
+    },
+    "32326": {
+      "name": "Medical Lake School District",
+      "legislativeDistrict": 6
+    },
+    "32354": {
+      "name": "Mead School District",
+      "legislativeDistrict": 4
+    },
+    "32356": {
+      "name": "Central Valley School District",
+      "legislativeDistrict": 9
+    },
+    "32358": {
+      "name": "Freeman School District",
+      "legislativeDistrict": 9
+    },
+    "32360": {
+      "name": "Cheney School District",
+      "legislativeDistrict": 9
+    },
+    "32361": {
+      "name": "East Valley School District (Spokane)",
+      "legislativeDistrict": 4
+    },
+    "32362": {
+      "name": "Liberty School District",
+      "legislativeDistrict": 9
+    },
+    "32363": {
+      "name": "West Valley School District (Spokane)",
+      "legislativeDistrict": 4
+    },
+    "32414": {
+      "name": "Deer Park School District",
+      "legislativeDistrict": 7
+    },
+    "32416": {
+      "name": "Riverside School District",
+      "legislativeDistrict": 4
+    },
+    "33030": {
+      "name": "Onion Creek School District",
+      "legislativeDistrict": 7
+    },
+    "33036": {
+      "name": "Chewelah School District",
+      "legislativeDistrict": 7
+    },
+    "33049": {
+      "name": "Wellpinit School District",
+      "legislativeDistrict": 7
+    },
+    "33070": {
+      "name": "Valley School District",
+      "legislativeDistrict": 7
+    },
+    "33115": {
+      "name": "Colville School District",
+      "legislativeDistrict": 7
+    },
+    "33183": {
+      "name": "Loon Lake School District",
+      "legislativeDistrict": 7
+    },
+    "33202": {
+      "name": "Summit Valley School District",
+      "legislativeDistrict": 7
+    },
+    "33205": {
+      "name": "Evergreen School District (Stevens)",
+      "legislativeDistrict": 7
+    },
+    "33206": {
+      "name": "Columbia (Stevens) School District",
+      "legislativeDistrict": 7
+    },
+    "33207": {
+      "name": "Mary Walker School District",
+      "legislativeDistrict": 7
+    },
+    "33211": {
+      "name": "Northport School District",
+      "legislativeDistrict": 7
+    },
+    "33212": {
+      "name": "Kettle Falls School District",
+      "legislativeDistrict": 7
+    },
+    "34002": {
+      "name": "Yelm School District",
+      "legislativeDistrict": 2
+    },
+    "34003": {
+      "name": "North Thurston Public Schools",
+      "legislativeDistrict": 22
+    },
+    "34033": {
+      "name": "Tumwater School District",
+      "legislativeDistrict": 35
+    },
+    "34111": {
+      "name": "Olympia School District",
+      "legislativeDistrict": 22
+    },
+    "34307": {
+      "name": "Rainier School District",
+      "legislativeDistrict": 2
+    },
+    "34324": {
+      "name": "Griffin School District",
+      "legislativeDistrict": 35
+    },
+    "34401": {
+      "name": "Rochester School District",
+      "legislativeDistrict": 35
+    },
+    "34402": {
+      "name": "Tenino School District",
+      "legislativeDistrict": 2
+    },
+    "35200": {
+      "name": "Wahkiakum School District",
+      "legislativeDistrict": 19
+    },
+    "36101": {
+      "name": "Dixie School District",
+      "legislativeDistrict": 16
+    },
+    "36140": {
+      "name": "Walla Walla Public Schools",
+      "legislativeDistrict": 16
+    },
+    "36250": {
+      "name": "College Place School District",
+      "legislativeDistrict": 16
+    },
+    "36300": {
+      "name": "Touchet School District",
+      "legislativeDistrict": 16
+    },
+    "36400": {
+      "name": "Columbia (Walla Walla) School District",
+      "legislativeDistrict": 16
+    },
+    "36401": {
+      "name": "Waitsburg School District",
+      "legislativeDistrict": 16
+    },
+    "36402": {
+      "name": "Prescott School District",
+      "legislativeDistrict": 16
+    },
+    "37501": {
+      "name": "Bellingham School District",
+      "legislativeDistrict": 40
+    },
+    "37502": {
+      "name": "Ferndale School District",
+      "legislativeDistrict": 42
+    },
+    "37503": {
+      "name": "Blaine School District",
+      "legislativeDistrict": 42
+    },
+    "37504": {
+      "name": "Lynden School District",
+      "legislativeDistrict": 42
+    },
+    "37505": {
+      "name": "Meridian School District",
+      "legislativeDistrict": 42
+    },
+    "37506": {
+      "name": "Nooksack Valley School District",
+      "legislativeDistrict": 42
+    },
+    "37507": {
+      "name": "Mount Baker School District",
+      "legislativeDistrict": 42
+    },
+    "38126": {
+      "name": "LaCrosse School District",
+      "legislativeDistrict": 9
+    },
+    "38264": {
+      "name": "Lamont School District",
+      "legislativeDistrict": 9
+    },
+    "38265": {
+      "name": "Tekoa School District",
+      "legislativeDistrict": 9
+    },
+    "38267": {
+      "name": "Pullman School District",
+      "legislativeDistrict": 9
+    },
+    "38300": {
+      "name": "Colfax School District",
+      "legislativeDistrict": 9
+    },
+    "38301": {
+      "name": "Palouse School District",
+      "legislativeDistrict": 9
+    },
+    "38302": {
+      "name": "Garfield School District",
+      "legislativeDistrict": 9
+    },
+    "38304": {
+      "name": "Steptoe School District",
+      "legislativeDistrict": 9
+    },
+    "38306": {
+      "name": "Colton School District",
+      "legislativeDistrict": 9
+    },
+    "38308": {
+      "name": "Endicott School District",
+      "legislativeDistrict": 9
+    },
+    "38320": {
+      "name": "Rosalia School District",
+      "legislativeDistrict": 9
+    },
+    "38322": {
+      "name": "St. John School District",
+      "legislativeDistrict": 9
+    },
+    "38324": {
+      "name": "Oakesdale School District",
+      "legislativeDistrict": 9
+    },
+    "39002": {
+      "name": "Union Gap School District",
+      "legislativeDistrict": 14
+    },
+    "39003": {
+      "name": "Naches Valley School District",
+      "legislativeDistrict": 15
+    },
+    "39007": {
+      "name": "Yakima School District",
+      "legislativeDistrict": 15
+    },
+    "39090": {
+      "name": "East Valley School District (Yakima)",
+      "legislativeDistrict": 15
+    },
+    "39119": {
+      "name": "Selah School District",
+      "legislativeDistrict": 15
+    },
+    "39120": {
+      "name": "Mabton School District",
+      "legislativeDistrict": 14
+    },
+    "39200": {
+      "name": "Grandview School District",
+      "legislativeDistrict": 14
+    },
+    "39201": {
+      "name": "Sunnyside School District",
+      "legislativeDistrict": 15
+    },
+    "39202": {
+      "name": "Toppenish School District",
+      "legislativeDistrict": 14
+    },
+    "39203": {
+      "name": "Highland School District",
+      "legislativeDistrict": 15
+    },
+    "39204": {
+      "name": "Granger School District",
+      "legislativeDistrict": 14
+    },
+    "39205": {
+      "name": "Zillah School District",
+      "legislativeDistrict": 15
+    },
+    "39207": {
+      "name": "Wapato School District",
+      "legislativeDistrict": 14
+    },
+    "39208": {
+      "name": "West Valley School District (Yakima)",
+      "legislativeDistrict": 15
+    },
+    "39209": {
+      "name": "Mount Adams School District",
+      "legislativeDistrict": 14
+    },
+    "02420": {
+      "name": "Asotin-Anatone School District",
+      "legislativeDistrict": 9
+    },
+    "06119": {
+      "name": "Battle Ground School District",
+      "legislativeDistrict": 20
+    },
+    "01122": {
+      "name": "Benge School District",
+      "legislativeDistrict": 9
+    },
+    "09075": {
+      "name": "Bridgeport School District",
+      "legislativeDistrict": 7
+    },
+    "06117": {
+      "name": "Camas School District",
+      "legislativeDistrict": 17
+    },
+    "05401": {
+      "name": "Cape Flattery School District",
+      "legislativeDistrict": 24
+    },
+    "04228": {
+      "name": "Cascade School District",
+      "legislativeDistrict": 12
+    },
+    "04222": {
+      "name": "Cashmere School District",
+      "legislativeDistrict": 12
+    },
+    "08401": {
+      "name": "Castle Rock School District",
+      "legislativeDistrict": 19
+    },
+    "02250": {
+      "name": "Clarkston School District",
+      "legislativeDistrict": 9
+    },
+    "05313": {
+      "name": "Crescent School District",
+      "legislativeDistrict": 24
+    },
+    "07002": {
+      "name": "Dayton School District",
+      "legislativeDistrict": 9
+    },
+    "09206": {
+      "name": "Eastmont School District",
+      "legislativeDistrict": 7
+    },
+    "04127": {
+      "name": "Entiat School District",
+      "legislativeDistrict": 12
+    },
+    "06114": {
+      "name": "Evergreen School District (Clark)",
+      "legislativeDistrict": 17
+    },
+    "03053": {
+      "name": "Finley School District",
+      "legislativeDistrict": 14
+    },
+    "06103": {
+      "name": "Green Mountain School District",
+      "legislativeDistrict": 20
+    },
+    "06098": {
+      "name": "Hockinson School District",
+      "legislativeDistrict": 20
+    },
+    "08402": {
+      "name": "Kalama School District",
+      "legislativeDistrict": 20
+    },
+    "08458": {
+      "name": "Kelso School District",
+      "legislativeDistrict": 20
+    },
+    "03017": {
+      "name": "Kennewick School District",
+      "legislativeDistrict": 8
+    },
+    "03052": {
+      "name": "Kiona-Benton City School District",
+      "legislativeDistrict": 16
+    },
+    "06101": {
+      "name": "La Center School District",
+      "legislativeDistrict": 20
+    },
+    "04129": {
+      "name": "Lake Chelan School District",
+      "legislativeDistrict": 12
+    },
+    "01158": {
+      "name": "Lind School District",
+      "legislativeDistrict": 9
+    },
+    "08122": {
+      "name": "Longview School District",
+      "legislativeDistrict": 19
+    },
+    "09207": {
+      "name": "Mansfield School District",
+      "legislativeDistrict": 7
+    },
+    "04019": {
+      "name": "Manson School District",
+      "legislativeDistrict": 12
+    },
+    "09013": {
+      "name": "Orondo School District",
+      "legislativeDistrict": 7
+    },
+    "01147": {
+      "name": "Othello School District",
+      "legislativeDistrict": 13
+    },
+    "09102": {
+      "name": "Palisades School District",
+      "legislativeDistrict": 13
+    },
+    "03050": {
+      "name": "Paterson School District",
+      "legislativeDistrict": 14
+    },
+    "05121": {
+      "name": "Port Angeles School District",
+      "legislativeDistrict": 24
+    },
+    "03116": {
+      "name": "Prosser School District",
+      "legislativeDistrict": 15
+    },
+    "05402": {
+      "name": "Quillayute Valley School District",
+      "legislativeDistrict": 24
+    },
+    "03400": {
+      "name": "Richland School District",
+      "legislativeDistrict": 16
+    },
+    "06122": {
+      "name": "Ridgefield School District",
+      "legislativeDistrict": 20
+    },
+    "01160": {
+      "name": "Ritzville School District",
+      "legislativeDistrict": 9
+    },
+    "05323": {
+      "name": "Sequim School District",
+      "legislativeDistrict": 24
+    },
+    "07035": {
+      "name": "Starbuck School District",
+      "legislativeDistrict": 9
+    },
+    "04069": {
+      "name": "Stehekin School District",
+      "legislativeDistrict": 12
+    },
+    "08130": {
+      "name": "Toutle Lake School District",
+      "legislativeDistrict": 20
+    },
+    "06037": {
+      "name": "Vancouver School District",
+      "legislativeDistrict": 49
+    },
+    "06112": {
+      "name": "Washougal School District",
+      "legislativeDistrict": 17
+    },
+    "01109": {
+      "name": "Washtucna School District",
+      "legislativeDistrict": 9
+    },
+    "09209": {
+      "name": "Waterville School District",
+      "legislativeDistrict": 7
+    },
+    "04246": {
+      "name": "Wenatchee School District",
+      "legislativeDistrict": 12
+    },
+    "08404": {
+      "name": "Woodland School District",
+      "legislativeDistrict": 20
+    }
+  },
+  "legislators": {
+    "1": [
+      {
+        "name": "Derek Stanford",
+        "chamber": "Senator",
+        "position": null,
+        "party": "Democrat",
+        "url": "https://leg.wa.gov/legislators/member/derek-stanford"
+      },
+      {
+        "name": "Davina Duerr",
+        "chamber": "Representative",
+        "position": null,
+        "party": "Democrat",
+        "url": "https://leg.wa.gov/legislators/member/davina-duerr"
+      },
+      {
+        "name": "Shelley Kloba",
+        "chamber": "Representative",
+        "position": null,
+        "party": "Democrat",
+        "url": "https://leg.wa.gov/legislators/member/shelley-kloba"
+      }
+    ],
+    "2": [
+      {
+        "name": "Jim McCune",
+        "chamber": "Senator",
+        "position": null,
+        "party": "Republican",
+        "url": "https://leg.wa.gov/legislators/member/jim-mccune"
+      },
+      {
+        "name": "Andrew Barkis",
+        "chamber": "Representative",
+        "position": null,
+        "party": "Republican",
+        "url": "https://leg.wa.gov/legislators/member/andrew-barkis"
+      },
+      {
+        "name": "Matt Marshall",
+        "chamber": "Representative",
+        "position": null,
+        "party": "Republican",
+        "url": "https://leg.wa.gov/legislators/member/matt-marshall"
+      }
+    ],
+    "3": [
+      {
+        "name": "Marcus Riccelli",
+        "chamber": "Senator",
+        "position": null,
+        "party": "Democrat",
+        "url": "https://leg.wa.gov/legislators/member/marcus-riccelli"
+      },
+      {
+        "name": "Natasha Hill",
+        "chamber": "Representative",
+        "position": null,
+        "party": "Democrat",
+        "url": "https://leg.wa.gov/legislators/member/natasha-hill"
+      },
+      {
+        "name": "Timm Ormsby",
+        "chamber": "Representative",
+        "position": null,
+        "party": "Democrat",
+        "url": "https://leg.wa.gov/legislators/member/timm-ormsby"
+      }
+    ],
+    "4": [
+      {
+        "name": "Leonard Christian",
+        "chamber": "Senator",
+        "position": null,
+        "party": "Republican",
+        "url": "https://leg.wa.gov/legislators/member/leonard-christian"
+      },
+      {
+        "name": "Suzanne Schmidt",
+        "chamber": "Representative",
+        "position": null,
+        "party": "Republican",
+        "url": "https://leg.wa.gov/legislators/member/suzanne-schmidt"
+      },
+      {
+        "name": "Rob Chase",
+        "chamber": "Representative",
+        "position": null,
+        "party": "Republican",
+        "url": "https://leg.wa.gov/legislators/member/rob-chase"
+      }
+    ],
+    "5": [
+      {
+        "name": "Victoria Hunt",
+        "chamber": "Senator",
+        "position": null,
+        "party": "Democrat",
+        "url": "https://leg.wa.gov/legislators/member/victoria-hunt"
+      },
+      {
+        "name": "Zach Hall",
+        "chamber": "Representative",
+        "position": null,
+        "party": "Democrat",
+        "url": "https://leg.wa.gov/legislators/member/zach-hall"
+      },
+      {
+        "name": "Lisa Callan",
+        "chamber": "Representative",
+        "position": null,
+        "party": "Democrat",
+        "url": "https://leg.wa.gov/legislators/member/lisa-callan"
+      }
+    ],
+    "6": [
+      {
+        "name": "Jeff Holy",
+        "chamber": "Senator",
+        "position": null,
+        "party": "Republican",
+        "url": "https://leg.wa.gov/legislators/member/jeff-holy"
+      },
+      {
+        "name": "Mike Volz",
+        "chamber": "Representative",
+        "position": null,
+        "party": "Republican",
+        "url": "https://leg.wa.gov/legislators/member/mike-volz"
+      },
+      {
+        "name": "Jenny Graham",
+        "chamber": "Representative",
+        "position": null,
+        "party": "Republican",
+        "url": "https://leg.wa.gov/legislators/member/jenny-graham"
+      }
+    ],
+    "7": [
+      {
+        "name": "Shelly Short",
+        "chamber": "Senator",
+        "position": null,
+        "party": "Republican",
+        "url": "https://leg.wa.gov/legislators/member/shelly-short"
+      },
+      {
+        "name": "Andrew Engell",
+        "chamber": "Representative",
+        "position": null,
+        "party": "Republican",
+        "url": "https://leg.wa.gov/legislators/member/andrew-engell"
+      },
+      {
+        "name": "Hunter Abell",
+        "chamber": "Representative",
+        "position": null,
+        "party": "Republican",
+        "url": "https://leg.wa.gov/legislators/member/hunter-abell"
+      }
+    ],
+    "8": [
+      {
+        "name": "Matt Boehnke",
+        "chamber": "Senator",
+        "position": null,
+        "party": "Republican",
+        "url": "https://leg.wa.gov/legislators/member/matt-boehnke"
+      },
+      {
+        "name": "Stephanie Barnard",
+        "chamber": "Representative",
+        "position": null,
+        "party": "Republican",
+        "url": "https://leg.wa.gov/legislators/member/stephanie-barnard"
+      },
+      {
+        "name": "April Connors",
+        "chamber": "Representative",
+        "position": null,
+        "party": "Republican",
+        "url": "https://leg.wa.gov/legislators/member/april-connors"
+      }
+    ],
+    "9": [
+      {
+        "name": "Mark Schoesler",
+        "chamber": "Senator",
+        "position": null,
+        "party": "Republican",
+        "url": "https://leg.wa.gov/legislators/member/mark-schoesler"
+      },
+      {
+        "name": "Mary Dye",
+        "chamber": "Representative",
+        "position": null,
+        "party": "Republican",
+        "url": "https://leg.wa.gov/legislators/member/mary-dye"
+      },
+      {
+        "name": "Joe Schmick",
+        "chamber": "Representative",
+        "position": null,
+        "party": "Republican",
+        "url": "https://leg.wa.gov/legislators/member/joe-schmick"
+      }
+    ],
+    "10": [
+      {
+        "name": "Ron Muzzall",
+        "chamber": "Senator",
+        "position": null,
+        "party": "Republican",
+        "url": "https://leg.wa.gov/legislators/member/ron-muzzall"
+      },
+      {
+        "name": "Clyde Shavers",
+        "chamber": "Representative",
+        "position": null,
+        "party": "Democrat",
+        "url": "https://leg.wa.gov/legislators/member/clyde-shavers"
+      },
+      {
+        "name": "Dave Paul",
+        "chamber": "Representative",
+        "position": null,
+        "party": "Democrat",
+        "url": "https://leg.wa.gov/legislators/member/dave-paul"
+      }
+    ],
+    "11": [
+      {
+        "name": "Bob Hasegawa",
+        "chamber": "Senator",
+        "position": null,
+        "party": "Democrat",
+        "url": "https://leg.wa.gov/legislators/member/bob-hasegawa"
+      },
+      {
+        "name": "David Hackney",
+        "chamber": "Representative",
+        "position": null,
+        "party": "Democrat",
+        "url": "https://leg.wa.gov/legislators/member/david-hackney"
+      },
+      {
+        "name": "Steve Bergquist",
+        "chamber": "Representative",
+        "position": null,
+        "party": "Democrat",
+        "url": "https://leg.wa.gov/legislators/member/steve-bergquist"
+      }
+    ],
+    "12": [
+      {
+        "name": "Keith Goehner",
+        "chamber": "Senator",
+        "position": null,
+        "party": "Republican",
+        "url": "https://leg.wa.gov/legislators/member/keith-goehner"
+      },
+      {
+        "name": "Brian Burnett",
+        "chamber": "Representative",
+        "position": null,
+        "party": "Republican",
+        "url": "https://leg.wa.gov/legislators/member/brian-burnett"
+      },
+      {
+        "name": "Mike Steele",
+        "chamber": "Representative",
+        "position": null,
+        "party": "Republican",
+        "url": "https://leg.wa.gov/legislators/member/mike-steele"
+      }
+    ],
+    "13": [
+      {
+        "name": "Judy Warnick",
+        "chamber": "Senator",
+        "position": null,
+        "party": "Republican",
+        "url": "https://leg.wa.gov/legislators/member/judy-warnick"
+      },
+      {
+        "name": "Tom Dent",
+        "chamber": "Representative",
+        "position": null,
+        "party": "Republican",
+        "url": "https://leg.wa.gov/legislators/member/tom-dent"
+      },
+      {
+        "name": "Alex Ybarra",
+        "chamber": "Representative",
+        "position": null,
+        "party": "Republican",
+        "url": "https://leg.wa.gov/legislators/member/alex-ybarra"
+      }
+    ],
+    "14": [
+      {
+        "name": "Curtis King",
+        "chamber": "Senator",
+        "position": null,
+        "party": "Republican",
+        "url": "https://leg.wa.gov/legislators/member/curtis-king"
+      },
+      {
+        "name": "Gloria Mendoza",
+        "chamber": "Representative",
+        "position": null,
+        "party": "Republican",
+        "url": "https://leg.wa.gov/legislators/member/gloria-mendoza"
+      },
+      {
+        "name": "Deb Manjarrez",
+        "chamber": "Representative",
+        "position": null,
+        "party": "Republican",
+        "url": "https://leg.wa.gov/legislators/member/deb-manjarrez"
+      }
+    ],
+    "15": [
+      {
+        "name": "Nikki Torres",
+        "chamber": "Senator",
+        "position": null,
+        "party": "Republican",
+        "url": "https://leg.wa.gov/legislators/member/nikki-torres"
+      },
+      {
+        "name": "Chris Corry",
+        "chamber": "Representative",
+        "position": null,
+        "party": "Republican",
+        "url": "https://leg.wa.gov/legislators/member/chris-corry"
+      },
+      {
+        "name": "Jeremie Dufault",
+        "chamber": "Representative",
+        "position": null,
+        "party": "Republican",
+        "url": "https://leg.wa.gov/legislators/member/jeremie-dufault"
+      }
+    ],
+    "16": [
+      {
+        "name": "Perry Dozier",
+        "chamber": "Senator",
+        "position": null,
+        "party": "Republican",
+        "url": "https://leg.wa.gov/legislators/member/perry-dozier"
+      },
+      {
+        "name": "Mark Klicker",
+        "chamber": "Representative",
+        "position": null,
+        "party": "Republican",
+        "url": "https://leg.wa.gov/legislators/member/mark-klicker"
+      },
+      {
+        "name": "Skyler Rude",
+        "chamber": "Representative",
+        "position": null,
+        "party": "Republican",
+        "url": "https://leg.wa.gov/legislators/member/skyler-rude"
+      }
+    ],
+    "17": [
+      {
+        "name": "Paul Harris",
+        "chamber": "Senator",
+        "position": null,
+        "party": "Republican",
+        "url": "https://leg.wa.gov/legislators/member/paul-harris"
+      },
+      {
+        "name": "Kevin Waters",
+        "chamber": "Representative",
+        "position": null,
+        "party": "Republican",
+        "url": "https://leg.wa.gov/legislators/member/kevin-waters"
+      },
+      {
+        "name": "David Stuebe",
+        "chamber": "Representative",
+        "position": null,
+        "party": "Republican",
+        "url": "https://leg.wa.gov/legislators/member/david-stuebe"
+      }
+    ],
+    "18": [
+      {
+        "name": "Adrian Cortes",
+        "chamber": "Senator",
+        "position": null,
+        "party": "Democrat",
+        "url": "https://leg.wa.gov/legislators/member/adrian-cortes"
+      },
+      {
+        "name": "Stephanie McClintock",
+        "chamber": "Representative",
+        "position": null,
+        "party": "Republican",
+        "url": "https://leg.wa.gov/legislators/member/stephanie-mcclintock"
+      },
+      {
+        "name": "John Ley",
+        "chamber": "Representative",
+        "position": null,
+        "party": "Republican",
+        "url": "https://leg.wa.gov/legislators/member/john-ley"
+      }
+    ],
+    "19": [
+      {
+        "name": "Jeff Wilson",
+        "chamber": "Senator",
+        "position": null,
+        "party": "Republican",
+        "url": "https://leg.wa.gov/legislators/member/jeff-wilson"
+      },
+      {
+        "name": "Jim Walsh",
+        "chamber": "Representative",
+        "position": null,
+        "party": "Republican",
+        "url": "https://leg.wa.gov/legislators/member/jim-walsh"
+      },
+      {
+        "name": "Joel McEntire",
+        "chamber": "Representative",
+        "position": null,
+        "party": "Republican",
+        "url": "https://leg.wa.gov/legislators/member/joel-mcentire"
+      }
+    ],
+    "20": [
+      {
+        "name": "John Braun",
+        "chamber": "Senator",
+        "position": null,
+        "party": "Republican",
+        "url": "https://leg.wa.gov/legislators/member/john-braun"
+      },
+      {
+        "name": "Peter Abbarno",
+        "chamber": "Representative",
+        "position": null,
+        "party": "Republican",
+        "url": "https://leg.wa.gov/legislators/member/peter-abbarno"
+      },
+      {
+        "name": "Ed Orcutt",
+        "chamber": "Representative",
+        "position": null,
+        "party": "Republican",
+        "url": "https://leg.wa.gov/legislators/member/ed-orcutt"
+      }
+    ],
+    "21": [
+      {
+        "name": "Marko Liias",
+        "chamber": "Senator",
+        "position": null,
+        "party": "Democrat",
+        "url": "https://leg.wa.gov/legislators/member/marko-liias"
+      },
+      {
+        "name": "Strom Peterson",
+        "chamber": "Representative",
+        "position": null,
+        "party": "Democrat",
+        "url": "https://leg.wa.gov/legislators/member/strom-peterson"
+      },
+      {
+        "name": "Lillian Ortiz-Self",
+        "chamber": "Representative",
+        "position": null,
+        "party": "Democrat",
+        "url": "https://leg.wa.gov/legislators/member/lillian-ortiz-self"
+      }
+    ],
+    "22": [
+      {
+        "name": "Jessica Bateman",
+        "chamber": "Senator",
+        "position": null,
+        "party": "Democrat",
+        "url": "https://leg.wa.gov/legislators/member/jessica-bateman"
+      },
+      {
+        "name": "Beth Doglio",
+        "chamber": "Representative",
+        "position": null,
+        "party": "Democrat",
+        "url": "https://leg.wa.gov/legislators/member/beth-doglio"
+      },
+      {
+        "name": "Lisa Parshley",
+        "chamber": "Representative",
+        "position": null,
+        "party": "Democrat",
+        "url": "https://leg.wa.gov/legislators/member/lisa-parshley"
+      }
+    ],
+    "23": [
+      {
+        "name": "Drew Hansen",
+        "chamber": "Senator",
+        "position": null,
+        "party": "Democrat",
+        "url": "https://leg.wa.gov/legislators/member/drew-hansen"
+      },
+      {
+        "name": "Tarra Simmons",
+        "chamber": "Representative",
+        "position": null,
+        "party": "Democrat",
+        "url": "https://leg.wa.gov/legislators/member/tarra-simmons"
+      },
+      {
+        "name": "Greg Nance",
+        "chamber": "Representative",
+        "position": null,
+        "party": "Democrat",
+        "url": "https://leg.wa.gov/legislators/member/greg-nance"
+      }
+    ],
+    "24": [
+      {
+        "name": "Mike Chapman",
+        "chamber": "Senator",
+        "position": null,
+        "party": "Democrat",
+        "url": "https://leg.wa.gov/legislators/member/mike-chapman"
+      },
+      {
+        "name": "Adam Bernbaum",
+        "chamber": "Representative",
+        "position": null,
+        "party": "Democrat",
+        "url": "https://leg.wa.gov/legislators/member/adam-bernbaum"
+      },
+      {
+        "name": "Steve Tharinger",
+        "chamber": "Representative",
+        "position": null,
+        "party": "Democrat",
+        "url": "https://leg.wa.gov/legislators/member/steve-tharinger"
+      }
+    ],
+    "25": [
+      {
+        "name": "Chris Gildon",
+        "chamber": "Senator",
+        "position": null,
+        "party": "Republican",
+        "url": "https://leg.wa.gov/legislators/member/chris-gildon"
+      },
+      {
+        "name": "Michael Keaton",
+        "chamber": "Representative",
+        "position": null,
+        "party": "Republican",
+        "url": "https://leg.wa.gov/legislators/member/michael-keaton"
+      },
+      {
+        "name": "Cyndy Jacobsen",
+        "chamber": "Representative",
+        "position": null,
+        "party": "Republican",
+        "url": "https://leg.wa.gov/legislators/member/cyndy-jacobsen"
+      }
+    ],
+    "26": [
+      {
+        "name": "Deborah Krishnadasan",
+        "chamber": "Senator",
+        "position": null,
+        "party": "Democrat",
+        "url": "https://leg.wa.gov/legislators/member/deborah-krishnadasan"
+      },
+      {
+        "name": "Adison Richards",
+        "chamber": "Representative",
+        "position": null,
+        "party": "Democrat",
+        "url": "https://leg.wa.gov/legislators/member/adison-richards"
+      },
+      {
+        "name": "Michelle Valdez",
+        "chamber": "Representative",
+        "position": null,
+        "party": "Republican",
+        "url": "https://leg.wa.gov/legislators/member/michelle-valdez"
+      }
+    ],
+    "27": [
+      {
+        "name": "Yasmin Trudeau",
+        "chamber": "Senator",
+        "position": null,
+        "party": "Democrat",
+        "url": "https://leg.wa.gov/legislators/member/yasmin-trudeau"
+      },
+      {
+        "name": "Laurie Jinkins",
+        "chamber": "Representative",
+        "position": null,
+        "party": "Democrat",
+        "url": "https://leg.wa.gov/legislators/member/laurie-jinkins"
+      },
+      {
+        "name": "Jake Fey",
+        "chamber": "Representative",
+        "position": null,
+        "party": "Democrat",
+        "url": "https://leg.wa.gov/legislators/member/jake-fey"
+      }
+    ],
+    "28": [
+      {
+        "name": "T'wina Nobles",
+        "chamber": "Senator",
+        "position": null,
+        "party": "Democrat",
+        "url": "https://leg.wa.gov/legislators/member/t&#x27;wina-nobles"
+      },
+      {
+        "name": "Mari Leavitt",
+        "chamber": "Representative",
+        "position": null,
+        "party": "Democrat",
+        "url": "https://leg.wa.gov/legislators/member/mari-leavitt"
+      },
+      {
+        "name": "Dan Bronoske",
+        "chamber": "Representative",
+        "position": null,
+        "party": "Democrat",
+        "url": "https://leg.wa.gov/legislators/member/dan-bronoske"
+      }
+    ],
+    "29": [
+      {
+        "name": "Steve Conway",
+        "chamber": "Senator",
+        "position": null,
+        "party": "Democrat",
+        "url": "https://leg.wa.gov/legislators/member/steve-conway"
+      },
+      {
+        "name": "Melanie Morgan",
+        "chamber": "Representative",
+        "position": null,
+        "party": "Democrat",
+        "url": "https://leg.wa.gov/legislators/member/melanie-morgan"
+      },
+      {
+        "name": "Sharlett Mena",
+        "chamber": "Representative",
+        "position": null,
+        "party": "Democrat",
+        "url": "https://leg.wa.gov/legislators/member/sharlett-mena"
+      }
+    ],
+    "30": [
+      {
+        "name": "Claire Wilson",
+        "chamber": "Senator",
+        "position": null,
+        "party": "Democrat",
+        "url": "https://leg.wa.gov/legislators/member/claire-wilson"
+      },
+      {
+        "name": "Jamila Taylor",
+        "chamber": "Representative",
+        "position": null,
+        "party": "Democrat",
+        "url": "https://leg.wa.gov/legislators/member/jamila-taylor"
+      },
+      {
+        "name": "Kristine Reeves",
+        "chamber": "Representative",
+        "position": null,
+        "party": "Democrat",
+        "url": "https://leg.wa.gov/legislators/member/kristine-reeves"
+      }
+    ],
+    "31": [
+      {
+        "name": "Phil Fortunato",
+        "chamber": "Senator",
+        "position": null,
+        "party": "Republican",
+        "url": "https://leg.wa.gov/legislators/member/phil-fortunato"
+      },
+      {
+        "name": "Drew Stokesbary",
+        "chamber": "Representative",
+        "position": null,
+        "party": "Republican",
+        "url": "https://leg.wa.gov/legislators/member/drew-stokesbary"
+      },
+      {
+        "name": "Joshua Penner",
+        "chamber": "Representative",
+        "position": null,
+        "party": "Republican",
+        "url": "https://leg.wa.gov/legislators/member/joshua-penner"
+      }
+    ],
+    "32": [
+      {
+        "name": "Jesse Salomon",
+        "chamber": "Senator",
+        "position": null,
+        "party": "Democrat",
+        "url": "https://leg.wa.gov/legislators/member/jesse-salomon"
+      },
+      {
+        "name": "Cindy Ryu",
+        "chamber": "Representative",
+        "position": null,
+        "party": "Democrat",
+        "url": "https://leg.wa.gov/legislators/member/cindy-ryu"
+      },
+      {
+        "name": "Lauren Davis",
+        "chamber": "Representative",
+        "position": null,
+        "party": "Democrat",
+        "url": "https://leg.wa.gov/legislators/member/lauren-davis"
+      }
+    ],
+    "33": [
+      {
+        "name": "Tina Orwall",
+        "chamber": "Senator",
+        "position": null,
+        "party": "Democrat",
+        "url": "https://leg.wa.gov/legislators/member/tina-orwall"
+      },
+      {
+        "name": "Edwin Obras",
+        "chamber": "Representative",
+        "position": null,
+        "party": "Democrat",
+        "url": "https://leg.wa.gov/legislators/member/edwin-obras"
+      },
+      {
+        "name": "Mia Gregerson",
+        "chamber": "Representative",
+        "position": null,
+        "party": "Democrat",
+        "url": "https://leg.wa.gov/legislators/member/mia-gregerson"
+      }
+    ],
+    "34": [
+      {
+        "name": "Emily Alvarado",
+        "chamber": "Senator",
+        "position": null,
+        "party": "Democrat",
+        "url": "https://leg.wa.gov/legislators/member/emily-alvarado"
+      },
+      {
+        "name": "Brianna Thomas",
+        "chamber": "Representative",
+        "position": null,
+        "party": "Democrat",
+        "url": "https://leg.wa.gov/legislators/member/brianna-thomas"
+      },
+      {
+        "name": "Joe Fitzgibbon",
+        "chamber": "Representative",
+        "position": null,
+        "party": "Democrat",
+        "url": "https://leg.wa.gov/legislators/member/joe-fitzgibbon"
+      }
+    ],
+    "35": [
+      {
+        "name": "Drew MacEwen",
+        "chamber": "Senator",
+        "position": null,
+        "party": "Republican",
+        "url": "https://leg.wa.gov/legislators/member/drew-macewen"
+      },
+      {
+        "name": "Dan Griffey",
+        "chamber": "Representative",
+        "position": null,
+        "party": "Republican",
+        "url": "https://leg.wa.gov/legislators/member/dan-griffey"
+      },
+      {
+        "name": "Travis Couture",
+        "chamber": "Representative",
+        "position": null,
+        "party": "Republican",
+        "url": "https://leg.wa.gov/legislators/member/travis-couture"
+      }
+    ],
+    "36": [
+      {
+        "name": "Noel Frame",
+        "chamber": "Senator",
+        "position": null,
+        "party": "Democrat",
+        "url": "https://leg.wa.gov/legislators/member/noel-frame"
+      },
+      {
+        "name": "Julia Reed",
+        "chamber": "Representative",
+        "position": null,
+        "party": "Democrat",
+        "url": "https://leg.wa.gov/legislators/member/julia-reed"
+      },
+      {
+        "name": "Liz Berry",
+        "chamber": "Representative",
+        "position": null,
+        "party": "Democrat",
+        "url": "https://leg.wa.gov/legislators/member/liz-berry"
+      }
+    ],
+    "37": [
+      {
+        "name": "Rebecca Salda&#xF1;a",
+        "chamber": "Senator",
+        "position": null,
+        "party": "Democrat",
+        "url": "https://leg.wa.gov/legislators/member/rebecca-salda&#xF1;a"
+      },
+      {
+        "name": "Sharon Tomiko Santos",
+        "chamber": "Representative",
+        "position": null,
+        "party": "Democrat",
+        "url": "https://leg.wa.gov/legislators/member/sharon-tomiko-santos"
+      },
+      {
+        "name": "Chipalo Street",
+        "chamber": "Representative",
+        "position": null,
+        "party": "Democrat",
+        "url": "https://leg.wa.gov/legislators/member/chipalo-street"
+      }
+    ],
+    "38": [
+      {
+        "name": "June Robinson",
+        "chamber": "Senator",
+        "position": null,
+        "party": "Democrat",
+        "url": "https://leg.wa.gov/legislators/member/june-robinson"
+      },
+      {
+        "name": "Julio Cortes",
+        "chamber": "Representative",
+        "position": null,
+        "party": "Democrat",
+        "url": "https://leg.wa.gov/legislators/member/julio-cortes"
+      },
+      {
+        "name": "Mary Fosse",
+        "chamber": "Representative",
+        "position": null,
+        "party": "Democrat",
+        "url": "https://leg.wa.gov/legislators/member/mary-fosse"
+      }
+    ],
+    "39": [
+      {
+        "name": "Keith Wagoner",
+        "chamber": "Senator",
+        "position": null,
+        "party": "Republican",
+        "url": "https://leg.wa.gov/legislators/member/keith-wagoner"
+      },
+      {
+        "name": "Sam Low",
+        "chamber": "Representative",
+        "position": null,
+        "party": "Republican",
+        "url": "https://leg.wa.gov/legislators/member/sam-low"
+      },
+      {
+        "name": "Carolyn Eslick",
+        "chamber": "Representative",
+        "position": null,
+        "party": "Republican",
+        "url": "https://leg.wa.gov/legislators/member/carolyn-eslick"
+      }
+    ],
+    "40": [
+      {
+        "name": "Liz Lovelett",
+        "chamber": "Senator",
+        "position": null,
+        "party": "Democrat",
+        "url": "https://leg.wa.gov/legislators/member/liz-lovelett"
+      },
+      {
+        "name": "Debra Lekanoff",
+        "chamber": "Representative",
+        "position": null,
+        "party": "Democrat",
+        "url": "https://leg.wa.gov/legislators/member/debra-lekanoff"
+      },
+      {
+        "name": "Alex Ramel",
+        "chamber": "Representative",
+        "position": null,
+        "party": "Democrat",
+        "url": "https://leg.wa.gov/legislators/member/alex-ramel"
+      }
+    ],
+    "41": [
+      {
+        "name": "Lisa Wellman",
+        "chamber": "Senator",
+        "position": null,
+        "party": "Democrat",
+        "url": "https://leg.wa.gov/legislators/member/lisa-wellman"
+      },
+      {
+        "name": "Janice Zahn",
+        "chamber": "Representative",
+        "position": null,
+        "party": "Democrat",
+        "url": "https://leg.wa.gov/legislators/member/janice-zahn"
+      },
+      {
+        "name": "My-Linh Thai",
+        "chamber": "Representative",
+        "position": null,
+        "party": "Democrat",
+        "url": "https://leg.wa.gov/legislators/member/my-linh-thai"
+      }
+    ],
+    "42": [
+      {
+        "name": "Sharon Shewmake",
+        "chamber": "Senator",
+        "position": null,
+        "party": "Democrat",
+        "url": "https://leg.wa.gov/legislators/member/sharon-shewmake"
+      },
+      {
+        "name": "Alicia Rule",
+        "chamber": "Representative",
+        "position": null,
+        "party": "Democrat",
+        "url": "https://leg.wa.gov/legislators/member/alicia-rule"
+      },
+      {
+        "name": "Joe Timmons",
+        "chamber": "Representative",
+        "position": null,
+        "party": "Democrat",
+        "url": "https://leg.wa.gov/legislators/member/joe-timmons"
+      }
+    ],
+    "43": [
+      {
+        "name": "Jamie Pedersen",
+        "chamber": "Senator",
+        "position": null,
+        "party": "Democrat",
+        "url": "https://leg.wa.gov/legislators/member/jamie-pedersen"
+      },
+      {
+        "name": "Nicole Macri",
+        "chamber": "Representative",
+        "position": null,
+        "party": "Democrat",
+        "url": "https://leg.wa.gov/legislators/member/nicole-macri"
+      },
+      {
+        "name": "Shaun Scott",
+        "chamber": "Representative",
+        "position": null,
+        "party": "Democrat",
+        "url": "https://leg.wa.gov/legislators/member/shaun-scott"
+      }
+    ],
+    "44": [
+      {
+        "name": "John Lovick",
+        "chamber": "Senator",
+        "position": null,
+        "party": "Democrat",
+        "url": "https://leg.wa.gov/legislators/member/john-lovick"
+      },
+      {
+        "name": "Brandy Donaghy",
+        "chamber": "Representative",
+        "position": null,
+        "party": "Democrat",
+        "url": "https://leg.wa.gov/legislators/member/brandy-donaghy"
+      },
+      {
+        "name": "April Berg",
+        "chamber": "Representative",
+        "position": null,
+        "party": "Democrat",
+        "url": "https://leg.wa.gov/legislators/member/april-berg"
+      }
+    ],
+    "45": [
+      {
+        "name": "Manka Dhingra",
+        "chamber": "Senator",
+        "position": null,
+        "party": "Democrat",
+        "url": "https://leg.wa.gov/legislators/member/manka-dhingra"
+      },
+      {
+        "name": "Roger Goodman",
+        "chamber": "Representative",
+        "position": null,
+        "party": "Democrat",
+        "url": "https://leg.wa.gov/legislators/member/roger-goodman"
+      },
+      {
+        "name": "Larry Springer",
+        "chamber": "Representative",
+        "position": null,
+        "party": "Democrat",
+        "url": "https://leg.wa.gov/legislators/member/larry-springer"
+      }
+    ],
+    "46": [
+      {
+        "name": "Javier Valdez",
+        "chamber": "Senator",
+        "position": null,
+        "party": "Democrat",
+        "url": "https://leg.wa.gov/legislators/member/javier-valdez"
+      },
+      {
+        "name": "Gerry Pollet",
+        "chamber": "Representative",
+        "position": null,
+        "party": "Democrat",
+        "url": "https://leg.wa.gov/legislators/member/gerry-pollet"
+      },
+      {
+        "name": "Darya Farivar",
+        "chamber": "Representative",
+        "position": null,
+        "party": "Democrat",
+        "url": "https://leg.wa.gov/legislators/member/darya-farivar"
+      }
+    ],
+    "47": [
+      {
+        "name": "Claudia Kauffman",
+        "chamber": "Senator",
+        "position": null,
+        "party": "Democrat",
+        "url": "https://leg.wa.gov/legislators/member/claudia-kauffman"
+      },
+      {
+        "name": "Debra Entenman",
+        "chamber": "Representative",
+        "position": null,
+        "party": "Democrat",
+        "url": "https://leg.wa.gov/legislators/member/debra-entenman"
+      },
+      {
+        "name": "Chris Stearns",
+        "chamber": "Representative",
+        "position": null,
+        "party": "Democrat",
+        "url": "https://leg.wa.gov/legislators/member/chris-stearns"
+      }
+    ],
+    "48": [
+      {
+        "name": "Vandana Slatter",
+        "chamber": "Senator",
+        "position": null,
+        "party": "Democrat",
+        "url": "https://leg.wa.gov/legislators/member/vandana-slatter"
+      },
+      {
+        "name": "Osman Salahuddin",
+        "chamber": "Representative",
+        "position": null,
+        "party": "Democrat",
+        "url": "https://leg.wa.gov/legislators/member/osman-salahuddin"
+      },
+      {
+        "name": "Amy Walen",
+        "chamber": "Representative",
+        "position": null,
+        "party": "Democrat",
+        "url": "https://leg.wa.gov/legislators/member/amy-walen"
+      }
+    ],
+    "49": [
+      {
+        "name": "Annette Cleveland",
+        "chamber": "Senator",
+        "position": null,
+        "party": "Democrat",
+        "url": "https://leg.wa.gov/legislators/member/annette-cleveland"
+      },
+      {
+        "name": "Sharon Wylie",
+        "chamber": "Representative",
+        "position": null,
+        "party": "Democrat",
+        "url": "https://leg.wa.gov/legislators/member/sharon-wylie"
+      },
+      {
+        "name": "Monica Jurado Stonier",
+        "chamber": "Representative",
+        "position": null,
+        "party": "Democrat",
+        "url": "https://leg.wa.gov/legislators/member/monica-jurado-stonier"
+      }
+    ]
+  }
+}

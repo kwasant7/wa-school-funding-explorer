@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { District, LATEST, YEARS, districtSeries, statewideSeries, yearData } from '@/lib/data';
@@ -9,7 +9,7 @@ import SourceShareBar from '@/components/charts/SourceShareBar';
 import CompareBar from '@/components/charts/CompareBar';
 import TrendChart from '@/components/charts/TrendChart';
 import WaMap from '@/components/charts/WaMap';
-import { fmtInt, fmtMoney, fmtMoneyFull, pct } from '@/lib/format';
+import { fmtInt, fmtMoney, fmtMoneyFull, fmtSignedMoney, pct } from '@/lib/format';
 
 function YearSelect({ year, onChange }: { year: string; onChange: (y: string) => void }) {
   return (
@@ -39,6 +39,12 @@ export default function DistrictsExplorer() {
     () => yearData(year).districts.find((d) => d.code === selectedCode) ?? null,
     [selectedCode, year]
   );
+
+  useEffect(() => {
+    if (selectedCode) {
+      window.localStorage.setItem('wa-selected-district', selectedCode);
+    }
+  }, [selectedCode]);
 
   if (selectedCode && selected) {
     return <DistrictDetail district={selected} year={year} onYearChange={setYear} />;
@@ -80,17 +86,6 @@ function DistrictOverview({
   const data = yearData(year);
   const s = data.statewide;
 
-  const byCounty = useMemo(() => {
-    const groups = new Map<string, District[]>();
-    for (const d of data.districts) {
-      if (!groups.has(d.county)) groups.set(d.county, []);
-      groups.get(d.county)!.push(d);
-    }
-    return Array.from(groups.entries())
-      .sort(([a], [b]) => a.localeCompare(b))
-      .map(([county, ds]) => [county, [...ds].sort((a, b) => a.name.localeCompare(b.name))] as const);
-  }, [data]);
-
   return (
     <div className="max-w-site mx-auto px-4 md:px-6 pt-10">
       <h1 className="text-3xl md:text-4xl font-bold tracking-tight">
@@ -98,8 +93,8 @@ function DistrictOverview({
       </h1>
       <p className="mt-3 max-w-2xl text-ink-secondary">
         Funding for every school district and charter school in Washington,
-        from the F-196 financial reports, any year since 2019–20. Pick your
-        district on the map — its full profile opens on this page.
+        from the F-196 financial reports, any year since 2019-20. Pick your
+        district on the map - its full profile opens on this page.
       </p>
 
       <div className="mt-6 grid lg:grid-cols-[1fr,22rem] gap-4 items-stretch">
@@ -131,40 +126,251 @@ function DistrictOverview({
       </div>
 
       <div className="mt-6 card p-5">
-        <h2 className="font-semibold">Find your district on the map</h2>
-        <p className="mt-0.5 mb-4 text-sm text-ink-secondary">
-          Click your district (or search for it), then open its profile from
-          the card. Pinch (or Ctrl+scroll) to zoom.
-        </p>
+        <div className="flex items-start justify-between gap-4 flex-wrap">
+          <div>
+            <h2 className="font-semibold">Find your district on the map</h2>
+            <p className="mt-0.5 mb-4 text-sm text-ink-secondary">
+              Pick from the dropdown or click your district to open its profile.
+            </p>
+          </div>
+          <YearSelect year={year} onChange={onYearChange} />
+        </div>
         <WaMap year={year} onSelect={onSelect} />
       </div>
-
-      <div className="mt-6 flex flex-wrap items-center gap-4">
-        <label className="inline-flex items-center gap-2 text-sm text-ink-secondary">
-          Or jump straight to one
-          <select
-            value=""
-            onChange={(e) => e.target.value && onSelect(e.target.value)}
-            className="card px-3 py-2 text-base font-medium text-ink cursor-pointer max-w-[16rem] md:max-w-xs"
-          >
-            <option value="">Choose from {data.districts.length} districts…</option>
-            {byCounty.map(([county, ds]) => (
-              <optgroup key={county} label={`${county} County`}>
-                {ds.map((d) => (
-                  <option key={d.code} value={d.code}>
-                    {d.name}
-                  </option>
-                ))}
-              </optgroup>
-            ))}
-          </select>
-        </label>
-        <YearSelect year={year} onChange={onYearChange} />
-      </div>
       <p className="mt-3 text-xs text-ink-muted max-w-2xl">
-        Per-student figures divide general fund revenues by October headcount
-        enrollment; official OSPI per-pupil statistics use annual average FTE
-        and will differ slightly.
+        Per-student figures divide general fund revenues by OSPI&apos;s final
+        annual-average funding FTE, including Running Start college FTE.
+        Student totals remain the Report Card&apos;s October headcount.
+      </p>
+    </div>
+  );
+}
+
+function FundBalanceCard({ district: d, year }: { district: District; year: string }) {
+  const surplus = d.surplus;
+  const deficit = surplus < 0;
+  // 6-year running total: net added to / drawn from reserves since 2019-20
+  const netSeries = districtSeries(d.code, (x) => x.surplus);
+  const cumulative = netSeries.reduce((sum, p) => sum + (p.value ?? 0), 0);
+  const maxAbs = Math.max(1, ...netSeries.map((p) => Math.abs(p.value ?? 0)));
+
+  return (
+    <div className="mt-6 card p-5">
+      <h2 className="font-semibold">Money in vs. money out ({year})</h2>
+      <p className="mt-0.5 text-sm text-ink-secondary">
+        The general fund is where a district&apos;s day-to-day money flows. If it
+        spends more than it takes in, it dips into savings (its fund balance).
+      </p>
+
+      <div className="mt-4 grid grid-cols-1 sm:grid-cols-3 gap-3">
+        <div className="rounded-lg border border-line p-4">
+          <div className="text-sm text-ink-secondary">Total revenue (in)</div>
+          <div className="text-2xl font-bold">{fmtMoney(d.rev.total)}</div>
+        </div>
+        <div className="rounded-lg border border-line p-4">
+          <div className="text-sm text-ink-secondary">Total spending (out)</div>
+          <div className="text-2xl font-bold">{fmtMoney(d.exp)}</div>
+        </div>
+        <div className={`rounded-lg border p-4 ${deficit ? 'border-critical/40 bg-red-50' : 'border-good/40 bg-green-50'}`}>
+          <div className="text-sm text-ink-secondary">
+            {deficit ? 'Drew down savings' : 'Added to savings'}
+          </div>
+          <div className={`text-2xl font-bold ${deficit ? 'text-critical' : 'text-good'}`}>
+            {fmtSignedMoney(surplus)}
+          </div>
+          <div className="text-xs text-ink-muted mt-0.5">this year&apos;s change in fund balance</div>
+        </div>
+      </div>
+
+      {/* Fund balance (savings on hand) + reserve ratio */}
+      {d.fundBalance != null && (
+        <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div className="rounded-lg border border-line p-4">
+            <div className="text-sm text-ink-secondary">Fund balance (savings on hand)</div>
+            <div className={`text-2xl font-bold ${d.fundBalance < 0 ? 'text-critical' : ''}`}>
+              {fmtSignedMoney(d.fundBalance).replace('+', '')}
+            </div>
+            <div className="text-xs text-ink-muted mt-1">
+              The savings left at year&apos;s end, carried forward for emergencies,
+              uneven cash flow, and next year&apos;s start-up costs.
+            </div>
+          </div>
+          {(() => {
+            const rr = d.reserveRatio;
+            if (rr == null) return null;
+            const cls =
+              rr >= 5
+                ? 'border-good/40 bg-green-50'
+                : rr >= 0
+                  ? 'border-amber-300 bg-amber-50'
+                  : 'border-critical/40 bg-red-50';
+            const textCls = rr >= 5 ? 'text-good' : rr >= 0 ? 'text-amber-600' : 'text-critical';
+            const status =
+              rr >= 5
+                ? 'Healthy cushion'
+                : rr >= 0
+                  ? 'Thin — below the 4-5% experts recommend'
+                  : 'Negative — no cushion left';
+            return (
+              <div className={`rounded-lg border p-4 ${cls}`}>
+                <div className="text-sm text-ink-secondary">Reserve ratio</div>
+                <div className={`text-2xl font-bold ${textCls}`}>{rr.toFixed(1)}%</div>
+                <div className="text-xs mt-0.5 font-medium">
+                  <span className={textCls}>{status.replace('—', '-')}</span>
+                </div>
+                <div className="text-xs text-ink-muted mt-1">
+                  Savings as a share of annual spending (fund balance ÷ spending).
+                  Experts recommend keeping at least 4-5%; below that, one bad year
+                  can force cuts.
+                </div>
+              </div>
+            );
+          })()}
+        </div>
+      )}
+
+      {/* Year-by-year net strip */}
+      <div className="mt-5">
+        <div className="text-xs font-medium text-ink-secondary mb-2">
+          Surplus / (deficit) by year
+        </div>
+        <div className="flex items-stretch gap-2" role="img" aria-label={`${d.name} surplus or deficit by year`}>
+          {netSeries.map((p) => {
+            const v = p.value ?? 0;
+            const h = (Math.abs(v) / maxAbs) * 40;
+            const neg = v < 0;
+            return (
+              <div key={p.label} className="flex-1 flex flex-col items-center" title={`${p.label}: ${fmtSignedMoney(v)}`}>
+                {/* fixed top zone: surplus bars grow up to the shared baseline */}
+                <div className="w-full flex items-end justify-center" style={{ height: 40 }}>
+                  {!neg && <div className="w-6 rounded-t bg-good" style={{ height: h }} />}
+                </div>
+                {/* shared baseline across all years */}
+                <div className="w-full h-px bg-baseline" />
+                {/* fixed bottom zone: deficit bars grow down from the baseline */}
+                <div className="w-full flex items-start justify-center" style={{ height: 40 }}>
+                  {neg && <div className="w-6 rounded-b bg-critical" style={{ height: h }} />}
+                </div>
+                <div className="mt-1 text-[10px] text-ink-muted tabular-nums">{p.label.slice(2)}</div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      <p className="mt-4 text-sm text-ink-secondary">
+        Since 2019-20, {d.name} has{' '}
+        <strong className={cumulative < 0 ? 'text-critical' : 'text-good'}>
+          {cumulative < 0 ? 'spent down' : 'added'} {fmtMoney(Math.abs(cumulative))}
+        </strong>{' '}
+        net {cumulative < 0 ? 'from' : 'to'} its reserves
+        {d.fundBalance != null && (
+          <>
+            , landing at a {fmtSignedMoney(d.fundBalance).replace('+', '')} fund
+            balance
+            {d.reserveRatio != null && <> ({d.reserveRatio.toFixed(1)}% of spending)</>}
+          </>
+        )}
+        .
+      </p>
+      <p className="mt-2 text-xs text-ink-muted max-w-2xl">
+        Revenues and expenditures are OSPI F-196 actuals; the ending fund balance
+        and reserve ratio come from fiscal.wa.gov&apos;s statewide school-finance
+        workbook. Bars show each year&apos;s change (money in minus money out).
+      </p>
+    </div>
+  );
+}
+
+/**
+ * Data-driven read of a district's trends. Everything here is computed from the
+ * district's own series (per-student, enrollment, surplus) so it works for any
+ * district - no hand-written per-district claims.
+ */
+function TrendAnalysis({ district: d }: { district: District }) {
+  const pp = districtSeries(d.code, (x) => x.perPupil)
+    .map((p) => p.value)
+    .filter((v): v is number => v != null);
+  const enr = districtSeries(d.code, (x) => x.enrollment)
+    .map((p) => p.value)
+    .filter((v): v is number => v != null);
+  const surp = districtSeries(d.code, (x) => x.surplus)
+    .map((p) => p.value)
+    .filter((v): v is number => v != null);
+  if (pp.length < 2 || enr.length < 2) return null;
+
+  const ppPct = ((pp[pp.length - 1] - pp[0]) / pp[0]) * 100;
+  const enrPct = ((enr[enr.length - 1] - enr[0]) / enr[0]) * 100;
+  const deficitYears = surp.filter((v) => v < 0).length;
+  const cumNet = surp.reduce((a, b) => a + b, 0);
+  const drewDown = cumNet < 0;
+  const name = d.name.replace(/ School District.*$/, '').replace(/ Public Schools$/, '');
+
+  const sentences: string[] = [];
+
+  // 1. The headline trend
+  if (ppPct > 2) {
+    sentences.push(
+      `${name}'s funding per student has risen about ${Math.round(ppPct)}% since 2019-20 (from ${fmtMoneyFull(pp[0])} to ${fmtMoneyFull(pp[pp.length - 1])}).`
+    );
+  } else if (ppPct < -2) {
+    sentences.push(
+      `${name}'s funding per student has fallen about ${Math.round(Math.abs(ppPct))}% since 2019-20.`
+    );
+  } else {
+    sentences.push(`${name}'s funding per student has held roughly flat since 2019-20.`);
+  }
+
+  // 2. The context that complicates the headline
+  if (ppPct > 2 && drewDown) {
+    sentences.push(
+      `That upward line looks reassuring, but it doesn't mean the district is flush: it spent more than it took in in ${deficitYears} of the last ${surp.length} years, drawing down about ${fmtMoney(Math.abs(cumNet))} net from reserves. Per-student funding rising while savings shrink usually means the increases aren't keeping pace with real costs.`
+    );
+  } else if (ppPct > 2 && enrPct < -3) {
+    sentences.push(
+      `Some of that increase is mechanical: enrollment fell about ${Math.round(Math.abs(enrPct))}% over the same span, so a similar pot of money is split among fewer students rather than reflecting genuinely richer funding.`
+    );
+  } else if (ppPct > 2) {
+    sentences.push(
+      `Whether that keeps pace with rising salaries, special-education costs, and inflation is the real question - a higher nominal figure can still be a cut in real terms.`
+    );
+  } else if (drewDown) {
+    sentences.push(
+      `Meanwhile the district ran a deficit in ${deficitYears} of the last ${surp.length} years, drawing down about ${fmtMoney(Math.abs(cumNet))} net from reserves - a sign that funding hasn't matched what it costs to run these schools.`
+    );
+  } else {
+    sentences.push(
+      `Against rising salaries and inflation, flat funding is effectively a cut, even as the total dollar figure holds steady.`
+    );
+  }
+
+  // 3. The reserve-ratio reality check (the sharpest signal when available)
+  if (d.reserveRatio != null && d.reserveRatio < 0) {
+    sentences.push(
+      `Its reserves have run dry: the reserve ratio is now ${d.reserveRatio.toFixed(1)}%, meaning the district has essentially no savings cushion left, so any further shortfall means cuts.`
+    );
+  } else if (d.reserveRatio != null && d.reserveRatio < 5) {
+    sentences.push(
+      `Its reserve ratio has slipped to ${d.reserveRatio.toFixed(1)}%, below the 4-5% experts treat as a safe minimum — a single bad year could force cuts.`
+    );
+  } else {
+    sentences.push(
+      `Read the funding line together with the surplus/deficit bars above: more dollars per student only help if they outpace what the district actually needs to spend.`
+    );
+  }
+
+  return (
+    <div className="mt-4 rounded-xl border border-accent-soft bg-accent-wash p-4 md:p-5">
+      <p className="text-xs font-semibold uppercase tracking-wide text-accent-deep">
+        What the trends mean
+      </p>
+      <p className="mt-2 text-sm md:text-base text-ink-secondary leading-relaxed">
+        {sentences.join(' ')}
+      </p>
+      <p className="mt-2 text-xs text-ink-muted">
+        Auto-generated from this district&apos;s own funding, enrollment, and
+        surplus/deficit data - a starting point for interpretation, not a formal
+        fiscal assessment.
       </p>
     </div>
   );
@@ -181,9 +387,6 @@ function DistrictDetail({
 }) {
   const data = yearData(year);
   const s = data.statewide;
-  const rank =
-    [...data.districts].sort((a, b) => b.perPupil - a.perPupil).findIndex((x) => x.code === d.code) + 1;
-  const vsAvg = d.perPupil - s.avgPerPupil;
 
   const demoPct = (n: number) => (100 * n) / d.enrollment;
   const statePct = (key: keyof District['demo']) =>
@@ -204,20 +407,25 @@ function DistrictDetail({
         {d.county} County · {d.esd}
       </p>
 
-      <div className="mt-6 grid grid-cols-2 lg:grid-cols-4 gap-3">
-        <StatTile label={`Students (${year})`} value={fmtInt(d.enrollment)} />
+      <div className="mt-6 grid grid-cols-1 sm:grid-cols-3 gap-3">
+        <StatTile
+          label={`Students (${year})`}
+          value={fmtInt(d.enrollment)}
+          note="October headcount"
+        />
         <StatTile label="Total funding" value={fmtMoney(d.rev.total)} note="general fund revenues" />
         <StatTile
           label="Per student"
           value={fmtMoneyFull(d.perPupil)}
-          note={`${vsAvg >= 0 ? '+' : '−'}${fmtMoneyFull(Math.abs(vsAvg)).slice(1)} vs state average`}
+          note={`Uses ${fmtInt(Math.round(d.fundingEnrollment))} funding FTE - not the ${fmtInt(d.enrollment)} headcount`}
         />
-        <StatTile label="Per-student rank" value={`#${rank}`} note={`of ${s.districts} districts`} />
       </div>
 
-      <div className="mt-6 grid lg:grid-cols-2 gap-4 items-start">
+      <FundBalanceCard district={d} year={year} />
+
+      <div className="mt-4 grid lg:grid-cols-2 gap-4 items-start">
         <div className="card p-5">
-          <h2 className="font-semibold mb-1">Funding per student since 2019–20</h2>
+          <h2 className="font-semibold mb-1">Funding per student since 2019-20</h2>
           <p className="text-xs text-ink-muted mb-3">Nominal dollars · hover for values</p>
           <TrendChart
             points={districtSeries(d.code, (x) => x.perPupil)}
@@ -226,7 +434,7 @@ function DistrictDetail({
           />
         </div>
         <div className="card p-5">
-          <h2 className="font-semibold mb-1">Enrollment since 2019–20</h2>
+          <h2 className="font-semibold mb-1">Enrollment since 2019-20</h2>
           <p className="text-xs text-ink-muted mb-3">October headcount · hover for values</p>
           <TrendChart
             points={districtSeries(d.code, (x) => x.enrollment)}
@@ -235,6 +443,8 @@ function DistrictDetail({
           />
         </div>
       </div>
+
+      <TrendAnalysis district={d} />
 
       <div className="mt-4 grid lg:grid-cols-2 gap-4 items-start">
         <div className="card p-5">
@@ -282,7 +492,14 @@ function DistrictDetail({
       </div>
 
       <p className="mt-4 text-xs text-ink-muted max-w-2xl">
-        Higher-need districts generally receive more per student — categorical
+        <strong>Why the numbers differ:</strong> per-student funding uses
+        annual-average funding FTE, which counts part-time participation such
+        as Running Start proportionally. The student total above is the normal
+        October headcount.
+      </p>
+
+      <p className="mt-3 text-xs text-ink-muted max-w-2xl">
+        Higher-need districts generally receive more per student - categorical
         programs (special education, LAP, bilingual education) and federal Title
         dollars follow need. Small rural districts also cost more per student to
         run. That&apos;s why per-student funding ranges from{' '}

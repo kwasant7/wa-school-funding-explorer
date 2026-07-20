@@ -8,6 +8,7 @@ const TABS = [
   { href: '/districts', label: 'District Explorer' },
   { href: '/simulator', label: 'Policy Simulator' },
   { href: '/take-action', label: 'Take Action' },
+  { href: '/sources', label: 'Sources' },
 ];
 
 export default function TabNav() {

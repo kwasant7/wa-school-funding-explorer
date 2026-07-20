@@ -2,14 +2,15 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { yearData } from '@/lib/data';
+import DistrictCombobox from '@/components/DistrictCombobox';
 import { fmtInt, fmtMoneyFull } from '@/lib/format';
 
 type MapFile = {
   w: number;
   h: number;
+  land?: string;
   districts: { code: string; name: string; d: string }[];
-  water?: { name: string; d: string }[];
-  rivers?: { name: string; d: string }[];
+  water?: { name?: string; d: string }[];
 };
 
 // Sequential blue ramp (light -> dark); districts are colored on a continuous
@@ -43,18 +44,6 @@ function rampColor(t: number) {
 
 let mapCache: MapFile | null = null;
 
-function pathBounds(d: string) {
-  const nums = d.match(/-?\d+(\.\d+)?/g)?.map(Number) ?? [];
-  let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
-  for (let i = 0; i + 1 < nums.length; i += 2) {
-    if (nums[i] < minX) minX = nums[i];
-    if (nums[i] > maxX) maxX = nums[i];
-    if (nums[i + 1] < minY) minY = nums[i + 1];
-    if (nums[i + 1] > maxY) maxY = nums[i + 1];
-  }
-  return { minX, maxX, minY, maxY };
-}
-
 export default function WaMap({
   year,
   onSelect,
@@ -64,9 +53,8 @@ export default function WaMap({
 }) {
   const [map, setMap] = useState<MapFile | null>(mapCache);
   const [view, setView] = useState<{ x: number; y: number; w: number; h: number } | null>(null);
-  const [query, setQuery] = useState('');
-  const [selected, setSelected] = useState<string | null>(null);
   const [hovered, setHovered] = useState<string | null>(null);
+  const [hoverPoint, setHoverPoint] = useState<{ x: number; y: number; below: boolean } | null>(null);
   const dragged = useRef(false);
   const svgRef = useRef<SVGSVGElement>(null);
   const pointers = useRef(new Map<number, { x: number; y: number }>());
@@ -87,7 +75,6 @@ export default function WaMap({
 
   const homeView = useMemo(() => {
     if (!map) return null;
-    // Rest state: whole state with a little breathing room
     const w = map.w * 1.08;
     const h = (w / map.w) * map.h;
     return { x: -(w - map.w) / 2, y: -(h - map.h) / 2, w, h };
@@ -103,7 +90,10 @@ export default function WaMap({
     const sorted = [...yd.districts].sort((a, b) => a.perPupil - b.perPupil);
     const rank = new Map(sorted.map((d, i) => [d.code, i / Math.max(1, sorted.length - 1)]));
     const fills = new Map<string, string>();
-    const info = new Map<string, { name: string; perPupil: number; enrollment: number }>();
+    const info = new Map<
+      string,
+      { name: string; county: string; perPupil: number; enrollment: number }
+    >();
     if (map) {
       for (const d of map.districts) {
         const data = byCode.get(d.code);
@@ -114,6 +104,7 @@ export default function WaMap({
         fills.set(d.code, rampColor(rank.get(d.code) ?? 0));
         info.set(d.code, {
           name: data.name,
+          county: data.county,
           perPupil: data.perPupil,
           enrollment: data.enrollment,
         });
@@ -122,30 +113,24 @@ export default function WaMap({
     return { fills, info };
   }, [map, year]);
 
-  const matches = useMemo(() => {
-    const q = query.trim().toLowerCase();
-    if (!map || q.length < 2 || selected) return [];
-    const yd = yearData(year);
-    // Name matches outrank county-only matches; earlier name hits rank higher
-    const score = (d: (typeof yd.districts)[number]) => {
-      const name = d.name.toLowerCase();
-      if (name.startsWith(q)) return 0;
-      if (name.includes(q)) return 1;
-      if (d.county.toLowerCase().includes(q)) return 2;
-      return 3;
-    };
-    return yd.districts
-      .filter((d) => score(d) < 3)
-      .sort((a, b) => score(a) - score(b) || a.name.localeCompare(b.name))
-      .slice(0, 7);
-  }, [map, query, year, selected]);
+  // Flat district list for the searchable picker
+  const comboDistricts = useMemo(
+    () =>
+      yearData(year).districts.map((d) => ({ code: d.code, name: d.name, county: d.county })),
+    [year]
+  );
 
   function clampView(v: { x: number; y: number; w: number; h: number }) {
     if (!map) return v;
     const w = Math.min(Math.max(v.w, map.w / 40), map.w * MAX_OUT);
     const h = (w / map.w) * map.h;
-    const x = Math.min(Math.max(v.x, -w * 0.35), map.w - w * 0.65);
-    const y = Math.min(Math.max(v.y, -h * 0.35), map.h - h * 0.65);
+    // When the view is wider/taller than the map, center the state instead of
+    // letting it drift into a corner. Otherwise clamp so you can't pan the
+    // map entirely off-screen.
+    const x =
+      w >= map.w ? (map.w - w) / 2 : Math.min(Math.max(v.x, -w * 0.35), map.w - w * 0.65);
+    const y =
+      h >= map.h ? (map.h - h) / 2 : Math.min(Math.max(v.y, -h * 0.35), map.h - h * 0.65);
     return { x, y, w, h };
   }
 
@@ -171,14 +156,13 @@ export default function WaMap({
   }
 
   // Native wheel listener so we can preventDefault ONLY for pinch/Ctrl+scroll.
-  // A normal two-finger scroll keeps scrolling the page.
   useEffect(() => {
     const svg = svgRef.current;
     if (!svg) return;
     const onWheel = (e: WheelEvent) => {
       if (!e.ctrlKey && !e.metaKey) return; // regular scroll -> page scrolls
       e.preventDefault();
-      zoomAt(e.clientX, e.clientY, Math.pow(1.003, -e.deltaY));
+      zoomAt(e.clientX, e.clientY, Math.pow(1.01, -e.deltaY)); // faster wheel zoom
     };
     svg.addEventListener('wheel', onWheel, { passive: false });
     return () => svg.removeEventListener('wheel', onWheel);
@@ -192,17 +176,16 @@ export default function WaMap({
     zoomAt(rect.left + rect.width / 2, rect.top + rect.height / 2, factor);
   }
 
-  function zoomToDistrict(code: string) {
-    if (!map) return;
-    const d = map.districts.find((x) => x.code === code);
-    if (!d) return;
-    const b = pathBounds(d.d);
-    const pad = Math.max(b.maxX - b.minX, b.maxY - b.minY) * 0.9 + 12;
-    const cx = (b.minX + b.maxX) / 2;
-    const cy = (b.minY + b.maxY) / 2;
-    const w = Math.min(map.w, (b.maxX - b.minX) + pad);
-    const h = (w / map.w) * map.h;
-    setView(clampView({ x: cx - w / 2, y: cy - (h / 2), w, h }));
+  function updateHoverPoint(clientX: number, clientY: number) {
+    const svg = svgRef.current;
+    if (!svg) return;
+    const rect = svg.getBoundingClientRect();
+    const horizontalPadding = Math.min(125, rect.width * 0.3);
+    setHoverPoint({
+      x: Math.min(Math.max(clientX - rect.left, horizontalPadding), rect.width - horizontalPadding),
+      y: clientY - rect.top,
+      below: clientY - rect.top < 90,
+    });
   }
 
   if (!map || !view) {
@@ -213,43 +196,14 @@ export default function WaMap({
     );
   }
 
-  const selectedInfo = selected ? info.get(selected) : null;
-  const selectedShape = selected ? map.districts.find((d) => d.code === selected) : null;
-
   return (
     <div className="relative select-none">
-      {/* Search on the map */}
-      <div className="relative max-w-md mb-3">
-        <input
-          type="search"
-          value={query}
-          onChange={(e) => {
-            setQuery(e.target.value);
-            setSelected(null);
-          }}
-          placeholder="Search a district to highlight it on the map…"
-          aria-label="Search for a district on the map"
-          className="w-full px-4 py-2.5 card rounded-lg text-base placeholder:text-ink-muted"
-        />
-        {matches.length > 0 && (
-          <ul className="absolute z-20 mt-1 w-full card shadow-lg overflow-hidden">
-            {matches.map((d) => (
-              <li key={d.code}>
-                <button
-                  onClick={() => {
-                    setSelected(d.code);
-                    setQuery(d.name);
-                    zoomToDistrict(d.code);
-                  }}
-                  className="w-full text-left px-4 py-2.5 text-sm hover:bg-accent-wash"
-                >
-                  <span className="font-medium">{d.name}</span>
-                  <span className="text-ink-muted"> · {d.county} County</span>
-                </button>
-              </li>
-            ))}
-          </ul>
-        )}
+      {/* Searchable picker: jump straight to a district's page */}
+      <div className="mb-3">
+        <DistrictCombobox districts={comboDistricts} onPick={onSelect} />
+        <span className="mt-1 block text-sm text-ink-muted">
+          …or click your district on the map.
+        </span>
       </div>
 
       <div className="relative">
@@ -257,15 +211,10 @@ export default function WaMap({
           ref={svgRef}
           viewBox={`${view.x} ${view.y} ${view.w} ${view.h}`}
           className="w-full rounded-lg"
-          style={{
-            touchAction: 'pan-y',
-            aspectRatio: `${map.w} / ${map.h}`,
-            backgroundColor: '#e2f3f8',
-          }}
+          style={{ touchAction: 'pan-y', aspectRatio: `${map.w} / ${map.h}`, backgroundColor: '#e2f3f8' }}
           role="img"
-          aria-label={`Map of Washington school districts, colored by funding per student in ${year}. Click a district or use the search box to select one.`}
+          aria-label={`Map of Washington school districts, colored by funding per student in ${year}. Click a district to open its profile.`}
           onPointerDown={(e) => {
-            // Capture on the original target so click still fires on the path
             (e.target as Element).setPointerCapture?.(e.pointerId);
             pointers.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
             dragged.current = false;
@@ -275,7 +224,6 @@ export default function WaMap({
             const prev = pts.get(e.pointerId);
             if (!prev) return;
             if (pts.size === 2) {
-              // two-finger pinch -> zoom
               const [a, b] = Array.from(pts.values());
               const before = Math.hypot(a.x - b.x, a.y - b.y);
               pts.set(e.pointerId, { x: e.clientX, y: e.clientY });
@@ -286,7 +234,6 @@ export default function WaMap({
                 zoomAt((a2.x + b2.x) / 2, (a2.y + b2.y) / 2, after / before);
               }
             } else if (pts.size === 1 && e.pointerType === 'mouse') {
-              // mouse drag -> pan (touch drag is left to the page for scrolling)
               const dx = e.clientX - prev.x;
               const dy = e.clientY - prev.y;
               if (Math.abs(dx) + Math.abs(dy) > 2) dragged.current = true;
@@ -305,87 +252,97 @@ export default function WaMap({
           }}
           onPointerUp={(e) => pointers.current.delete(e.pointerId)}
           onPointerCancel={(e) => pointers.current.delete(e.pointerId)}
-          onDoubleClick={(e) => zoomAt(e.clientX, e.clientY, 2)}
+          onDoubleClick={(e) => zoomAt(e.clientX, e.clientY, 2.5)}
         >
           <defs>
-            <clipPath id="wa-district-extent">
-              {map.districts.map((district) => (
-                <path key={`clip-${district.code}`} d={district.d} />
-              ))}
+            <clipPath id="wa-land-extent">
+              {map.land ? (
+                <path d={map.land} />
+              ) : (
+                map.districts.map((district) => (
+                  <path key={`clip-${district.code}`} d={district.d} />
+                ))
+              )}
             </clipPath>
           </defs>
-          {map.districts.map((d) => (
-            <path
-              key={d.code}
-              d={d.d}
-              fill={fills.get(d.code) ?? NO_DATA}
-              stroke={hovered === d.code ? '#0b0b0b' : '#fcfcfb'}
-              strokeWidth={hovered === d.code ? 1.2 : 0.7}
-              vectorEffect="non-scaling-stroke"
-              opacity={selected && selected !== d.code ? 0.55 : 1}
-              style={{ cursor: 'pointer' }}
-              onPointerEnter={() => setHovered(d.code)}
-              onPointerLeave={() => setHovered((h) => (h === d.code ? null : h))}
-              onClick={() => {
-                if (dragged.current) return;
-                setSelected(d.code);
-                setQuery(info.get(d.code)?.name ?? d.name);
-              }}
-            >
-              <title>{info.get(d.code)?.name ?? d.name}</title>
-            </path>
-          ))}
-          <g pointerEvents="none" aria-label="Major Washington waterbodies">
+          <g clipPath="url(#wa-land-extent)">
+            {map.districts.map((d) => (
+              <path
+                key={d.code}
+                d={d.d}
+                fill={fills.get(d.code) ?? NO_DATA}
+                stroke={hovered === d.code ? '#104281' : '#fcfcfb'}
+                strokeWidth={hovered === d.code ? 1.6 : 0.7}
+                vectorEffect="non-scaling-stroke"
+                style={{ cursor: 'pointer' }}
+                aria-label={
+                  info.has(d.code)
+                    ? `${info.get(d.code)!.name}, ${info.get(d.code)!.county} County`
+                    : d.name
+                }
+                onMouseEnter={(e) => {
+                  setHovered(d.code);
+                  updateHoverPoint(e.clientX, e.clientY);
+                }}
+                onMouseMove={(e) => {
+                  if (!dragged.current) updateHoverPoint(e.clientX, e.clientY);
+                }}
+                onMouseLeave={() => {
+                  setHovered((h) => (h === d.code ? null : h));
+                  setHoverPoint(null);
+                }}
+                onClick={() => {
+                  if (dragged.current) return;
+                  onSelect(d.code);
+                }}
+              />
+            ))}
+          </g>
+          <g pointerEvents="none" aria-hidden="true" clipPath="url(#wa-land-extent)">
             {(map.water ?? []).map((water, index) => (
-              <path
-                key={`${water.name}-${index}`}
-                d={water.d}
-                fill="#9fd4ef"
-                stroke="#7fc3e6"
-                strokeWidth={0.8}
-                vectorEffect="non-scaling-stroke"
-              >
-                <title>{water.name}</title>
-              </path>
+              <path key={index} d={water.d} fill="#9fd4ef" />
             ))}
           </g>
-          <g
-            pointerEvents="none"
-            aria-label="Major Washington rivers"
-            clipPath="url(#wa-district-extent)"
-          >
-            {(map.rivers ?? []).map((river, index) => (
-              <path
-                key={`${river.name}-${index}`}
-                d={river.d}
-                fill="none"
-                stroke="#79bee3"
-                strokeWidth={1.4}
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                vectorEffect="non-scaling-stroke"
-              >
-                <title>{river.name}</title>
-              </path>
-            ))}
-          </g>
-          {selectedShape && (
-            <path
-              d={selectedShape.d}
-              fill="none"
-              stroke="#0b0b0b"
-              strokeWidth={2}
-              vectorEffect="non-scaling-stroke"
-              pointerEvents="none"
-            />
-          )}
         </svg>
+
+        {/* hover tooltip */}
+        {hovered && hoverPoint && (
+          <div
+            className="pointer-events-none absolute z-10 w-max max-w-[min(16rem,80%)] card px-3 py-2 shadow-md"
+            style={{
+              left: hoverPoint.x,
+              top: hoverPoint.y,
+              transform: hoverPoint.below
+                ? 'translate(-50%, 12px)'
+                : 'translate(-50%, calc(-100% - 12px))',
+            }}
+          >
+            <p className="text-sm font-semibold">
+              {info.get(hovered)?.name ??
+                map.districts.find((district) => district.code === hovered)?.name}
+            </p>
+            {info.get(hovered) ? (
+              <>
+                <p className="mt-0.5 text-xs text-ink-muted">
+                  {info.get(hovered)!.county} County
+                </p>
+                <p className="mt-1 text-xs text-ink-secondary">
+                  {fmtMoneyFull(info.get(hovered)!.perPupil)} per funding FTE ·{' '}
+                  {fmtInt(info.get(hovered)!.enrollment)} students
+                </p>
+                <p className="mt-1 text-xs font-medium text-accent">Click to open →</p>
+              </>
+            ) : (
+              <p className="mt-1 text-xs text-ink-muted">No data for {year}</p>
+            )}
+          </div>
+        )}
 
         {/* zoom controls */}
         <div className="absolute top-2 right-2 flex flex-col gap-1">
           {[
-            ['+', () => zoomCenter(1.6), 'Zoom in'],
-            ['−', () => zoomCenter(1 / 1.6), 'Zoom out'],
+            ['+', () => zoomCenter(2), 'Zoom in'],
+            ['−', () => zoomCenter(0.5), 'Zoom out'],
             ['⟲', () => { if (homeView) setView(homeView); }, 'Reset view'],
           ].map(([label, fn, title]) => (
             <button
@@ -398,46 +355,6 @@ export default function WaMap({
             </button>
           ))}
         </div>
-
-        {/* selected district card */}
-        {selected && (
-          <div className="anim-rise absolute left-2 bottom-2 card px-4 py-3 shadow-md max-w-[85%]">
-            <div className="flex items-start justify-between gap-3">
-              <div>
-                <div className="font-semibold text-sm md:text-base">
-                  {selectedInfo?.name ?? selectedShape?.name}
-                </div>
-                {selectedInfo ? (
-                  <div className="text-xs md:text-sm text-ink-secondary mt-0.5">
-                    {fmtMoneyFull(selectedInfo.perPupil)} per student ·{' '}
-                    {fmtInt(selectedInfo.enrollment)} students
-                  </div>
-                ) : (
-                  <div className="text-xs text-ink-muted mt-0.5">No data for {year}</div>
-                )}
-                {selectedInfo && (
-                  <button
-                    onClick={() => onSelect(selected)}
-                    className="mt-1.5 text-sm font-medium text-accent hover:underline"
-                  >
-                    Open full profile →
-                  </button>
-                )}
-              </div>
-              <button
-                onClick={() => {
-                  setSelected(null);
-                  setQuery('');
-                  if (homeView) setView(homeView);
-                }}
-                aria-label="Clear selection"
-                className="text-ink-muted hover:text-ink text-lg leading-none"
-              >
-                ×
-              </button>
-            </div>
-          </div>
-        )}
       </div>
 
       {/* legend */}
@@ -456,15 +373,8 @@ export default function WaMap({
           <span className="inline-block w-3 h-3 rounded-sm" style={{ background: NO_DATA }} />
           no data
         </span>
-        <span className="flex items-center gap-1.5">
-          <span
-            className="inline-block w-3 h-3 rounded-sm border border-[#63abc4]"
-            style={{ background: '#bfe7f1' }}
-          />
-          water
-        </span>
         <span className="text-ink-muted">
-          click a district · pinch or Ctrl+scroll to zoom · drag to pan
+          click a district to open it · pinch or Ctrl+scroll to zoom · drag to pan
         </span>
       </div>
     </div>

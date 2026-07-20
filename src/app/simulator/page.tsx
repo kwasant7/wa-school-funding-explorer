@@ -4,7 +4,7 @@ import Simulator from '@/components/Simulator';
 export const metadata: Metadata = {
   title: 'Policy Simulator',
   description:
-    'Adjust the levers of Washington’s prototypical school funding model — class sizes, staffing, and per-student dollars — and see what your plan would cost.',
+    'Compare Washington school funding policy ideas for low-income students, English learners, special education, levy equalization, operating costs, and transportation.',
 };
 
 export default function SimulatorPage() {

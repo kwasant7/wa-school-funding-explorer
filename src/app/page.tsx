@@ -1,3 +1,6 @@
+'use client';
+
+import { useState } from 'react';
 import Link from 'next/link';
 import data from '@/data/districts.json';
 import StatTile from '@/components/StatTile';
@@ -6,42 +9,13 @@ import CountUp from '@/components/interactive/CountUp';
 import DistrictQuickFind from '@/components/interactive/DistrictQuickFind';
 import SchoolBuilder from '@/components/interactive/SchoolBuilder';
 import ClassSizeViz from '@/components/interactive/ClassSizeViz';
-import McClearyTimeline from '@/components/interactive/McClearyTimeline';
-import { fmtMoneyFull } from '@/lib/format';
-
-const STEPS = [
-  {
-    title: 'Count the students',
-    body: 'Each district reports how many full-time students it serves, by grade.',
-  },
-  {
-    title: 'Imagine prototypical schools',
-    body: 'The state pretends every district is built from identical model schools — 400-student elementaries, 432-student middles, 600-student highs.',
-  },
-  {
-    title: 'Generate staff positions',
-    body: 'Formulas turn those imaginary schools into funded jobs: teachers from class sizes, plus set fractions of principals, counselors, nurses, and custodians.',
-  },
-  {
-    title: 'Multiply by salaries',
-    body: 'Each funded job × a state-set salary (plus benefits). Expensive labor markets get a “regionalization” boost up to ~18%.',
-  },
-  {
-    title: 'Add money for stuff',
-    body: 'MSOC — about $1,600 per student for materials, utilities, insurance, and tech, with extra for high schoolers.',
-  },
-  {
-    title: 'Add extra-need dollars',
-    body: 'More money follows students who need more: special education, learning assistance, bilingual programs, highly capable services.',
-  },
-  {
-    title: 'Cap the local levies',
-    body: 'Voters can add local “enrichment” levies — but the state caps them, and they legally can’t pay for basic education.',
-  },
-];
+import FundingJourney from '@/components/interactive/FundingJourney';
 
 export default function HomePage() {
   const s = data.statewide;
+  const [selectedDistrict, setSelectedDistrict] = useState<
+    (typeof data.districts)[number] | null
+  >(null);
   return (
     <div className="max-w-site mx-auto px-4 md:px-6">
       {/* Hero */}
@@ -50,11 +24,10 @@ export default function HomePage() {
           How it works · play with everything on this page
         </p>
         <h1 className="mt-2 text-3xl md:text-5xl font-bold tracking-tight max-w-3xl">
-          Washington runs its schools on an{' '}
-          <span className="text-accent">imaginary school</span>.
+          How K-12 schools are funded
         </h1>
         <p className="mt-4 max-w-2xl text-lg text-ink-secondary">
-          The state doesn&apos;t fund the schools that exist — it funds a
+          The state doesn&apos;t fund the schools that exist - it funds a
           make-believe &ldquo;prototypical school&rdquo; and uses it as a recipe
           for real money. A lot of it:
         </p>
@@ -62,11 +35,12 @@ export default function HomePage() {
           <StatTile
             label="This year's funding"
             value={<CountUp value={s.revenues.total} kind="money" />}
-            note="entire Washington state general-fund total, 2024–25"
+            note="entire Washington state general-fund total, 2024-25"
           />
           <StatTile
             label="Students"
             value={<CountUp value={s.enrollment} kind="int" />}
+            note="October headcount"
           />
           <StatTile
             label="Districts & charters"
@@ -75,27 +49,30 @@ export default function HomePage() {
           <StatTile
             label="Average per student"
             value={<CountUp value={s.avgPerPupil} kind="moneyFull" />}
-            note={`range: ${fmtMoneyFull(s.minPerPupil)}–${fmtMoneyFull(s.maxPerPupil)}`}
+            note="Uses funding FTE - not the student headcount shown here"
           />
         </div>
       </section>
 
       {/* Personalize */}
       <section className="pb-8">
-        <DistrictQuickFind />
+        <DistrictQuickFind onPick={setSelectedDistrict} />
       </section>
 
+      {selectedDistrict ? (
+        <>
       {/* Money sources */}
       <section className="pb-8">
         <div className="card p-5 md:p-6">
-          <h2 className="text-lg md:text-xl font-bold">Follow the money</h2>
+          <h2 className="text-lg md:text-xl font-bold">
+            How {selectedDistrict.name}&apos;s funding is split
+          </h2>
           <p className="mt-1 text-sm text-ink-secondary">
-            For every dollar Washington&apos;s schools spend, about 78¢ comes
-            from the state — that wasn&apos;t always true, and a lawsuit is the
-            reason. Hover the bar.
+            Actual 2024-25 general-fund revenue by source. Hover the bar for
+            exact amounts and shares.
           </p>
           <div className="mt-4">
-            <SourceShareBar slices={s.revenues} />
+            <SourceShareBar slices={selectedDistrict.rev} />
           </div>
         </div>
       </section>
@@ -103,11 +80,11 @@ export default function HomePage() {
       {/* Model explainer -> builder */}
       <section className="py-6">
         <h2 className="text-2xl md:text-3xl font-bold max-w-2xl">
-          The formula decides who works at your school
+          How the formula funds {selectedDistrict.name}
         </h2>
         <p className="mt-2 max-w-2xl text-ink-secondary">
           Washington does not start with each school&apos;s actual payroll. Instead,
-          it uses one statewide recipe — the prototypical school model — to
+          it uses one statewide recipe - the prototypical school model - to
           estimate the staff and operating dollars a district should receive.
         </p>
         <div className="mt-5 grid gap-5">
@@ -116,7 +93,15 @@ export default function HomePage() {
             <div className="mt-4 grid md:grid-cols-3 gap-4 text-sm text-ink-secondary">
               <div>
                 <p className="font-semibold text-ink">1. Start with enrollment</p>
-                <p className="mt-1">The state counts students by grade span, then converts those counts into shares of model elementary, middle, and high schools.</p>
+                <p className="mt-1">
+                  The state counts students in{' '}
+                  <strong className="text-ink">FTE (full-time equivalent)</strong>{' '}
+                  - a measure of enrollment by how much school a student
+                  actually attends, not just how many bodies are counted. A
+                  student enrolled half-time counts as 0.5 FTE, not 1. The state
+                  uses this funding FTE by grade span, then converts it into
+                  shares of model elementary, middle, and high schools.
+                </p>
               </div>
               <div>
                 <p className="font-semibold text-ink">2. Generate a staffing allocation</p>
@@ -131,7 +116,7 @@ export default function HomePage() {
               These are funding allocations, not a required staffing plan. Districts can organize schools differently, but must cover anything beyond the formula with other available revenue.
             </p>
           </div>
-          <SchoolBuilder />
+          <SchoolBuilder district={selectedDistrict} />
           <ClassSizeViz />
         </div>
       </section>
@@ -139,98 +124,15 @@ export default function HomePage() {
       {/* Steps */}
       <section className="py-8">
         <h2 className="text-2xl md:text-3xl font-bold">
-          The whole machine in 7 steps
+          How money reaches {selectedDistrict.name}, in 7 steps
         </h2>
-        <ol className="mt-6 grid md:grid-cols-2 gap-3">
-          {STEPS.map((step, i) => (
-            <li key={step.title} className="card p-4 md:p-5 flex gap-3.5">
-              <span className="shrink-0 w-8 h-8 rounded-full bg-accent text-white font-bold flex items-center justify-center tabular-nums text-sm">
-                {i + 1}
-              </span>
-              <div>
-                <h3 className="font-semibold">{step.title}</h3>
-                <p className="mt-1 text-ink-secondary text-sm">{step.body}</p>
-              </div>
-            </li>
-          ))}
-          <li className="card p-4 md:p-5 flex gap-3.5 bg-accent-wash border-accent-soft">
-            <span className="shrink-0 w-8 h-8 rounded-full bg-accent-deep text-white font-bold flex items-center justify-center text-sm">
-              =
-            </span>
-            <div>
-              <h3 className="font-semibold">Your district&apos;s budget</h3>
-              <p className="mt-1 text-ink-secondary text-sm">
-                Sum it all up and you get the dollars in the{' '}
-                <Link href="/districts" className="text-accent font-medium hover:underline">
-                  District Explorer
-                </Link>
-                . Don&apos;t like the recipe? Rewrite it in the{' '}
-                <Link href="/simulator" className="text-accent font-medium hover:underline">
-                  Simulator
-                </Link>
-                .
-              </p>
-            </div>
-          </li>
-        </ol>
+        <p className="mt-2 max-w-2xl text-ink-secondary">
+          Follow the path from student enrollment to a real district budget -
+          each step shows what happens and why it matters.
+        </p>
+        <FundingJourney district={selectedDistrict} />
       </section>
 
-      {/* Constitution + McCleary */}
-      <section className="py-8">
-        <h2 className="text-2xl md:text-3xl font-bold max-w-2xl">
-          Why the state pays: a lawsuit and one sentence
-        </h2>
-        <div className="mt-5 card p-5 md:p-6 bg-accent-wash border-accent-soft">
-          <blockquote className="border-l-4 border-accent pl-4 text-lg md:text-xl">
-            &ldquo;It is the paramount duty of the state to make ample provision
-            for the education of all children residing within its
-            borders&hellip;&rdquo;
-          </blockquote>
-          <p className="mt-2 text-sm text-ink-secondary">
-            — Washington Constitution, Article IX, Section 1.{' '}
-            <strong className="text-ink">Paramount</strong> = before everything
-            else. No other state says it this bluntly.
-          </p>
-        </div>
-        <div className="mt-5">
-          <McClearyTimeline />
-        </div>
-      </section>
-
-      {/* What's unresolved */}
-      <section className="py-8">
-        <h2 className="text-2xl md:text-3xl font-bold">
-          Still unresolved (this is where you come in)
-        </h2>
-        <div className="mt-6 grid md:grid-cols-3 gap-4">
-          <div className="card p-5">
-            <h3 className="font-semibold">The funding-vs-reality gap</h3>
-            <p className="mt-2 text-sm text-ink-secondary">
-              Real schools employ far more people than the formula funds — the
-              difference comes from capped levies, cuts, or bigger classes.
-            </p>
-          </div>
-          <div className="card p-5">
-            <h3 className="font-semibold">Zip codes still matter</h3>
-            <p className="mt-2 text-sm text-ink-secondary">
-              Levies are capped and partially equalized, but a wealthy tax base
-              still raises more, more easily. Compare local shares in the{' '}
-              <Link href="/districts" className="text-accent hover:underline">
-                District Explorer
-              </Link>
-              .
-            </p>
-          </div>
-          <div className="card p-5">
-            <h3 className="font-semibold">Special education</h3>
-            <p className="mt-2 text-sm text-ink-secondary">
-              Districts spent more than the state provided for decades. 2025&apos;s
-              SB 5263 added ~$750M and removed the enrollment cap — advocacy did
-              that.
-            </p>
-          </div>
-        </div>
-      </section>
 
       {/* CTA */}
       <section className="py-8">
@@ -255,6 +157,18 @@ export default function HomePage() {
           </Link>
         </div>
       </section>
+        </>
+      ) : (
+        <section className="pb-10">
+          <div className="card p-5 md:p-6 text-center border-dashed">
+            <p className="font-semibold">Choose a school district above</p>
+            <p className="mt-1 text-sm text-ink-secondary">
+              Its funding sources and personalized prototypical-school model
+              will appear here after you select it.
+            </p>
+          </div>
+        </section>
+      )}
     </div>
   );
 }
