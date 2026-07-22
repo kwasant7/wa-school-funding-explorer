@@ -6,6 +6,9 @@ import data from '@/data/districts.json';
 import representation from '@/data/legislators.json';
 
 const SELECTED_DISTRICT_KEY = 'wa-selected-district';
+// Portraits live in public/legislators; prefix with the deploy base path so
+// they resolve under the GitHub Pages project subpath.
+const BASE_PATH = process.env.NEXT_PUBLIC_BASE_PATH ?? '';
 
 const EMAIL_TEMPLATE = `Subject: A constituent's perspective on K-12 school funding
 
@@ -358,26 +361,43 @@ export default function TakeAction() {
             </p>
             <div className="mt-3 grid md:grid-cols-3 gap-3">
               {legislators.map((legislator) => (
-                <article key={legislator.name} className="card p-4 bg-surface">
-                  <p className="text-xs uppercase tracking-wide text-ink-muted">
-                    {legislator.chamber}
-                  </p>
-                  <h3 className="mt-1 font-bold text-lg">{legislator.name}</h3>
-                  <p className="text-sm text-ink-secondary">
-                    {legislator.party} · District{' '}
-                    {match.legislativeDistrict}
-                  </p>
-                  <a
-                    href={legislator.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="mt-3 inline-block text-sm font-semibold text-accent hover:underline"
-                  >
-                    Contact and official profile ↗
-                  </a>
+                <article key={legislator.name} className="card p-4 bg-surface flex gap-3">
+                  {legislator.photo && (
+                    <img
+                      src={`${BASE_PATH}/legislators/${legislator.photo}`}
+                      alt={`Official portrait of ${legislator.chamber} ${legislator.name}`}
+                      width={240}
+                      height={320}
+                      loading="lazy"
+                      className="w-16 h-[5.33rem] shrink-0 rounded-md border border-line object-cover object-top bg-paper"
+                    />
+                  )}
+                  <div className="min-w-0">
+                    <p className="text-xs uppercase tracking-wide text-ink-muted">
+                      {legislator.chamber}
+                    </p>
+                    <h3 className="mt-0.5 font-bold text-lg leading-tight">
+                      {legislator.name}
+                    </h3>
+                    <p className="text-sm text-ink-secondary">
+                      {legislator.party} · District {match.legislativeDistrict}
+                    </p>
+                    <a
+                      href={legislator.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="mt-2 inline-block text-sm font-semibold text-accent hover:underline"
+                    >
+                      Contact ↗
+                    </a>
+                  </div>
                 </article>
               ))}
             </div>
+            <p className="mt-2 text-xs text-ink-muted">
+              Official member portraits: Washington State Legislature
+              (Legislative Support Services).
+            </p>
             <div className="mt-4 pt-4 border-t border-accent-soft text-sm text-ink-secondary">
               School and legislative boundaries do not line up exactly. These
               lawmakers represent the legislative district containing the
