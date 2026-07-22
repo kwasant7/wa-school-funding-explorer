@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import CopyBlock from '@/components/CopyBlock';
+import DistrictCombobox from '@/components/DistrictCombobox';
 import data from '@/data/districts.json';
 import representation from '@/data/legislators.json';
 
@@ -335,21 +336,19 @@ export default function TakeAction() {
               site, it will already be filled in.
             </p>
           </div>
-          <label className="text-sm font-medium text-ink-secondary">
-            School district
-            <select
-              value={selectedCode}
-              onChange={(event) => chooseDistrict(event.target.value)}
-              className="mt-1 block w-full md:w-80 card px-3 py-2 text-base text-ink"
-            >
-              <option value="">Choose a district</option>
-              {districts.map((district) => (
-                <option key={district.code} value={district.code}>
-                  {district.name}
-                </option>
-              ))}
-            </select>
-          </label>
+          <div className="w-full md:w-80">
+            <span className="text-sm font-medium text-ink-secondary">
+              School district
+            </span>
+            <div className="mt-1">
+              <DistrictCombobox
+                districts={districts}
+                onPick={chooseDistrict}
+                selectedName={selectedDistrict?.name}
+                placeholder="Choose or search for a district"
+              />
+            </div>
+          </div>
         </div>
 
         {selectedDistrict && match && legislators ? (

@@ -12,16 +12,27 @@ export type ComboDistrict = { code: string; name: string; county: string };
 export default function DistrictCombobox({
   districts,
   onPick,
+  selectedName,
   placeholder = 'Choose or search for a district',
 }: {
   districts: ComboDistrict[];
   onPick: (code: string) => void;
+  /** Name of the currently-selected district, shown in the field at rest
+   * (e.g. after loading a prior selection from storage). Omit for
+   * fire-and-forget pickers that navigate away on selection. */
+  selectedName?: string;
   placeholder?: string;
 }) {
-  const [query, setQuery] = useState('');
+  const [query, setQuery] = useState(selectedName ?? '');
   const [open, setOpen] = useState(false);
   const [activeIndex, setActiveIndex] = useState(0);
   const ref = useRef<HTMLDivElement>(null);
+
+  // Keep the field in sync when the selection changes from outside (e.g. a
+  // saved district loads after mount, or the parent clears the selection).
+  useEffect(() => {
+    setQuery(selectedName ?? '');
+  }, [selectedName]);
 
   const matches = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -93,6 +104,7 @@ export default function DistrictCombobox({
               setOpen(false);
             }
           }}
+          onBlur={() => setQuery(selectedName ?? '')}
           placeholder={placeholder}
           aria-label={placeholder}
           className="w-full px-4 py-2.5 pr-12 card rounded-lg text-base placeholder:text-ink-muted"
