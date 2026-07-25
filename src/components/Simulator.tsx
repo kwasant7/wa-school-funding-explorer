@@ -41,100 +41,199 @@ const LEVERS = [
   {
     id: 'lowIncomeWeight',
     group: 'Student needs',
-    label: 'Low-income / LAP weight',
-    description:
-      'Adds more Learning Assistance Program dollars for each low-income student.',
+    icon: 'lowIncome',
+    label: 'Low-income support (LAP)',
+    description: 'Extra help for students from low-income families.',
+    impactKey: 'lowIncome',
     baseline: 1,
     min: 1,
     max: 2,
     step: 0.05,
-    format: (value: number) => `${value.toFixed(2)}×`,
+    // Plain-language "what this actually does", instead of a bare multiplier
+    effect: (value: number) =>
+      `$${fmtInt(Math.round(BASELINE_LAP_PER_STUDENT * value))} per low-income student`,
+    unit: 'per student',
   },
   {
     id: 'povertyBonus',
     group: 'Student needs',
-    label: 'High-poverty concentration bonus',
+    icon: 'poverty',
+    label: 'High-poverty school bonus',
     description:
-      'Adds dollars for each low-income student in a district where at least 60% of students are low-income.',
+      'Extra money for schools where most students are low-income.',
+    impactKey: 'poverty',
     baseline: 0,
     min: 0,
     max: 3_000,
     step: 100,
-    format: (value: number) => `$${fmtInt(value)}`,
+    effect: (value: number) =>
+      value === 0
+        ? 'No bonus today'
+        : `+$${fmtInt(value)} per student in high-poverty districts`,
+    unit: 'per student',
   },
   {
     id: 'ellWeight',
     group: 'Student needs',
-    label: 'English learner (ELL) weight',
-    description:
-      'Adds more bilingual and language-learning support for each multilingual student.',
+    icon: 'ell',
+    label: 'English learner support',
+    description: 'Language help for students learning English.',
+    impactKey: 'ell',
     baseline: 1,
     min: 1,
     max: 2,
     step: 0.05,
-    format: (value: number) => `${value.toFixed(2)}×`,
+    effect: (value: number) =>
+      `$${fmtInt(Math.round(BASELINE_ELL_PER_STUDENT * value))} per English learner`,
+    unit: 'per student',
   },
   {
     id: 'spedMultiplier',
     group: 'Student needs',
-    label: 'Special education multiplier',
-    description:
-      'Raises the excess-cost multiplier used to fund services beyond basic education.',
+    icon: 'sped',
+    label: 'Special education',
+    description: 'Services for students with disabilities.',
+    impactKey: 'sped',
     baseline: 1.12,
     min: 1.12,
     max: 1.5,
     step: 0.01,
-    format: (value: number) => `${value.toFixed(2)}×`,
+    effect: (value: number) =>
+      value === 1.12
+        ? 'Current level'
+        : `+$${fmtInt(Math.round(BASELINE_SPED_ALLOCATION * (value - 1.12)))} per student with disabilities`,
+    unit: 'per student',
   },
   {
     id: 'leaStrength',
     group: 'District equity',
-    label: 'Local Effort Assistance (LEA)',
+    icon: 'lea',
+    label: 'Help for property-poor districts',
     description:
-      'Increases state levy-equalization aid for districts with lower property wealth.',
+      'State aid so districts with less local property wealth are not left behind.',
+    impactKey: 'lea',
     baseline: 100,
     min: 100,
     max: 200,
     step: 5,
-    format: (value: number) => `${fmtInt(value)}%`,
+    effect: (value: number) =>
+      `${fmtMoney(BASELINE_LEA * (value / 100))} statewide`,
+    unit: 'statewide',
   },
   {
     id: 'levyCap',
     group: 'District equity',
-    label: 'Local enrichment levy cap',
+    icon: 'levy',
+    label: 'Local levy limit',
     description:
-      'Lets voters authorize more local funding. This changes local capacity, not state spending.',
+      'How much districts may raise locally if voters approve. Local money, not state money.',
+    impactKey: null,
     baseline: 100,
     min: 100,
     max: 175,
     step: 5,
-    format: (value: number) => `${fmtInt(value)}%`,
+    effect: (value: number) =>
+      value === 100
+        ? "Today's limit"
+        : `${fmtInt(value - 100)}% more local authority`,
+    unit: 'local only',
   },
   {
     id: 'msoc',
     group: 'School operations',
-    label: 'MSOC dollars per funding FTE',
-    description:
-      'Funds materials, supplies, utilities, technology, insurance, and other operating costs.',
+    icon: 'msoc',
+    label: 'Supplies & operating costs',
+    description: 'Curriculum, technology, utilities, and insurance.',
+    impactKey: 'msoc',
     baseline: 1_614,
     min: 1_614,
     max: 3_000,
     step: 50,
-    format: (value: number) => `$${fmtInt(value)}`,
+    effect: (value: number) => `$${fmtInt(value)} per student`,
+    unit: 'per student',
   },
   {
     id: 'transportation',
     group: 'School operations',
-    label: 'Student transportation funding',
-    description:
-      'Raises the statewide amount available for buses, drivers, fuel, and required routes.',
+    icon: 'transportation',
+    label: 'Student transportation',
+    description: 'Buses, drivers, fuel, and required routes.',
+    impactKey: 'transportation',
     baseline: 100,
     min: 100,
     max: 140,
     step: 5,
-    format: (value: number) => `${fmtInt(value)}%`,
+    effect: (value: number) =>
+      `${fmtMoney(BASELINE_TRANSPORTATION * (value / 100))} statewide`,
+    unit: 'statewide',
   },
 ] as const;
+
+/** Small pictograms so each lever reads at a glance. */
+function LeverIcon({ name }: { name: string }) {
+  const p = {
+    viewBox: '0 0 24 24',
+    className: 'h-5 w-5',
+    fill: 'none',
+    stroke: 'currentColor',
+    strokeWidth: 1.8,
+    strokeLinecap: 'round' as const,
+    strokeLinejoin: 'round' as const,
+    'aria-hidden': true,
+  };
+  if (name === 'lowIncome')
+    return (
+      <svg {...p}>
+        <circle cx="12" cy="12" r="9" />
+        <path d="M15 8.5c-.7-.6-1.6-.9-2.7-.9-1.6 0-2.8.8-2.8 2s1 1.8 3 2.3 3 1.2 3 2.4-1.3 2.1-3.1 2.1c-1.2 0-2.3-.4-3.1-1.1M12 5.5v13" />
+      </svg>
+    );
+  if (name === 'poverty')
+    return (
+      <svg {...p}>
+        <path d="m3 10 9-6 9 6M5 9v10h14V9M9 19v-5h6v5" />
+      </svg>
+    );
+  if (name === 'ell')
+    return (
+      <svg {...p}>
+        <circle cx="12" cy="12" r="9" />
+        <path d="M3 12h18M12 3a15 15 0 0 1 0 18a15 15 0 0 1 0-18z" />
+      </svg>
+    );
+  if (name === 'sped')
+    return (
+      <svg {...p}>
+        <path d="M12 20s-7-4.3-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.7-7 10-7 10z" />
+      </svg>
+    );
+  if (name === 'lea')
+    return (
+      <svg {...p}>
+        <path d="M4 20h16M6 20V10M12 20V6M18 20v-7" />
+      </svg>
+    );
+  if (name === 'levy')
+    return (
+      <svg {...p}>
+        <path d="M4 20h16M7 17h10M9 17V9h6v8M6 9h12L12 4z" />
+      </svg>
+    );
+  if (name === 'msoc')
+    return (
+      <svg {...p}>
+        <path d="M4 6.5A2.5 2.5 0 0 1 6.5 4H20v14H6.5A2.5 2.5 0 0 0 4 20.5z" />
+        <path d="M4 6.5v14M8 8h8M8 12h6" />
+      </svg>
+    );
+  return (
+    <svg {...p}>
+      <path d="M4 16V7a2 2 0 0 1 2-2h9v11M15 8h3.5L21 11v5h-2M4 16h2M11 16h6" />
+      <circle cx="8" cy="17" r="1.6" />
+      <circle cx="18" cy="17" r="1.6" />
+    </svg>
+  );
+}
 
 type LeverId = (typeof LEVERS)[number]['id'];
 type Values = Record<LeverId, number>;
@@ -199,89 +298,84 @@ export default function Simulator() {
         Build a school funding policy
       </h1>
       <p className="mt-3 max-w-3xl text-ink-secondary">
-        Instead of changing individual class sizes, choose which needs
-        Washington should fund more strongly. Each lever represents a policy
-        lawmakers could change in the state formula.
+        Choose which student needs Washington should fund more strongly. Each
+        slider is a policy lawmakers could actually change.
       </p>
 
-      <div className="mt-4 card p-4 bg-accent-wash border-accent-soft text-sm text-ink-secondary max-w-3xl">
-        <strong className="text-ink">Educational estimate.</strong> The
-        simulator applies simplified statewide weights to real 2024-25
-        enrollment. It is useful for comparing policy ideas, but it is not an
-        official fiscal note. LEA and transportation use rounded current-program
-        estimates, and levy capacity assumes districts could use the full
-        increase.
-      </div>
-
       <section className="mt-8 card p-5 md:p-6">
-        <h2 className="text-xl font-bold">How this simulator works</h2>
-        <p className="mt-2 max-w-3xl text-ink-secondary">
-          Washington does not send every student the same amount. The state
-          starts with basic funding, then uses separate formulas for student
-          needs and district costs. This simulator lets you make those extra
-          formulas stronger. It estimates the additional statewide cost of your
-          choices compared with current law.
+        <h2 className="text-xl font-bold">How this works</h2>
+        <p className="mt-2 text-ink-secondary">
+          Washington sends extra money for students with extra needs. Turn those
+          up and see what it would cost.
         </p>
 
-        <ol className="mt-5 grid md:grid-cols-3 gap-5">
-          <li>
-            <span className="w-8 h-8 rounded-full bg-accent text-white font-bold flex items-center justify-center">
-              1
-            </span>
-            <h3 className="mt-2 font-bold">Start at current law</h3>
-            <p className="mt-1 text-sm text-ink-secondary">
-              Every lever begins at its current modeled level. A result of
-              &ldquo;no change&rdquo; means your plan matches the baseline.
-            </p>
-          </li>
-          <li>
-            <span className="w-8 h-8 rounded-full bg-accent text-white font-bold flex items-center justify-center">
-              2
-            </span>
-            <h3 className="mt-2 font-bold">Strengthen a policy</h3>
-            <p className="mt-1 text-sm text-ink-secondary">
-              Move one or more levers. The simulator multiplies that policy by
-              the statewide students or funding FTEs affected by it.
-            </p>
-          </li>
-          <li>
-            <span className="w-8 h-8 rounded-full bg-accent text-white font-bold flex items-center justify-center">
-              3
-            </span>
-            <h3 className="mt-2 font-bold">Read the added cost</h3>
-            <p className="mt-1 text-sm text-ink-secondary">
-              The results show added state spending per year, per student, and
-              by policy. Local levy capacity is shown separately.
-            </p>
-          </li>
+        <ol className="mt-5 grid gap-4 sm:grid-cols-3">
+          {[
+            {
+              title: 'Start at today',
+              body: 'Every slider begins at current law.',
+              icon: (
+                <>
+                  <circle cx="12" cy="12" r="9" />
+                  <path d="M12 7v5l3 2" />
+                </>
+              ),
+            },
+            {
+              title: 'Move a slider',
+              body: 'Each one shows what students would get.',
+              icon: (
+                <>
+                  <path d="M4 8h16M4 16h16" />
+                  <circle cx="9" cy="8" r="2.5" />
+                  <circle cx="15" cy="16" r="2.5" />
+                </>
+              ),
+            },
+            {
+              title: 'See the cost',
+              body: 'The total updates as you go.',
+              icon: (
+                <>
+                  <circle cx="12" cy="12" r="9" />
+                  <path d="M15 8.5c-.7-.6-1.6-.9-2.7-.9-1.6 0-2.8.8-2.8 2s1 1.8 3 2.3 3 1.2 3 2.4-1.3 2.1-3.1 2.1c-1.2 0-2.3-.4-3.1-1.1M12 5.5v13" />
+                </>
+              ),
+            },
+          ].map((step) => (
+            <li key={step.title} className="flex items-start gap-3">
+              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-accent text-white">
+                <svg
+                  viewBox="0 0 24 24"
+                  className="h-5 w-5"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth={1.8}
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  aria-hidden
+                >
+                  {step.icon}
+                </svg>
+              </span>
+              <div>
+                <h3 className="font-bold">{step.title}</h3>
+                <p className="mt-0.5 text-sm text-ink-secondary">{step.body}</p>
+              </div>
+            </li>
+          ))}
         </ol>
-
-        <div className="mt-5 pt-5 border-t border-line grid md:grid-cols-2 gap-5">
-          <div>
-            <h3 className="font-bold">What does a weight mean?</h3>
-            <p className="mt-1 text-sm text-ink-secondary">
-              A weight scales one program, not the entire school budget. For
-              example, changing the low-income/LAP weight from 1.00× to 1.50×
-              means the simulator adds 50% to its modeled LAP amount for every
-              low-income student.
-            </p>
-          </div>
-          <div>
-            <h3 className="font-bold">Why is the levy result separate?</h3>
-            <p className="mt-1 text-sm text-ink-secondary">
-              State programs are paid through the state budget. An enrichment
-              levy is local property-tax authority that voters may approve, so
-              increasing its cap creates possible local capacity rather than a
-              guaranteed state expense.
-            </p>
-          </div>
-        </div>
 
         <details className="mt-5 pt-4 border-t border-line">
           <summary className="font-semibold text-accent cursor-pointer">
-            See the calculation assumptions
+            Estimate details and assumptions
           </summary>
-          <ul className="mt-3 space-y-2 text-sm text-ink-secondary list-disc pl-5 max-w-3xl">
+          <ul className="mt-3 space-y-2 text-sm text-ink-secondary list-disc pl-5">
+            <li>
+              This is an educational estimate for comparing ideas, not an
+              official fiscal note. It applies simplified statewide averages to
+              real 2024-25 enrollment.
+            </li>
             <li>
               Low-income, English learner, and special education counts come
               from statewide district enrollment data.
@@ -291,17 +385,21 @@ export default function Simulator() {
               where at least 60% of students are identified as low-income.
             </li>
             <li>
-              MSOC uses annual-average funding FTE rather than October student
-              headcount.
+              Supplies and operating costs (MSOC) use annual-average funding FTE
+              rather than October student headcount.
             </li>
             <li>
-              LEA and transportation use rounded statewide program estimates
-              because this is not the Legislature&apos;s full fiscal-note
-              model.
+              Property-poor district aid and transportation use rounded
+              statewide program estimates.
             </li>
             <li>
-              The maximum shown on a lever is a comparison ceiling, not a
-              recommendation or a predicted policy outcome.
+              The local levy limit is shown separately because it is local
+              property-tax authority voters may approve, not state spending, and
+              it assumes districts use the full increase.
+            </li>
+            <li>
+              The far end of each slider is a comparison ceiling, not a
+              recommendation or a prediction.
             </li>
           </ul>
         </details>
@@ -319,29 +417,54 @@ export default function Simulator() {
                   (lever) => {
                     const value = values[lever.id];
                     const changed = value !== lever.baseline;
+                    const leverCost = lever.impactKey
+                      ? result.impacts[lever.impactKey]
+                      : lever.id === 'levyCap'
+                        ? result.localCapacity
+                        : 0;
 
                     return (
                       <div key={lever.id}>
-                        <div className="flex items-baseline justify-between gap-3 flex-wrap">
-                          <label
-                            htmlFor={lever.id}
-                            className="text-sm md:text-base font-medium"
-                          >
-                            {lever.label}
-                          </label>
+                        <div className="flex items-start gap-3">
                           <span
-                            className={`text-sm font-semibold tabular-nums px-2 py-0.5 rounded ${
+                            className={`mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full ${
                               changed
                                 ? 'bg-accent text-white'
-                                : 'text-ink-secondary'
+                                : 'bg-accent-wash text-accent-deep'
                             }`}
                           >
-                            {lever.format(value)}
+                            <LeverIcon name={lever.icon} />
                           </span>
+                          <div className="min-w-0 flex-1">
+                            <label
+                              htmlFor={lever.id}
+                              className="block text-sm md:text-base font-semibold"
+                            >
+                              {lever.label}
+                            </label>
+                            <p className="mt-0.5 text-sm text-ink-secondary">
+                              {lever.description}
+                            </p>
+                          </div>
                         </div>
-                        <p className="mt-1 text-sm text-ink-secondary">
-                          {lever.description}
-                        </p>
+
+                        {/* What the current setting actually means, in plain words */}
+                        <div className="mt-3 flex items-baseline justify-between gap-3 flex-wrap">
+                          <span
+                            className={`text-base font-bold ${
+                              changed ? 'text-accent-deep' : 'text-ink'
+                            }`}
+                          >
+                            {lever.effect(value)}
+                          </span>
+                          {changed && leverCost !== 0 && (
+                            <span className="text-sm font-semibold tabular-nums text-accent-deep">
+                              {fmtSignedMoney(leverCost)}/yr
+                              {lever.id === 'levyCap' && ' local'}
+                            </span>
+                          )}
+                        </div>
+
                         <input
                           id={lever.id}
                           type="range"
@@ -358,15 +481,15 @@ export default function Simulator() {
                               [lever.id]: nextValue,
                             }));
                           }}
-                          className="mt-3 w-full"
+                          className="mt-2 w-full"
                           style={{ accentColor: '#256abf' }}
-                          aria-describedby={`${lever.id}-baseline`}
+                          aria-describedby={`${lever.id}-scale`}
                         />
                         <div
-                          id={`${lever.id}-baseline`}
+                          id={`${lever.id}-scale`}
                           className="flex justify-between text-xs text-ink-muted"
                         >
-                          <span>Current: {lever.format(lever.baseline)}</span>
+                          <span>Today</span>
                           {changed ? (
                             <button
                               type="button"
@@ -378,12 +501,10 @@ export default function Simulator() {
                               }
                               className="text-accent hover:underline"
                             >
-                              Reset this idea
+                              Undo
                             </button>
-                          ) : (
-                            <span>Try increasing it</span>
-                          )}
-                          <span>Max: {lever.format(lever.max)}</span>
+                          ) : null}
+                          <span>Most generous</span>
                         </div>
                       </div>
                     );
