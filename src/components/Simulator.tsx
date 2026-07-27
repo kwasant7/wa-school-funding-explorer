@@ -890,6 +890,30 @@ export default function Simulator() {
     if (next) window.localStorage.setItem(SELECTED_DISTRICT_KEY, next);
   };
 
+  /**
+   * This district's own totals. Kept separate from the statewide figures
+   * because a lever can cost the state billions and still send this district
+   * nothing - a property-rich district gets no LEA, for instance.
+   */
+  const districtTotals = useMemo(() => {
+    let state = 0;
+    let local = 0;
+    const zeroLevers: string[] = [];
+    if (!district) return { state, local, zeroLevers };
+    for (const lever of LEVERS) {
+      if (values[lever.id] === lever.baseline) continue;
+      const impact = leverImpactFor(lever.id, values, district);
+      const amount = impact?.newMoney ?? 0;
+      if (impact?.local) local += amount;
+      else state += amount;
+      // Flag levers the user moved that do nothing here, so the difference
+      // between the statewide and district totals is explained rather than
+      // looking like a bug.
+      if (Math.round(amount) === 0) zeroLevers.push(lever.label);
+    }
+    return { state, local, zeroLevers };
+  }, [district, values]);
+
   return (
     <div className="max-w-site mx-auto px-4 md:px-6 pt-10">
       <h1 className="text-3xl md:text-4xl font-bold tracking-tight">
@@ -1077,9 +1101,61 @@ export default function Simulator() {
         </div>
 
         <aside className="lg:sticky lg:top-6 space-y-4">
+          {/* District total first: on a district-first page, the statewide
+              number alone reads as if it were this district's. */}
+          {district && (
+            <div className="card p-5 border-l-4 border-l-accent">
+              <h2 className="text-sm text-ink-secondary">
+                For{' '}
+                <strong className="text-ink">
+                  {district.record.name.replace(/ School District.*$/, '')}
+                </strong>
+              </h2>
+              <p
+                className={`mt-1 text-4xl font-bold tracking-tight ${
+                  districtTotals.state > 0 ? 'text-accent-deep' : 'text-ink'
+                }`}
+              >
+                {fmtSignedMoney(districtTotals.state)}
+                {Math.round(districtTotals.state) !== 0 && (
+                  <span className="text-base font-normal text-ink-secondary">
+                    {' '}
+                    / year
+                  </span>
+                )}
+              </p>
+              <p className="mt-1 text-sm text-ink-secondary">
+                {districtTotals.state === 0
+                  ? 'No state money from your plan reaches this district yet.'
+                  : `${((100 * districtTotals.state) / district.record.rev.total).toFixed(2)}% on top of its ${fmtMoney(district.record.rev.total)} budget.`}
+              </p>
+              {districtTotals.local > 0 && (
+                <p className="mt-2 text-sm text-ink-secondary">
+                  Plus{' '}
+                  <strong className="text-ink">
+                    {fmtSignedMoney(districtTotals.local)}
+                  </strong>{' '}
+                  of local levy room, if voters approve it.
+                </p>
+              )}
+              {districtTotals.zeroLevers.length > 0 && (
+                <p className="mt-3 pt-3 border-t border-line text-xs text-ink-muted">
+                  Nothing from{' '}
+                  {districtTotals.zeroLevers.map((l, i) => (
+                    <span key={l}>
+                      {i > 0 && (i === districtTotals.zeroLevers.length - 1 ? ' or ' : ', ')}
+                      <strong className="text-ink-secondary">{l}</strong>
+                    </span>
+                  ))}
+                  : this district does not qualify.
+                </p>
+              )}
+            </div>
+          )}
+
           <div className="card p-5">
             <h2 className="text-sm text-ink-secondary">
-              Added state funding in your plan
+              {district ? 'Statewide, all districts' : 'Added state funding in your plan'}
             </h2>
             <p className="mt-1 text-4xl font-bold tracking-tight text-accent-deep">
               {fmtSignedMoney(result.stateTotal)}
@@ -1093,7 +1169,7 @@ export default function Simulator() {
             <p className="mt-1 text-sm text-ink-secondary">
               {result.stateTotal === 0
                 ? 'Increase a policy weight to build your plan.'
-                : `About ${fmtSignedMoney(statePerStudent)} per student, or ${statePercent.toFixed(1)}% more than the current state share.`}
+                : `${fmtSignedMoney(statePerStudent)} per student averaged across all ${fmtInt(data.statewide.districts)} districts, or ${statePercent.toFixed(1)}% more than the current state share.`}
             </p>
 
             <dl className="mt-4 grid grid-cols-2 gap-3 text-sm border-t border-line pt-4">
