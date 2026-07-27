@@ -1,9 +1,63 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import data from '@/data/districts.json';
-import { fmtInt, fmtMoney, fmtSignedMoney } from '@/lib/format';
+import levyData from '@/data/levy.json';
+import DistrictCombobox from '@/components/DistrictCombobox';
+import { fmtInt, fmtMoney, fmtMoneyFull, fmtSignedMoney } from '@/lib/format';
+
+const SELECTED_DISTRICT_KEY = 'wa-selected-district';
+
+const LEA = levyData.assumptions;
+type LevyDistrict = (typeof levyData.districts)[keyof typeof levyData.districts];
+const LEVY_DISTRICTS = levyData.districts as Record<string, LevyDistrict>;
+
+/**
+ * Washington's Local Effort Assistance formula, exactly as OSPI computes it
+ * (LevyCalc rows Q, R, V, X):
+ *   capacity/pupil = AV x $1.50 / 1,000 / enrollment
+ *   max LEA/pupil  = threshold - capacity/pupil
+ *   payable LEA    = max LEA/pupil x enrollment x min(levy rate / $1.50, 1)
+ */
+function leaFor(district: LevyDistrict, threshold: number) {
+  const capacityPerPupil = (district.av * LEA.leaMaxRate) / 1000 / district.enrollment;
+  const maxPerPupil = Math.max(0, threshold - capacityPerPupil);
+  const maxLea = maxPerPupil * district.enrollment;
+  const effort = Math.min(district.levyRate / LEA.leaMaxRate, 1);
+  return {
+    capacityPerPupil,
+    maxPerPupil,
+    maxLea,
+    effort,
+    payable: maxLea * effort,
+  };
+}
+
+/** Statewide LEA cost at a given threshold, summed from real district data. */
+function statewideLea(threshold: number) {
+  let total = 0;
+  for (const d of Object.values(LEVY_DISTRICTS)) total += leaFor(d, threshold).payable;
+  return total;
+}
+
+/** A district's maximum enrichment levy authority: lesser of rate and per-pupil cap. */
+function levyAuthority(district: LevyDistrict, rate: number, perPupil: number) {
+  return Math.min((rate * district.av) / 1000, perPupil * district.enrollment);
+}
+
+function statewideLevyAuthority(rate: number, perPupil: number) {
+  let total = 0;
+  for (const d of Object.values(LEVY_DISTRICTS))
+    total += levyAuthority(d, rate, perPupil);
+  return total;
+}
+
+const BASELINE_LEA_TOTAL = statewideLea(LEA.leaThresholdPerPupil);
+const BASELINE_LEVY_AUTHORITY = statewideLevyAuthority(
+  LEA.maxLevyRate,
+  LEA.maxLevyPerPupil
+);
 
 const STUDENTS = data.statewide.enrollment;
 const FUNDING_FTE = data.statewide.fundingEnrollment;
@@ -34,10 +88,43 @@ const HIGH_POVERTY_LOW_INCOME_STUDENTS = data.districts.reduce(
 const BASELINE_LAP_PER_STUDENT = 1_500;
 const BASELINE_ELL_PER_STUDENT = 1_800;
 const BASELINE_SPED_ALLOCATION = 12_000;
-const BASELINE_LEA = 700_000_000;
 const BASELINE_TRANSPORTATION = 1_200_000_000;
 
 const LEVERS = [
+  {
+    id: 'levyCap',
+    group: 'Local levies and state match',
+    icon: 'levy',
+    label: 'Local levy limit',
+    description:
+      'The most a district may collect locally if voters approve. Local money, not state money.',
+    impactKey: null,
+    baseline: LEA.maxLevyRate,
+    min: LEA.maxLevyRate,
+    max: 4,
+    step: 0.1,
+    effect: (value: number) =>
+      value === LEA.maxLevyRate
+        ? `$${value.toFixed(2)} per $1,000 of property value (today's limit)`
+        : `$${value.toFixed(2)} per $1,000 of property value`,
+    unit: 'local only',
+  },
+  {
+    id: 'leaThreshold',
+    group: 'Local levies and state match',
+    icon: 'lea',
+    label: 'State match for property-poor districts (LEA)',
+    description:
+      'The per-student level the state guarantees. Districts whose $1.50 levy raises less get the difference.',
+    impactKey: 'lea',
+    baseline: LEA.leaThresholdPerPupil,
+    min: LEA.leaThresholdPerPupil,
+    max: 4_000,
+    step: 25,
+    effect: (value: number) =>
+      `$${fmtInt(Math.round(value))} guaranteed per student`,
+    unit: 'per student',
+  },
   {
     id: 'lowIncomeWeight',
     group: 'Student needs',
@@ -103,40 +190,6 @@ const LEVERS = [
         ? 'Current level'
         : `+$${fmtInt(Math.round(BASELINE_SPED_ALLOCATION * (value - 1.12)))} per student with disabilities`,
     unit: 'per student',
-  },
-  {
-    id: 'leaStrength',
-    group: 'District equity',
-    icon: 'lea',
-    label: 'Help for property-poor districts',
-    description:
-      'State aid so districts with less local property wealth are not left behind.',
-    impactKey: 'lea',
-    baseline: 100,
-    min: 100,
-    max: 200,
-    step: 5,
-    effect: (value: number) =>
-      `${fmtMoney(BASELINE_LEA * (value / 100))} statewide`,
-    unit: 'statewide',
-  },
-  {
-    id: 'levyCap',
-    group: 'District equity',
-    icon: 'levy',
-    label: 'Local levy limit',
-    description:
-      'How much districts may raise locally if voters approve. Local money, not state money.',
-    impactKey: null,
-    baseline: 100,
-    min: 100,
-    max: 175,
-    step: 5,
-    effect: (value: number) =>
-      value === 100
-        ? "Today's limit"
-        : `${fmtInt(value - 100)}% more local authority`,
-    unit: 'local only',
   },
   {
     id: 'msoc',
@@ -267,7 +320,9 @@ function policyImpact(values: Values) {
       SPED_STUDENTS *
       BASELINE_SPED_ALLOCATION *
       (values.spedMultiplier - 1.12),
-    lea: BASELINE_LEA * (values.leaStrength / 100 - 1),
+    // Summed district by district through the real LEA formula, not a
+    // flat statewide percentage.
+    lea: statewideLea(values.leaThreshold) - BASELINE_LEA_TOTAL,
     msoc: FUNDING_FTE * (values.msoc - 1_614),
     transportation:
       BASELINE_TRANSPORTATION * (values.transportation / 100 - 1),
@@ -277,9 +332,256 @@ function policyImpact(values: Values) {
     (sum, impact) => sum + impact,
     0
   );
-  const localCapacity = LOCAL_REVENUE * (values.levyCap / 100 - 1);
+  const localCapacity =
+    statewideLevyAuthority(values.levyCap, LEA.maxLevyPerPupil) -
+    BASELINE_LEVY_AUTHORITY;
 
   return { impacts, stateTotal, localCapacity };
+}
+
+/**
+ * Walks one district through the real LEA formula with the user's threshold,
+ * so the abstract slider lands on a concrete school district.
+ */
+function LeaBreakdown({
+  threshold,
+  levyRate,
+}: {
+  threshold: number;
+  levyRate: number;
+}) {
+  const [code, setCode] = useState('');
+
+  useEffect(() => {
+    const saved = window.localStorage.getItem(SELECTED_DISTRICT_KEY);
+    if (saved && LEVY_DISTRICTS[saved]) setCode(saved);
+  }, []);
+
+  const districts = useMemo(
+    () =>
+      data.districts
+        .filter((d) => LEVY_DISTRICTS[d.code])
+        .map((d) => ({ code: d.code, name: d.name, county: d.county }))
+        .sort((a, b) => a.name.localeCompare(b.name)),
+    []
+  );
+  const picked = code ? LEVY_DISTRICTS[code] : null;
+  const name = districts.find((d) => d.code === code)?.name;
+
+  const choose = (next: string) => {
+    setCode(next);
+    if (next) window.localStorage.setItem(SELECTED_DISTRICT_KEY, next);
+  };
+
+  const now = picked ? leaFor(picked, LEA.leaThresholdPerPupil) : null;
+  const plan = picked ? leaFor(picked, threshold) : null;
+  // Local levy authority under the user's levy limit
+  const authorityNow = picked
+    ? levyAuthority(picked, LEA.maxLevyRate, LEA.maxLevyPerPupil)
+    : 0;
+  const authorityPlan = picked
+    ? levyAuthority(picked, levyRate, LEA.maxLevyPerPupil)
+    : 0;
+
+  return (
+    <div className="card p-5 md:p-6">
+      <div className="flex items-start justify-between gap-4 flex-wrap">
+        <div>
+          <h2 className="text-lg md:text-xl font-bold">
+            See it for one district
+          </h2>
+          <p className="mt-1 text-sm text-ink-secondary max-w-2xl">
+            The state guarantees every district a set amount per student. A
+            district&apos;s own $1.50 levy covers part of it; the state pays the
+            rest as LEA.
+          </p>
+        </div>
+        <div className="w-full md:w-80">
+          <DistrictCombobox
+            districts={districts}
+            onPick={choose}
+            selectedName={name}
+            placeholder="Choose or search for a district"
+          />
+        </div>
+      </div>
+
+      {picked && now && plan ? (
+        <div className="mt-5">
+          {/* Per-pupil: the two bars that explain the whole formula */}
+          <p className="text-xs font-semibold uppercase tracking-wide text-ink-secondary">
+            Per student
+          </p>
+          {(() => {
+            const scale = Math.max(threshold, now.capacityPerPupil) * 1.05;
+            const pctOf = (v: number) => `${Math.max(0, (100 * v) / scale)}%`;
+            return (
+              <div className="mt-2 space-y-3">
+                <div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-ink-secondary">
+                      What their own $1.50 levy raises
+                    </span>
+                    <span className="font-semibold tabular-nums">
+                      {fmtMoneyFull(Math.round(now.capacityPerPupil))}
+                    </span>
+                  </div>
+                  <div className="mt-1 h-5 rounded bg-paper overflow-hidden">
+                    <div
+                      className="h-full rounded bg-series-local"
+                      style={{ width: pctOf(now.capacityPerPupil) }}
+                    />
+                  </div>
+                </div>
+                <div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-ink-secondary">
+                      State guarantee{' '}
+                      {threshold !== LEA.leaThresholdPerPupil && '(your plan)'}
+                    </span>
+                    <span className="font-semibold tabular-nums">
+                      {fmtMoneyFull(Math.round(threshold))}
+                    </span>
+                  </div>
+                  <div className="mt-1 h-5 rounded bg-paper overflow-hidden flex" style={{ gap: 2 }}>
+                    <div
+                      className="h-full bg-series-local"
+                      style={{ width: pctOf(Math.min(now.capacityPerPupil, threshold)) }}
+                    />
+                    <div
+                      className="h-full bg-series-state"
+                      style={{ width: pctOf(plan.maxPerPupil) }}
+                    />
+                  </div>
+                </div>
+              </div>
+            );
+          })()}
+          <p className="mt-2 text-sm">
+            {plan.maxPerPupil > 0 ? (
+              <>
+                The state fills a gap of{' '}
+                <strong className="text-accent-deep">
+                  {fmtMoneyFull(Math.round(plan.maxPerPupil))} per student
+                </strong>
+                .
+              </>
+            ) : (
+              <span className="text-ink-secondary">
+                This district&apos;s property wealth already exceeds the
+                guarantee, so it receives no LEA.
+              </span>
+            )}
+          </p>
+
+          {/* Dollars: max, payable, and what they actually got */}
+          <p className="mt-5 text-xs font-semibold uppercase tracking-wide text-ink-secondary">
+            Total dollars
+          </p>
+          {(() => {
+            const bars = [
+              {
+                label: 'Maximum possible LEA',
+                value: plan.maxLea,
+                color: '#9ec5f4',
+              },
+              {
+                label: `LEA after their ${'$'}${picked.levyRate.toFixed(2)} levy rate`,
+                value: plan.payable,
+                color: '#2a78d6',
+              },
+              {
+                label: 'Actually received (2024-25)',
+                value: picked.actualLea,
+                color: '#104281',
+              },
+            ];
+            const max = Math.max(1, ...bars.map((b) => b.value));
+            return (
+              <div className="mt-2 space-y-2.5">
+                {bars.map((b) => (
+                  <div key={b.label}>
+                    <div className="flex justify-between text-sm">
+                      <span className="text-ink-secondary">{b.label}</span>
+                      <span className="font-semibold tabular-nums">
+                        {fmtMoney(b.value)}
+                      </span>
+                    </div>
+                    <div className="mt-1 h-5 rounded bg-paper overflow-hidden">
+                      <div
+                        className="h-full rounded"
+                        style={{
+                          width: `${(100 * b.value) / max}%`,
+                          background: b.color,
+                        }}
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            );
+          })()}
+          <p className="mt-2 text-xs text-ink-muted">
+            {plan.effort < 1 ? (
+              <>
+                Their levy rate of ${picked.levyRate.toFixed(2)} is below the
+                $1.50 needed for a full match, so they receive{' '}
+                {Math.round(plan.effort * 100)}% of the maximum.
+              </>
+            ) : (
+              <>
+                Their levy rate of ${picked.levyRate.toFixed(2)} meets the $1.50
+                threshold, so they qualify for the full match.
+              </>
+            )}{' '}
+            &ldquo;Actually received&rdquo; is F-196 revenue code 3300 for
+            2024-25 and covers a different period than the {levyData.calendarYear}{' '}
+            estimate above.
+          </p>
+
+          {/* Local levy authority */}
+          <div className="mt-5 pt-4 border-t border-line">
+            <div className="grid sm:grid-cols-2 gap-4 text-sm">
+              <div>
+                <p className="text-ink-secondary">Local levy limit today</p>
+                <p className="font-semibold tabular-nums">
+                  {fmtMoney(authorityNow)}
+                </p>
+              </div>
+              <div>
+                <p className="text-ink-secondary">Under your levy limit</p>
+                <p className="font-semibold tabular-nums">
+                  {fmtMoney(authorityPlan)}
+                  {authorityPlan !== authorityNow && (
+                    <span className="ml-2 text-accent-deep">
+                      {fmtSignedMoney(authorityPlan - authorityNow)}
+                    </span>
+                  )}
+                </p>
+              </div>
+            </div>
+            {/* A district's limit is the LESSER of the rate cap and the
+                per-pupil cap, so raising the rate does nothing once the
+                per-pupil cap binds. Say so rather than looking broken. */}
+            {levyRate > LEA.maxLevyRate &&
+              authorityPlan === authorityNow && (
+                <p className="mt-2 text-xs text-ink-muted">
+                  Raising the rate does not help here: this district is already
+                  capped by the per-student limit of{' '}
+                  {fmtMoneyFull(Math.round(LEA.maxLevyPerPupil))}, not by the
+                  tax rate.
+                </p>
+              )}
+          </div>
+        </div>
+      ) : (
+        <p className="mt-4 text-sm text-ink-muted">
+          Pick a district to see its property wealth, its levy rate, and the
+          state match it earns.
+        </p>
+      )}
+    </div>
+  );
 }
 
 export default function Simulator() {
@@ -389,8 +691,31 @@ export default function Simulator() {
               rather than October student headcount.
             </li>
             <li>
-              Property-poor district aid and transportation use rounded
-              statewide program estimates.
+              Local Effort Assistance uses Washington&apos;s actual formula and
+              real district data - assessed valuation, voter-approved levy, and
+              LEA enrollment from OSPI&apos;s{' '}
+              <a
+                className="text-accent hover:underline"
+                href="https://ospi.k12.wa.us/policy-funding/school-apportionment/budget-preparations"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                Enrichment Levy Pre-Ballot Approval worksheet
+              </a>
+              . A district&apos;s $1.50 levy capacity is subtracted from the
+              state guarantee ({fmtMoneyFull(LEA.leaThresholdPerPupil)} per
+              student for calendar {levyData.calendarYear}), then scaled by its
+              levy rate. Statewide cost is summed district by district.
+            </li>
+            <li>
+              &ldquo;Actually received&rdquo; LEA is F-196 revenue code 3300 for
+              2024-25, a different period than the {levyData.calendarYear}{' '}
+              estimate, so the two will not match exactly.
+            </li>
+            <li>
+              A district&apos;s levy limit is the lesser of the tax-rate cap and
+              the per-student cap, so raising the rate does not always raise the
+              limit. Transportation uses a rounded statewide program estimate.
             </li>
             <li>
               The local levy limit is shown separately because it is local
@@ -511,6 +836,15 @@ export default function Simulator() {
                   }
                 )}
               </div>
+              {/* The levy/LEA group gets a worked example for a real district */}
+              {group === 'Local levies and state match' && (
+                <div className="mt-5 pt-5 border-t border-line -mx-5 px-5">
+                  <LeaBreakdown
+                    threshold={values.leaThreshold}
+                    levyRate={values.levyCap}
+                  />
+                </div>
+              )}
             </section>
           ))}
         </div>

@@ -284,6 +284,28 @@ export default function SourcesPage() {
 
         <div className="mt-4 card p-5 text-sm text-ink-secondary space-y-2">
           <p className="font-semibold text-ink">
+            Levies & Local Effort Assistance (the policy simulator)
+          </p>
+          <p>
+            The simulator&apos;s levy and LEA sliders run Washington&apos;s
+            actual formula on real district data. Assessed valuation,
+            voter-approved levy amounts, LEA enrollment, and the statutory
+            assumptions (the per-student guarantee, the $1.50 LEA rate, and the
+            $2.50 / per-student levy caps) come from OSPI&apos;s{' '}
+            <Ext href="https://ospi.k12.wa.us/policy-funding/school-apportionment/budget-preparations">
+              Enrichment Levy Pre-Ballot Approval worksheet
+            </Ext>{' '}
+            on the School Apportionment budget-preparations page. Our
+            calculation reproduces that workbook&apos;s LevyCalc sheet
+            (capacity per pupil, maximum LEA per pupil, levy rate, and payable
+            LEA), and the LEA a district actually received is F-196 revenue code
+            3300. Script:{' '}
+            <code className="text-ink">scripts/build-levy-lea.py</code>.
+          </p>
+        </div>
+
+        <div className="mt-4 card p-5 text-sm text-ink-secondary space-y-2">
+          <p className="font-semibold text-ink">
             Expenditures, fund balance & reserve ratio
           </p>
           <p>

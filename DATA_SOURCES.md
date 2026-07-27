@@ -136,6 +136,43 @@ that district's F-196 report on the Financial Reporting Summary.
 Each year, roughly 10–14 enrollment rows (mostly tribal-compact schools) have
 no F-196 match and are dropped for that year.
 
+### Levies & Local Effort Assistance (policy simulator)
+
+The simulator's levy and LEA sliders use Washington's real formula and real
+district inputs, not statewide averages.
+
+**Source:** OSPI's "Enrichment Levy Pre-Ballot Approval" worksheet, published on
+the School Apportionment budget-preparations page:
+
+- Page: https://ospi.k12.wa.us/policy-funding/school-apportionment/budget-preparations
+- Workbook (CY2026): https://ospi.k12.wa.us/sites/default/files/2025-04/2026multiyearlacombined.xlsx
+- Assessed valuations (standalone): https://ospi.k12.wa.us/sites/default/files/2025-06/assess25rpt.xlsx
+
+`scripts/build-levy-lea.py` reads three sheets - `Data` (assessed valuation by
+calendar year), `Voter Approved` (levy amounts), and `District AAFTE` (LEA
+enrollment net of high/non-high transfers) - plus the statutory assumptions from
+`LevyCalc`, and writes `src/data/levy.json`.
+
+The calculation reproduces LevyCalc rows Q, R, T, V, and X:
+
+| Step | Formula |
+|---|---|
+| Capacity per pupil (Q) | AV × $1.50 ÷ 1,000 ÷ enrollment |
+| Max LEA per pupil (R) | threshold − capacity per pupil |
+| Levy rate (T) | levy ÷ AV × 1,000 |
+| Maximum LEA (V) | max LEA per pupil × enrollment |
+| Payable LEA (X) | maximum LEA × min(levy rate ÷ $1.50, 1) |
+
+CY2026 assumptions: LEA guarantee **$2,223.80** per student, LEA rate **$1.50**,
+maximum levy **$3,838.26** per student or **$2.50** per $1,000 AV, whichever is
+less. Verified against the workbook's own output for Aberdeen (capacity
+$1,416.29, max LEA per pupil $807.51, payable $2.41M).
+
+**LEA actually received** is F-196 revenue code **3300** ("Local Effort
+Assistance") for 2024-25. It covers a different period than the CY2026 estimate,
+so the two are close but not identical (statewide: $179.8M actual vs $200.5M
+modeled).
+
 ## 3. District boundaries (the map)
 
 **Source:** OSPI's official "Washington School Districts" boundary layer on the
