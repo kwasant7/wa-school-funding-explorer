@@ -88,21 +88,17 @@ function leverImpactFor(
       };
     case 'spedMultiplier':
       return {
-        newMoney:
-          r.demo.sped *
-          BASELINE_SPED_ALLOCATION *
-          (values.spedMultiplier - 1.16),
+        newMoney: r.demo.sped * (values.spedMultiplier - BASELINE_SPED_PER_STUDENT),
       };
     case 'msoc':
       return { newMoney: r.fundingEnrollment * (values.msoc - 1_614) };
     case 'transportation':
       // No public per-district split here, so scale the statewide program by
-      // this district's share of students.
+      // this district's own enrollment.
       return {
         newMoney:
-          BASELINE_TRANSPORTATION *
-          (values.transportation / 100 - 1) *
-          (r.enrollment / STUDENTS),
+          (values.transportation - BASELINE_TRANSPORTATION_PER_STUDENT) *
+          r.enrollment,
       };
     default:
       return null;
@@ -112,7 +108,9 @@ function leverImpactFor(
 const STUDENTS = data.statewide.enrollment;
 const BASELINE_ELL_PER_STUDENT = 1_800;
 const BASELINE_SPED_ALLOCATION = 12_000;
+const BASELINE_SPED_PER_STUDENT = BASELINE_SPED_ALLOCATION * 1.16;
 const BASELINE_TRANSPORTATION = 1_200_000_000;
+const BASELINE_TRANSPORTATION_PER_STUDENT = BASELINE_TRANSPORTATION / STUDENTS;
 
 const LEVERS = [
   {
@@ -156,6 +154,7 @@ const LEVERS = [
     step: 25,
     effect: (value: number) => `$${fmtInt(Math.round(value))} per student`,
     unit: 'local only',
+    markers: [{ value: 5_035, label: '$5,035 · 2031 cap' }],
   },
   {
     id: 'leaThreshold',
@@ -196,6 +195,7 @@ const LEVERS = [
     effect: (value: number) =>
       value === 0 ? 'No increase' : `+$${fmtInt(Math.round(value))} per student`,
     unit: 'per student',
+    markers: [],
   },
   {
     id: 'ellWeight',
@@ -234,6 +234,7 @@ const LEVERS = [
     effect: (value: number) =>
       `$${fmtInt(Math.round(BASELINE_ELL_PER_STUDENT * value))} per English learner`,
     unit: 'per student',
+    markers: [],
   },
   {
     id: 'spedMultiplier',
@@ -241,8 +242,8 @@ const LEVERS = [
     icon: 'sped',
     color: '#d15f78',
     label: 'Special education',
-    sliderLabel: 'Special education funding multiplier',
-    description: 'Washington funds special education as a multiplier on basic education.',
+    sliderLabel: 'Special education funding per student with disabilities',
+    description: 'Washington funds special education as extra dollars per student with disabilities, on top of basic education.',
     bill: (
       <>
         Most recently changed by{' '}
@@ -259,19 +260,22 @@ const LEVERS = [
     ),
     note: (
       <>
-        Special education is funded as a multiplier on top of basic education.
-        Districts have long reported spending more than the formula provides;
+        Special education is funded as a multiplier on top of basic education;
+        shown here as the dollar amount it works out to per student with
+        disabilities. Districts have long reported spending more than the
+        formula provides;
         2025's <strong className="text-ink">SB 5263</strong> raised it and
         removed the enrollment cap, but the gap is still debated.
       </>
     ),
     impactKey: 'sped',
-    baseline: 1.16,
-    min: 1.16,
-    max: 1.5,
-    step: 0.01,
-    effect: (value: number) => `${value.toFixed(2)}× basic education`,
-    unit: 'multiplier',
+    baseline: BASELINE_SPED_PER_STUDENT,
+    min: BASELINE_SPED_PER_STUDENT,
+    max: BASELINE_SPED_ALLOCATION * 1.5,
+    step: 120,
+    effect: (value: number) => `$${fmtInt(Math.round(value))} per student`,
+    unit: 'per student',
+    markers: [],
   },
   {
     id: 'msoc',
@@ -309,6 +313,7 @@ const LEVERS = [
     step: 50,
     effect: (value: number) => `$${fmtInt(value)} per student`,
     unit: 'per student',
+    markers: [],
   },
   {
     id: 'transportation',
@@ -316,7 +321,7 @@ const LEVERS = [
     icon: 'transportation',
     color: '#9a6a39',
     label: 'Student transportation',
-    sliderLabel: 'Transportation funding level',
+    sliderLabel: 'Transportation dollars per student',
     description: 'Buses, drivers, fuel, and required routes.',
     bill: (
       <>
@@ -341,13 +346,13 @@ const LEVERS = [
       </>
     ),
     impactKey: 'transportation',
-    baseline: 100,
-    min: 100,
-    max: 140,
-    step: 5,
-    effect: (value: number) =>
-      `${fmtMoney(BASELINE_TRANSPORTATION * (value / 100))} statewide`,
-    unit: 'statewide',
+    baseline: BASELINE_TRANSPORTATION_PER_STUDENT,
+    min: BASELINE_TRANSPORTATION_PER_STUDENT,
+    max: BASELINE_TRANSPORTATION_PER_STUDENT * 1.4,
+    step: 25,
+    effect: (value: number) => `$${fmtInt(Math.round(value))} per student`,
+    unit: 'per student',
+    markers: [],
   },
   {
     id: 'povertyBonus',
@@ -383,6 +388,7 @@ const LEVERS = [
         ? 'No bonus today'
         : `+$${fmtInt(value)} per student in high-poverty districts`,
     unit: 'per student',
+    markers: [],
   },
 ] as const;
 
@@ -674,55 +680,6 @@ function LeverBar({
     );
   }
 
-  // Special education is expressed as the excess-cost multiplier used in the
-  // formula, rather than as a made-up dollar amount per student.
-  if (lever.id === 'spedMultiplier') {
-    const scale = lever.max * 1.08;
-    const pct = (v: number) => `${Math.max(0, Math.min(100, (100 * v) / scale))}%`;
-    const added = values.spedMultiplier - lever.baseline;
-    return (
-      <figure>
-        <figcaption className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-ink-secondary">
-          <span className="flex items-center gap-1.5">
-            <span className="inline-block w-3 h-3 rounded-sm bg-[#d15f78]" />
-            Current formula multiplier
-          </span>
-          <span className="flex items-center gap-1.5">
-            <span className="inline-block w-3 h-3 rounded-sm bg-[#f9c7d1]" />
-            Your increase
-          </span>
-        </figcaption>
-        <div className="mt-3 flex items-center gap-3">
-          <div className="w-28 shrink-0 text-right">
-            <p className="font-bold leading-tight">{name}</p>
-            <p className="text-[11px] text-ink-muted">
-              {fmtInt(district.record.demo.sped)} students served
-            </p>
-          </div>
-          <div className="flex-1 h-9 flex rounded bg-baseline/35 overflow-hidden">
-            <div
-              className="h-full bg-[#d15f78] flex items-center justify-center text-sm font-semibold text-white"
-              style={{ width: pct(lever.baseline) }}
-            >
-              {lever.baseline / scale > 0.16 && `${lever.baseline.toFixed(2)}×`}
-            </div>
-            {added > 0 && (
-              <div
-                className="h-full bg-[#f9c7d1] flex items-center justify-center text-sm font-semibold text-[#831843]"
-                style={{ width: pct(added) }}
-              >
-                {added / scale > 0.16 && `+${added.toFixed(2)}×`}
-              </div>
-            )}
-          </div>
-          <div className="w-20 shrink-0 text-lg font-bold tabular-nums">
-            {values.spedMultiplier.toFixed(2)}×
-          </div>
-        </div>
-      </figure>
-    );
-  }
-
   // Everything else: a simple today-vs-plan per-student comparison.
   const counts: Partial<Record<LeverId, { base: number; now: number; who: string }>> = {
     povertyBonus: {
@@ -739,10 +696,20 @@ function LeverBar({
       now: BASELINE_ELL_PER_STUDENT * values.ellWeight,
       who: `${fmtInt(district.record.demo.ell)} English learners`,
     },
+    spedMultiplier: {
+      base: BASELINE_SPED_PER_STUDENT,
+      now: values.spedMultiplier,
+      who: `${fmtInt(district.record.demo.sped)} students with disabilities`,
+    },
     msoc: {
       base: 1_614,
       now: values.msoc,
       who: `${fmtInt(Math.round(district.record.fundingEnrollment))} funding FTE`,
+    },
+    transportation: {
+      base: BASELINE_TRANSPORTATION_PER_STUDENT,
+      now: values.transportation,
+      who: `${fmtInt(district.record.enrollment)} students`,
     },
   };
   const c = counts[lever.id];
@@ -856,21 +823,45 @@ function LeverCard({
             {lever.effect(value)}
           </span>
         </div>
-        <input
-          id={lever.id}
-          type="range"
-          min={lever.min}
-          max={lever.max}
-          step={lever.step}
-          value={value}
-          onInput={(event) => {
-            const next = Number(event.currentTarget.value);
-            setValues((previous) => ({ ...previous, [lever.id]: next }));
-          }}
-          className="mt-2 w-full"
-          style={{ accentColor: lever.color }}
-        />
-        <div className="flex justify-between text-xs text-ink-muted">
+        <div className="relative mt-2">
+          <input
+            id={lever.id}
+            type="range"
+            min={lever.min}
+            max={lever.max}
+            step={lever.step}
+            value={value}
+            onInput={(event) => {
+              const next = Number(event.currentTarget.value);
+              setValues((previous) => ({ ...previous, [lever.id]: next }));
+            }}
+            className="w-full"
+            style={{ accentColor: lever.color }}
+          />
+          {lever.markers.map((marker) => {
+            const pct =
+              ((marker.value - lever.min) / (lever.max - lever.min)) * 100;
+            return (
+              <div
+                key={marker.value}
+                className="pointer-events-none absolute top-full flex -translate-x-1/2 flex-col items-center"
+                style={{ left: `${pct}%` }}
+              >
+                <div
+                  className="h-1.5 w-0.5"
+                  style={{ backgroundColor: lever.color }}
+                />
+                <span
+                  className="mt-0.5 whitespace-nowrap text-[10px] font-semibold"
+                  style={{ color: lever.color }}
+                >
+                  {marker.label}
+                </span>
+              </div>
+            );
+          })}
+        </div>
+        <div className="flex justify-between text-xs text-ink-muted mt-4">
           <span>Today</span>
           {changed && (
             <button
@@ -887,7 +878,7 @@ function LeverCard({
               Undo
             </button>
           )}
-          <span>Most generous</span>
+          <span>{lever.effect(lever.max)}</span>
         </div>
       </div>
 
