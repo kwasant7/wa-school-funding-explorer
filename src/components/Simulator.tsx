@@ -34,7 +34,6 @@ function leaFor(district: LevyDistrict, threshold: number) {
   };
 }
 
-/** Statewide LEA cost at a given threshold, summed from real district data. */
 /** A district's maximum enrichment levy authority: lesser of rate and per-pupil cap. */
 function levyAuthority(district: LevyDistrict, rate: number, perPupil: number) {
   return Math.min((rate * district.av) / 1000, perPupil * district.enrollment);
@@ -71,17 +70,10 @@ function leverImpactFor(
       if (!d.levy) return null;
       return {
         newMoney:
-          leaFor(d.levy, values.leaThreshold).payable -
+          leaFor(d.levy, LEA.leaThresholdPerPupil + values.leaThreshold).payable -
           leaFor(d.levy, LEA.leaThresholdPerPupil).payable,
       };
     }
-    case 'lowIncomeWeight':
-      return {
-        newMoney:
-          r.demo.lowIncome *
-          BASELINE_LAP_PER_STUDENT *
-          (values.lowIncomeWeight - 1),
-      };
     case 'povertyBonus':
       return {
         newMoney:
@@ -99,7 +91,7 @@ function leverImpactFor(
         newMoney:
           r.demo.sped *
           BASELINE_SPED_ALLOCATION *
-          (values.spedMultiplier - 1.12),
+          (values.spedMultiplier - 1.16),
       };
     case 'msoc':
       return { newMoney: r.fundingEnrollment * (values.msoc - 1_614) };
@@ -118,7 +110,6 @@ function leverImpactFor(
 }
 
 const STUDENTS = data.statewide.enrollment;
-const BASELINE_LAP_PER_STUDENT = 1_500;
 const BASELINE_ELL_PER_STUDENT = 1_800;
 const BASELINE_SPED_ALLOCATION = 12_000;
 const BASELINE_TRANSPORTATION = 1_200_000_000;
@@ -133,6 +124,20 @@ const LEVERS = [
     sliderLabel: 'Per-student levy dollar cap',
     description:
       'The state limits how much local school tax voters can approve per student.',
+    bill: (
+      <>
+        Most recently changed by{' '}
+        <a
+          className="font-semibold underline underline-offset-2"
+          href="https://app.leg.wa.gov/billsummary?BillNumber=2049&Year=2025"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          ESHB 2049 (2025)
+        </a>
+        , which raised the levy lid.
+      </>
+    ),
     note: (
       <>
         This is a statewide cap, the same for every district under 40,000
@@ -156,53 +161,40 @@ const LEVERS = [
     id: 'leaThreshold',
     group: 'Local levies and state match',
     icon: 'lea',
-    color: '#168a61',
+    color: '#8b5cf6',
     label: 'Local Effort Assistance (LEA)',
-    sliderLabel: 'Per-student state guarantee (LEA)',
+    sliderLabel: 'LEA increase, per student',
     description:
-      'The state promises every district a set amount per student. If a district’s own levy cannot reach it, the state pays the difference.',
+      'The state compares a district’s property wealth with a statewide goal, then fills the gap for districts below it.',
+    bill: (
+      <>
+        Most recently changed by{' '}
+        <a
+          className="font-semibold underline underline-offset-2"
+          href="https://app.leg.wa.gov/billsummary?BillNumber=2050&Year=2025"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          HB 2050 (2025)
+        </a>
+        , which changed the enrollment counted in LEA calculations.
+      </>
+    ),
     note: (
       <>
-        A district&apos;s{' '}
-        <strong className="text-ink">$1.50 per $1,000</strong> of property value
-        sets how much it can raise on its own. Whatever that leaves below the
-        guarantee, the state fills in as Local Effort Assistance - but only in
-        proportion to the levy rate voters actually approved.
+        This is a wealth test, not the district&apos;s actual levy. Washington
+        checks what its property could raise at{' '}
+        <strong className="text-ink">$1.50 per $1,000</strong>; where that
+        falls below the goal, the state provides Local Effort Assistance.
       </>
     ),
     impactKey: 'lea',
-    baseline: LEA.leaThresholdPerPupil,
-    min: LEA.leaThresholdPerPupil,
-    max: 4_000,
+    baseline: 0,
+    min: 0,
+    max: 1_800,
     step: 25,
     effect: (value: number) =>
-      `$${fmtInt(Math.round(value))} guaranteed per student`,
-    unit: 'per student',
-  },
-  {
-    id: 'lowIncomeWeight',
-    group: 'Student needs',
-    icon: 'lowIncome',
-    color: '#7a4bb7',
-    label: 'Low-income support (LAP)',
-    sliderLabel: 'LAP dollars per low-income student',
-    description: 'Extra help for students from low-income families.',
-    note: (
-      <>
-        The Learning Assistance Program pays for tutoring, extra reading and
-        math help, and staff time for students who are behind. It follows{' '}
-        <strong className="text-ink">low-income enrollment</strong>, so the
-        same change is worth far more in a high-poverty district.
-      </>
-    ),
-    impactKey: 'lowIncome',
-    baseline: 1,
-    min: 1,
-    max: 2,
-    step: 0.05,
-    // Plain-language "what this actually does", instead of a bare multiplier
-    effect: (value: number) =>
-      `$${fmtInt(Math.round(BASELINE_LAP_PER_STUDENT * value))} per low-income student`,
+      value === 0 ? 'No increase' : `+$${fmtInt(Math.round(value))} per student`,
     unit: 'per student',
   },
   {
@@ -213,6 +205,20 @@ const LEVERS = [
     label: 'English learner support',
     sliderLabel: 'Dollars per English learner',
     description: 'Language help for students learning English.',
+    bill: (
+      <>
+        The funding framework shown here comes from{' '}
+        <a
+          className="font-semibold underline underline-offset-2"
+          href="https://app.leg.wa.gov/billsummary?BillNumber=2261&Year=2009"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          ESHB 2261 (2009)
+        </a>
+        , Washington&apos;s core prototypical-school funding law.
+      </>
+    ),
     note: (
       <>
         The Transitional Bilingual Instruction Program funds language support
@@ -235,8 +241,22 @@ const LEVERS = [
     icon: 'sped',
     color: '#d15f78',
     label: 'Special education',
-    sliderLabel: 'Special education excess-cost multiplier',
-    description: 'Services for students with disabilities.',
+    sliderLabel: 'Special education funding multiplier',
+    description: 'Washington funds special education as a multiplier on basic education.',
+    bill: (
+      <>
+        Most recently changed by{' '}
+        <a
+          className="font-semibold underline underline-offset-2"
+          href="https://app.leg.wa.gov/billsummary?BillNumber=5263&Year=2025"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          E2SSB 5263 (2025)
+        </a>
+        , which increased special-education funding.
+      </>
+    ),
     note: (
       <>
         Special education is funded as a multiplier on top of basic education.
@@ -246,15 +266,12 @@ const LEVERS = [
       </>
     ),
     impactKey: 'sped',
-    baseline: 1.12,
-    min: 1.12,
+    baseline: 1.16,
+    min: 1.16,
     max: 1.5,
     step: 0.01,
-    effect: (value: number) =>
-      value === 1.12
-        ? 'Current level'
-        : `+$${fmtInt(Math.round(BASELINE_SPED_ALLOCATION * (value - 1.12)))} per student with disabilities`,
-    unit: 'per student',
+    effect: (value: number) => `${value.toFixed(2)}× basic education`,
+    unit: 'multiplier',
   },
   {
     id: 'msoc',
@@ -264,6 +281,20 @@ const LEVERS = [
     label: 'Materials, Supplies, & Operating Costs (MSOC)',
     sliderLabel: 'MSOC dollars per student',
     description: 'Curriculum, technology, utilities, and insurance.',
+    bill: (
+      <>
+        Most recently changed by{' '}
+        <a
+          className="font-semibold underline underline-offset-2"
+          href="https://app.leg.wa.gov/billsummary?BillNumber=5192&Year=2025"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          ESSB 5192 (2025)
+        </a>
+        , which increased MSOC allocations.
+      </>
+    ),
     note: (
       <>
         MSOC covers everything that is not staff pay: curriculum, technology,
@@ -287,6 +318,20 @@ const LEVERS = [
     label: 'Student transportation',
     sliderLabel: 'Transportation funding level',
     description: 'Buses, drivers, fuel, and required routes.',
+    bill: (
+      <>
+        Most recently changed by{' '}
+        <a
+          className="font-semibold underline underline-offset-2"
+          href="https://app.leg.wa.gov/billsummary?BillNumber=5009&Year=2025"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          ESSB 5009 (2025)
+        </a>
+        , which updated transportation allocations for different vehicle types.
+      </>
+    ),
     note: (
       <>
         Transportation is funded by a separate formula based on the students a
@@ -313,6 +358,12 @@ const LEVERS = [
     sliderLabel: 'Bonus per student in high-poverty districts',
     description:
       'Extra money for schools where most students are low-income.',
+    bill: (
+      <>
+        This is a modeled policy proposal; Washington does not currently have a
+        statewide high-poverty concentration-bonus law.
+      </>
+    ),
     note: (
       <>
         Washington does not currently pay a concentration bonus. This models one:
@@ -524,79 +575,156 @@ function LeverBar({
     );
   }
 
-  // LEA: what the district's own $1.50 levy raises vs the state guarantee.
+  // LEA: a district's property wealth at the standard $1.50 rate compared
+  // with the statewide goal. The chart intentionally shows the wealth test,
+  // not the levy voters actually approved.
   if (lever.id === 'leaThreshold' && levy) {
-    const now = leaFor(levy, LEA.leaThresholdPerPupil);
-    const plan = leaFor(levy, values.leaThreshold);
-    // Keep the same scale across settings so the bar's length communicates
-    // the amount, instead of always stretching the selected value to the end.
-    const scale = Math.max(lever.max, now.capacityPerPupil) * 1.08;
+    const baselineGoal = LEA.leaThresholdPerPupil;
+    const goal = baselineGoal + values.leaThreshold;
+    const wealth = leaFor(levy, baselineGoal).capacityPerPupil;
+    const baselineHelp = Math.max(0, baselineGoal - wealth);
+    const addedByPolicy = Math.max(0, goal - Math.max(baselineGoal, wealth));
+    const chartTotal = Math.max(wealth, goal);
+    const scale = chartTotal * 1.08;
     const pct = (v: number) => `${Math.max(0, Math.min(100, (100 * v) / scale))}%`;
-    const ownLevy = Math.min(now.capacityPerPupil, values.leaThreshold);
+    const propertyValuePerStudent = levy.av / levy.enrollment;
+    const qualifies = wealth < goal;
     return (
       <figure>
         <figcaption className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-ink-secondary">
           <span className="flex items-center gap-1.5">
-            <span className="inline-block w-3 h-3 rounded-sm bg-series-local" />
-            Their own $1.50 levy: {fmtMoneyFull(Math.round(ownLevy))}
+            <span className="inline-block w-3 h-3 rounded-sm bg-[#94a3b8]" />
+            What their property could raise
           </span>
           <span className="flex items-center gap-1.5">
-            <span className="inline-block w-3 h-3 rounded-sm bg-series-state" />
-            State fills the gap: {fmtMoneyFull(Math.round(plan.maxPerPupil))}
+            <span className="inline-block w-3 h-3 rounded-sm bg-[#8b5cf6]" />
+            State help (LEA)
+          </span>
+          <span className="flex items-center gap-1.5">
+            <span className="inline-block w-3 h-3 rounded-sm bg-[#c4b5fd]" />
+            Added by your policy
+          </span>
+          <span className="flex items-center gap-1.5">
+            <span
+              className="inline-block w-3 border-t-2 border-dashed border-[#8b5cf6]"
+              aria-hidden
+            />
+            Goal
+          </span>
+        </figcaption>
+        <div className="mt-4 flex items-center gap-3">
+          <div className="w-28 shrink-0 text-right">
+            <p className="font-bold leading-tight">{name}</p>
+            <p className="text-[11px] text-ink-muted">
+              {qualifies ? 'State help available' : 'No state help'}
+            </p>
+          </div>
+          <div className="relative flex-1 h-16 pt-6">
+            <div
+              className="absolute top-0 z-10 whitespace-nowrap text-sm font-bold tabular-nums text-[#7c3aed]"
+              style={{ left: pct(goal), transform: 'translateX(-50%)' }}
+            >
+              Goal: {fmtMoneyFull(Math.round(goal))}
+            </div>
+            <div className="absolute inset-x-0 bottom-0 h-10 rounded bg-[#e2e8f0]" />
+            <div className="absolute inset-x-0 bottom-0 flex h-10">
+              <div
+                className="h-full rounded-l bg-[#94a3b8] flex items-center justify-center text-sm font-semibold text-white"
+                style={{ width: pct(wealth) }}
+              >
+                {wealth / scale > 0.16 && fmtMoneyFull(Math.round(wealth))}
+              </div>
+              {baselineHelp > 0 && (
+                <div
+                  className="h-full bg-[#8b5cf6] flex items-center justify-center text-sm font-semibold text-white"
+                  style={{ width: pct(baselineHelp) }}
+                >
+                  {baselineHelp / scale > 0.16 && fmtMoneyFull(Math.round(baselineHelp))}
+                </div>
+              )}
+              {addedByPolicy > 0 && (
+                <div
+                  className="h-full bg-[#c4b5fd] flex items-center justify-center text-sm font-semibold text-[#3b0764]"
+                  style={{ width: pct(addedByPolicy) }}
+                >
+                  {addedByPolicy / scale > 0.16 && `+${fmtMoneyFull(Math.round(addedByPolicy))}`}
+                </div>
+              )}
+            </div>
+            <div
+              className="absolute bottom-0 h-10 border-l-[3px] border-dashed border-[#8b5cf6]"
+              style={{ left: pct(goal) }}
+              title={`Goal: ${fmtMoneyFull(Math.round(goal))} per student`}
+            />
+          </div>
+          <div className="w-20 shrink-0 text-lg font-bold tabular-nums">
+            {fmtMoneyFull(Math.round(chartTotal))}
+          </div>
+        </div>
+        <p className="mt-4 text-sm text-ink-secondary">
+          $1.50/$1,000 ×{' '}
+          {fmtMoneyFull(Math.round(propertyValuePerStudent))} in property value
+          per student = <strong className="text-ink">{fmtMoneyFull(Math.round(wealth))}</strong>.
+          {' '}
+          {qualifies
+            ? `${name} falls below the ${fmtMoneyFull(Math.round(goal))} goal, so it qualifies for LEA.`
+            : `${name} is above the ${fmtMoneyFull(Math.round(goal))} goal, so it does not qualify for LEA.`}
+        </p>
+      </figure>
+    );
+  }
+
+  // Special education is expressed as the excess-cost multiplier used in the
+  // formula, rather than as a made-up dollar amount per student.
+  if (lever.id === 'spedMultiplier') {
+    const scale = lever.max * 1.08;
+    const pct = (v: number) => `${Math.max(0, Math.min(100, (100 * v) / scale))}%`;
+    const added = values.spedMultiplier - lever.baseline;
+    return (
+      <figure>
+        <figcaption className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-ink-secondary">
+          <span className="flex items-center gap-1.5">
+            <span className="inline-block w-3 h-3 rounded-sm bg-[#d15f78]" />
+            Current formula multiplier
+          </span>
+          <span className="flex items-center gap-1.5">
+            <span className="inline-block w-3 h-3 rounded-sm bg-[#f9c7d1]" />
+            Your increase
           </span>
         </figcaption>
         <div className="mt-3 flex items-center gap-3">
           <div className="w-28 shrink-0 text-right">
             <p className="font-bold leading-tight">{name}</p>
             <p className="text-[11px] text-ink-muted">
-              Raises {fmtMoneyFull(Math.round(now.capacityPerPupil))}
+              {fmtInt(district.record.demo.sped)} students served
             </p>
           </div>
-          <div className="relative flex-1 h-12 pt-3">
-            <div className="absolute inset-x-0 bottom-0 h-9 rounded bg-baseline/35" />
-            <div className="absolute inset-x-0 bottom-0 h-9 flex">
-              <div
-                className="absolute -top-5 text-xs font-semibold tabular-nums text-series-local"
-                style={{ width: pct(ownLevy), minWidth: '4rem', textAlign: 'center' }}
-              >
-                {fmtMoneyFull(Math.round(ownLevy))}
-              </div>
+          <div className="flex-1 h-9 flex rounded bg-baseline/35 overflow-hidden">
             <div
-              className="h-full rounded-l bg-series-local"
-              style={{ width: pct(ownLevy) }}
-            />
-            {plan.maxPerPupil > 0 && (
+              className="h-full bg-[#d15f78] flex items-center justify-center text-sm font-semibold text-white"
+              style={{ width: pct(lever.baseline) }}
+            >
+              {lever.baseline / scale > 0.16 && `${lever.baseline.toFixed(2)}×`}
+            </div>
+            {added > 0 && (
               <div
-                className="h-full bg-series-state flex items-center justify-center text-white text-sm font-semibold"
-                style={{ width: pct(plan.maxPerPupil) }}
+                className="h-full bg-[#f9c7d1] flex items-center justify-center text-sm font-semibold text-[#831843]"
+                style={{ width: pct(added) }}
               >
-                {plan.maxPerPupil / scale > 0.16 &&
-                  fmtMoneyFull(Math.round(plan.maxPerPupil))}
+                {added / scale > 0.16 && `+${added.toFixed(2)}×`}
               </div>
             )}
-            </div>
           </div>
           <div className="w-20 shrink-0 text-lg font-bold tabular-nums">
-            {fmtMoneyFull(Math.round(values.leaThreshold))}
+            {values.spedMultiplier.toFixed(2)}×
           </div>
         </div>
-        {plan.maxPerPupil <= 0 && (
-          <p className="mt-2 text-xs text-ink-muted">
-            {name} already raises more than the guarantee on its own, so it
-            receives no state match.
-          </p>
-        )}
       </figure>
     );
   }
 
   // Everything else: a simple today-vs-plan per-student comparison.
   const counts: Partial<Record<LeverId, { base: number; now: number; who: string }>> = {
-    lowIncomeWeight: {
-      base: BASELINE_LAP_PER_STUDENT,
-      now: BASELINE_LAP_PER_STUDENT * values.lowIncomeWeight,
-      who: `${fmtInt(district.record.demo.lowIncome)} low-income students`,
-    },
     povertyBonus: {
       base: 0,
       now: values.povertyBonus,
@@ -610,11 +738,6 @@ function LeverBar({
       base: BASELINE_ELL_PER_STUDENT,
       now: BASELINE_ELL_PER_STUDENT * values.ellWeight,
       who: `${fmtInt(district.record.demo.ell)} English learners`,
-    },
-    spedMultiplier: {
-      base: 0,
-      now: BASELINE_SPED_ALLOCATION * (values.spedMultiplier - 1.12),
-      who: `${fmtInt(district.record.demo.sped)} students with disabilities`,
     },
     msoc: {
       base: 1_614,
@@ -638,7 +761,7 @@ function LeverBar({
           Today
         </span>
         <span className="flex items-center gap-1.5">
-          <span className="inline-block w-3 h-3 rounded-sm bg-accent-soft" />
+          <span className="inline-block w-3 h-3 rounded-sm bg-series-local" />
           Your plan adds
         </span>
       </figcaption>
@@ -658,9 +781,11 @@ function LeverBar({
           )}
           {added > 0 && (
             <div
-              className={`h-full bg-accent-soft ${c.base > 0 ? '' : 'rounded-l'}`}
+              className={`h-full bg-series-local flex items-center justify-center text-sm font-semibold text-white ${c.base > 0 ? '' : 'rounded-l'}`}
               style={{ width: pct(added) }}
-            />
+            >
+              {added / scale > 0.1 && `+${fmtMoneyFull(Math.round(added))}`}
+            </div>
           )}
         </div>
         <div className="w-20 shrink-0 text-lg font-bold tabular-nums">
@@ -693,7 +818,9 @@ function LeverCard({
 
   return (
     <section
-      className="card border-l-4 p-5 md:p-6"
+      className={`card border-l-4 p-5 md:p-6 ${
+        lever.id === 'leaThreshold' ? 'bg-[#f7f4ff]' : ''
+      }`}
       style={{ borderLeftColor: lever.color }}
     >
       <div className="flex items-start gap-3">
@@ -711,6 +838,9 @@ function LeverCard({
             {index}. {lever.label}
           </h2>
           <p className="mt-0.5 text-ink-secondary">{lever.description}</p>
+          <p className="mt-2 text-sm text-ink-secondary">
+            {lever.bill}
+          </p>
         </div>
       </div>
 
@@ -827,6 +957,9 @@ export default function Simulator() {
 
   const chooseDistrict = (next: string) => {
     setCode(next);
+    // A policy plan belongs to the district it was built for. Starting a new
+    // district with the old sliders would make its summary look pre-filled.
+    setValues(BASELINE);
     if (next) window.localStorage.setItem(SELECTED_DISTRICT_KEY, next);
   };
 
