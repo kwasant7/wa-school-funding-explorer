@@ -88,7 +88,10 @@ function leverImpactFor(
       };
     case 'spedMultiplier':
       return {
-        newMoney: r.demo.sped * (values.spedMultiplier - BASELINE_SPED_PER_STUDENT),
+        newMoney:
+          r.demo.sped *
+          BASELINE_SPED_ALLOCATION *
+          (values.spedMultiplier - 1.16),
       };
     case 'msoc':
       return { newMoney: r.fundingEnrollment * (values.msoc - 1_614) };
@@ -108,7 +111,6 @@ function leverImpactFor(
 const STUDENTS = data.statewide.enrollment;
 const BASELINE_ELL_PER_STUDENT = 1_800;
 const BASELINE_SPED_ALLOCATION = 12_000;
-const BASELINE_SPED_PER_STUDENT = BASELINE_SPED_ALLOCATION * 1.16;
 const BASELINE_TRANSPORTATION = 1_200_000_000;
 const BASELINE_TRANSPORTATION_PER_STUDENT = BASELINE_TRANSPORTATION / STUDENTS;
 
@@ -242,8 +244,8 @@ const LEVERS = [
     icon: 'sped',
     color: '#d15f78',
     label: 'Special education',
-    sliderLabel: 'Special education funding per student with disabilities',
-    description: 'Washington funds special education as extra dollars per student with disabilities, on top of basic education.',
+    sliderLabel: 'Special education funding multiplier',
+    description: 'Washington funds special education as a multiplier on basic education.',
     bill: (
       <>
         Most recently changed by{' '}
@@ -260,21 +262,19 @@ const LEVERS = [
     ),
     note: (
       <>
-        Special education is funded as a multiplier on top of basic education;
-        shown here as the dollar amount it works out to per student with
-        disabilities. Districts have long reported spending more than the
-        formula provides;
+        Special education is funded as a multiplier on top of basic education.
+        Districts have long reported spending more than the formula provides;
         2025's <strong className="text-ink">SB 5263</strong> raised it and
         removed the enrollment cap, but the gap is still debated.
       </>
     ),
     impactKey: 'sped',
-    baseline: BASELINE_SPED_PER_STUDENT,
-    min: BASELINE_SPED_PER_STUDENT,
-    max: BASELINE_SPED_ALLOCATION * 1.5,
-    step: 120,
-    effect: (value: number) => `$${fmtInt(Math.round(value))} per student`,
-    unit: 'per student',
+    baseline: 1.16,
+    min: 1.16,
+    max: 1.5,
+    step: 0.01,
+    effect: (value: number) => `${value.toFixed(2)}× basic education`,
+    unit: 'multiplier',
     markers: [],
   },
   {
@@ -519,7 +519,7 @@ function LeverBar({
     const today = perStudent(todayTotal);
     const plan = perStudent(planTotal);
     const ceiling = (levy.av * LEA.maxLevyRate) / 1000 / levy.enrollment;
-    const scale = Math.max(ceiling, plan) * 1.08;
+    const scale = Math.max(ceiling, plan);
     const pct = (v: number) => `${Math.max(0, Math.min(100, (100 * v) / scale))}%`;
     const added = Math.max(0, plan - today);
 
@@ -591,8 +591,11 @@ function LeverBar({
     const baselineHelp = Math.max(0, baselineGoal - wealth);
     const addedByPolicy = Math.max(0, goal - Math.max(baselineGoal, wealth));
     const chartTotal = Math.max(wealth, goal);
-    const scale = chartTotal * 1.08;
+    const scale = chartTotal || 1;
     const pct = (v: number) => `${Math.max(0, Math.min(100, (100 * v) / scale))}%`;
+    // Keep the floating "Goal" label from clipping off the right edge when
+    // the goal line sits at the very end of the bar.
+    const labelPct = (v: number) => `${Math.max(0, Math.min(96, (100 * v) / scale))}%`;
     const propertyValuePerStudent = levy.av / levy.enrollment;
     const qualifies = wealth < goal;
     return (
@@ -628,7 +631,7 @@ function LeverBar({
           <div className="relative flex-1 h-16 pt-6">
             <div
               className="absolute top-0 z-10 whitespace-nowrap text-sm font-bold tabular-nums text-[#7c3aed]"
-              style={{ left: pct(goal), transform: 'translateX(-50%)' }}
+              style={{ left: labelPct(goal), transform: 'translateX(-50%)' }}
             >
               Goal: {fmtMoneyFull(Math.round(goal))}
             </div>
@@ -680,6 +683,55 @@ function LeverBar({
     );
   }
 
+  // Special education is expressed as the excess-cost multiplier used in the
+  // formula, rather than as a made-up dollar amount per student.
+  if (lever.id === 'spedMultiplier') {
+    const scale = lever.max;
+    const pct = (v: number) => `${Math.max(0, Math.min(100, (100 * v) / scale))}%`;
+    const added = values.spedMultiplier - lever.baseline;
+    return (
+      <figure>
+        <figcaption className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-ink-secondary">
+          <span className="flex items-center gap-1.5">
+            <span className="inline-block w-3 h-3 rounded-sm bg-[#d15f78]" />
+            Current formula multiplier
+          </span>
+          <span className="flex items-center gap-1.5">
+            <span className="inline-block w-3 h-3 rounded-sm bg-[#f9c7d1]" />
+            Your increase
+          </span>
+        </figcaption>
+        <div className="mt-3 flex items-center gap-3">
+          <div className="w-28 shrink-0 text-right">
+            <p className="font-bold leading-tight">{name}</p>
+            <p className="text-[11px] text-ink-muted">
+              {fmtInt(district.record.demo.sped)} students served
+            </p>
+          </div>
+          <div className="flex-1 h-9 flex rounded overflow-hidden">
+            <div
+              className="h-full bg-[#d15f78] flex items-center justify-center text-sm font-semibold text-white"
+              style={{ width: pct(lever.baseline) }}
+            >
+              {lever.baseline / scale > 0.16 && `${lever.baseline.toFixed(2)}×`}
+            </div>
+            {added > 0 && (
+              <div
+                className="h-full bg-[#f9c7d1] flex items-center justify-center text-sm font-semibold text-[#831843]"
+                style={{ width: pct(added) }}
+              >
+                {added / scale > 0.16 && `+${added.toFixed(2)}×`}
+              </div>
+            )}
+          </div>
+          <div className="w-20 shrink-0 text-lg font-bold tabular-nums">
+            {values.spedMultiplier.toFixed(2)}×
+          </div>
+        </div>
+      </figure>
+    );
+  }
+
   // Everything else: a simple today-vs-plan per-student comparison.
   const counts: Partial<Record<LeverId, { base: number; now: number; who: string }>> = {
     povertyBonus: {
@@ -696,11 +748,6 @@ function LeverBar({
       now: BASELINE_ELL_PER_STUDENT * values.ellWeight,
       who: `${fmtInt(district.record.demo.ell)} English learners`,
     },
-    spedMultiplier: {
-      base: BASELINE_SPED_PER_STUDENT,
-      now: values.spedMultiplier,
-      who: `${fmtInt(district.record.demo.sped)} students with disabilities`,
-    },
     msoc: {
       base: 1_614,
       now: values.msoc,
@@ -714,9 +761,7 @@ function LeverBar({
   };
   const c = counts[lever.id];
   if (!c) return null;
-  // Use the policy's comparison ceiling, not the current selection, so a
-  // short bar stays short instead of looking like it fills the whole scale.
-  const scale = Math.max(lever.max, c.now, c.base) * 1.08 || 1;
+  const scale = Math.max(c.now, c.base) || 1;
   const pct = (v: number) => `${Math.max(0, Math.min(100, (100 * v) / scale))}%`;
   const added = Math.max(0, c.now - c.base);
 
@@ -737,7 +782,7 @@ function LeverBar({
           <p className="font-bold leading-tight">{name}</p>
           <p className="text-[11px] text-ink-muted">{c.who}</p>
         </div>
-        <div className="flex-1 h-9 flex rounded bg-baseline/35 overflow-hidden">
+        <div className="flex-1 h-9 flex rounded overflow-hidden">
           {c.base > 0 && (
             <div
               className="h-full rounded-l bg-series-state flex items-center justify-center text-white text-sm font-semibold"
@@ -835,8 +880,13 @@ function LeverCard({
               const next = Number(event.currentTarget.value);
               setValues((previous) => ({ ...previous, [lever.id]: next }));
             }}
-            className="w-full"
-            style={{ accentColor: lever.color }}
+            className="range-slider w-full"
+            style={
+              {
+                '--track-color': lever.color,
+                '--fill': `${((value - lever.min) / (lever.max - lever.min)) * 100}%`,
+              } as React.CSSProperties
+            }
           />
           {lever.markers.map((marker) => {
             const pct =
@@ -1154,23 +1204,23 @@ export default function Simulator() {
           </h2>
           <p
             className={`mt-1 text-4xl font-bold tracking-tight ${
-              districtTotals.state > 0 ? 'text-accent-deep' : 'text-ink'
+              districtTotals.state + districtTotals.local > 0 ? 'text-accent-deep' : 'text-ink'
             }`}
           >
-            {fmtSignedMoney(districtTotals.state)}
-            {Math.round(districtTotals.state) !== 0 && (
+            {fmtSignedMoney(districtTotals.state + districtTotals.local)}
+            {Math.round(districtTotals.state + districtTotals.local) !== 0 && (
               <span className="text-base font-normal text-ink-secondary"> / year</span>
             )}
           </p>
           <p className="mt-1 text-sm text-ink-secondary">
-            {districtTotals.state === 0
-              ? 'No state money from your plan reaches this district yet.'
-              : `${((100 * districtTotals.state) / district.record.rev.total).toFixed(2)}% on top of its ${fmtMoney(district.record.rev.total)} budget.`}
+            {districtTotals.state + districtTotals.local === 0
+              ? 'No money from your plan reaches this district yet.'
+              : `${((100 * (districtTotals.state + districtTotals.local)) / district.record.rev.total).toFixed(2)}% on top of its ${fmtMoney(district.record.rev.total)} budget.`}
           </p>
           {districtTotals.local > 0 && (
             <p className="mt-2 text-sm text-ink-secondary">
-              Plus <strong className="text-ink">{fmtSignedMoney(districtTotals.local)}</strong>{' '}
-              of local levy room, if voters approve it.
+              <strong className="text-ink">{fmtSignedMoney(districtTotals.local)}</strong> of
+              that is local levy room, only collected if voters approve it.
             </p>
           )}
           {districtTotals.zeroLevers.length > 0 && (
