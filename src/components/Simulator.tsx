@@ -59,6 +59,83 @@ const BASELINE_LEVY_AUTHORITY = statewideLevyAuthority(
   LEA.maxLevyPerPupil
 );
 
+/** districts.json record joined with its levy/LEA inputs. */
+type DistrictRecord = (typeof data.districts)[number];
+export type SimDistrict = {
+  record: DistrictRecord;
+  levy: LevyDistrict | null;
+};
+
+/**
+ * What one lever adds for one district. Returns null when the lever has no
+ * meaningful district-level split (e.g. statewide transportation).
+ */
+function leverImpactFor(
+  leverId: LeverId,
+  values: Values,
+  d: SimDistrict
+): { newMoney: number; local?: boolean } | null {
+  const r = d.record;
+  switch (leverId) {
+    case 'levyPerPupil': {
+      if (!d.levy) return null;
+      const now = Math.min(
+        d.levy.levy,
+        levyAuthority(d.levy, LEA.maxLevyRate, LEA.maxLevyPerPupil)
+      );
+      const next = levyAuthority(d.levy, LEA.maxLevyRate, values.levyPerPupil);
+      return { newMoney: Math.max(0, next - now), local: true };
+    }
+    case 'leaThreshold': {
+      if (!d.levy) return null;
+      return {
+        newMoney:
+          leaFor(d.levy, values.leaThreshold).payable -
+          leaFor(d.levy, LEA.leaThresholdPerPupil).payable,
+      };
+    }
+    case 'lowIncomeWeight':
+      return {
+        newMoney:
+          r.demo.lowIncome *
+          BASELINE_LAP_PER_STUDENT *
+          (values.lowIncomeWeight - 1),
+      };
+    case 'povertyBonus':
+      return {
+        newMoney:
+          r.enrollment > 0 && r.demo.lowIncome / r.enrollment >= 0.6
+            ? r.demo.lowIncome * values.povertyBonus
+            : 0,
+      };
+    case 'ellWeight':
+      return {
+        newMoney:
+          r.demo.ell * BASELINE_ELL_PER_STUDENT * (values.ellWeight - 1),
+      };
+    case 'spedMultiplier':
+      return {
+        newMoney:
+          r.demo.sped *
+          BASELINE_SPED_ALLOCATION *
+          (values.spedMultiplier - 1.12),
+      };
+    case 'msoc':
+      return { newMoney: r.fundingEnrollment * (values.msoc - 1_614) };
+    case 'transportation':
+      // No public per-district split here, so scale the statewide program by
+      // this district's share of students.
+      return {
+        newMoney:
+          BASELINE_TRANSPORTATION *
+          (values.transportation / 100 - 1) *
+          (r.enrollment / STUDENTS),
+      };
+    default:
+      return null;
+  }
+}
+
 const STUDENTS = data.statewide.enrollment;
 const FUNDING_FTE = data.statewide.fundingEnrollment;
 const STATE_SHARE = data.statewide.revenues.state;
@@ -92,30 +169,49 @@ const BASELINE_TRANSPORTATION = 1_200_000_000;
 
 const LEVERS = [
   {
-    id: 'levyCap',
+    id: 'levyPerPupil',
     group: 'Local levies and state match',
     icon: 'levy',
-    label: 'Local levy limit',
+    label: 'Levy cap',
+    sliderLabel: 'Per-student levy dollar cap',
     description:
-      'The most a district may collect locally if voters approve. Local money, not state money.',
+      'The state limits how much local school tax voters can approve per student.',
+    note: (
+      <>
+        This is a statewide cap, the same for every district under 40,000
+        students, set on a schedule by{' '}
+        <strong className="text-ink">ESHB 2049 (2025)</strong>. It reaches{' '}
+        <strong className="text-ink">$3,838 in 2026</strong> (today&apos;s
+        slider default) and <strong className="text-ink">$5,035 by 2031</strong>
+        . A higher cap does not raise money by itself - voters still have to
+        approve any levy increase at the ballot.
+      </>
+    ),
     impactKey: null,
-    baseline: LEA.maxLevyRate,
-    min: LEA.maxLevyRate,
-    max: 4,
-    step: 0.1,
-    effect: (value: number) =>
-      value === LEA.maxLevyRate
-        ? `$${value.toFixed(2)} per $1,000 of property value (today's limit)`
-        : `$${value.toFixed(2)} per $1,000 of property value`,
+    baseline: LEA.maxLevyPerPupil,
+    min: LEA.maxLevyPerPupil,
+    max: 6_000,
+    step: 25,
+    effect: (value: number) => `$${fmtInt(Math.round(value))} per student`,
     unit: 'local only',
   },
   {
     id: 'leaThreshold',
     group: 'Local levies and state match',
     icon: 'lea',
-    label: 'State match for property-poor districts (LEA)',
+    label: 'State match for property-poor districts',
+    sliderLabel: 'Per-student state guarantee (LEA)',
     description:
-      'The per-student level the state guarantees. Districts whose $1.50 levy raises less get the difference.',
+      'The state promises every district a set amount per student. If a district’s own levy cannot reach it, the state pays the difference.',
+    note: (
+      <>
+        A district&apos;s{' '}
+        <strong className="text-ink">$1.50 per $1,000</strong> of property value
+        sets how much it can raise on its own. Whatever that leaves below the
+        guarantee, the state fills in as Local Effort Assistance - but only in
+        proportion to the levy rate voters actually approved.
+      </>
+    ),
     impactKey: 'lea',
     baseline: LEA.leaThresholdPerPupil,
     min: LEA.leaThresholdPerPupil,
@@ -130,7 +226,16 @@ const LEVERS = [
     group: 'Student needs',
     icon: 'lowIncome',
     label: 'Low-income support (LAP)',
+    sliderLabel: 'LAP dollars per low-income student',
     description: 'Extra help for students from low-income families.',
+    note: (
+      <>
+        The Learning Assistance Program pays for tutoring, extra reading and
+        math help, and staff time for students who are behind. It follows{' '}
+        <strong className="text-ink">low-income enrollment</strong>, so the
+        same change is worth far more in a high-poverty district.
+      </>
+    ),
     impactKey: 'lowIncome',
     baseline: 1,
     min: 1,
@@ -146,8 +251,18 @@ const LEVERS = [
     group: 'Student needs',
     icon: 'poverty',
     label: 'High-poverty school bonus',
+    sliderLabel: 'Bonus per student in high-poverty districts',
     description:
       'Extra money for schools where most students are low-income.',
+    note: (
+      <>
+        Washington does not currently pay a concentration bonus. This models one:
+        extra dollars only where at least{' '}
+        <strong className="text-ink">60% of students are low-income</strong>,
+        on the theory that concentrated poverty costs more to address than the
+        same number of students spread across a wealthier district.
+      </>
+    ),
     impactKey: 'poverty',
     baseline: 0,
     min: 0,
@@ -164,7 +279,15 @@ const LEVERS = [
     group: 'Student needs',
     icon: 'ell',
     label: 'English learner support',
+    sliderLabel: 'Dollars per English learner',
     description: 'Language help for students learning English.',
+    note: (
+      <>
+        The Transitional Bilingual Instruction Program funds language support
+        until a student tests out. Districts with recent immigration or refugee
+        resettlement carry most of this cost.
+      </>
+    ),
     impactKey: 'ell',
     baseline: 1,
     min: 1,
@@ -179,7 +302,16 @@ const LEVERS = [
     group: 'Student needs',
     icon: 'sped',
     label: 'Special education',
+    sliderLabel: 'Special education excess-cost multiplier',
     description: 'Services for students with disabilities.',
+    note: (
+      <>
+        Special education is funded as a multiplier on top of basic education.
+        Districts have long reported spending more than the formula provides;
+        2025's <strong className="text-ink">SB 5263</strong> raised it and
+        removed the enrollment cap, but the gap is still debated.
+      </>
+    ),
     impactKey: 'sped',
     baseline: 1.12,
     min: 1.12,
@@ -196,7 +328,15 @@ const LEVERS = [
     group: 'School operations',
     icon: 'msoc',
     label: 'Supplies & operating costs',
+    sliderLabel: 'MSOC dollars per student',
     description: 'Curriculum, technology, utilities, and insurance.',
+    note: (
+      <>
+        MSOC covers everything that is not staff pay: curriculum, technology,
+        utilities, and insurance. Because it is a flat per-student amount, it is
+        the lever that reaches every district equally.
+      </>
+    ),
     impactKey: 'msoc',
     baseline: 1_614,
     min: 1_614,
@@ -210,7 +350,16 @@ const LEVERS = [
     group: 'School operations',
     icon: 'transportation',
     label: 'Student transportation',
+    sliderLabel: 'Transportation funding level',
     description: 'Buses, drivers, fuel, and required routes.',
+    note: (
+      <>
+        Transportation is funded by a separate formula based on the students a
+        district actually carries and how far. Rural districts with long routes
+        and districts running required special education routes feel changes
+        here most.
+      </>
+    ),
     impactKey: 'transportation',
     baseline: 100,
     min: 100,
@@ -289,7 +438,375 @@ function LeverIcon({ name }: { name: string }) {
 }
 
 type LeverId = (typeof LEVERS)[number]['id'];
+type Lever = (typeof LEVERS)[number];
 type Values = Record<LeverId, number>;
+
+/** Uppercase label + value, the stat strip along the bottom of each card. */
+function CardStat({
+  label,
+  value,
+  tone,
+}: {
+  label: string;
+  value: string;
+  tone?: 'good' | 'plain';
+}) {
+  return (
+    <div>
+      <p className="text-[11px] font-semibold uppercase tracking-wide text-ink-muted">
+        {label}
+      </p>
+      <p
+        className={`mt-0.5 text-lg font-bold tabular-nums ${
+          tone === 'good' ? 'text-good' : ''
+        }`}
+      >
+        {value}
+      </p>
+    </div>
+  );
+}
+
+/**
+ * The per-district picture for one lever: a solid bar for today, a lighter
+ * segment for what the change adds, and (for the levy cap) a dashed marker
+ * showing the ceiling the district's tax base could physically support.
+ */
+function LeverBar({
+  lever,
+  values,
+  district,
+}: {
+  lever: Lever;
+  values: Values;
+  district: SimDistrict;
+}) {
+  const levy = district.levy;
+  const name = district.record.name
+    .replace(/ School District.*$/, '')
+    .replace(/ Public Schools$/, '');
+
+  // Levy cap: today's collectible levy, the room a higher cap opens, and the
+  // tax-base ceiling ($2.50 per $1,000 of assessed value).
+  if (lever.id === 'levyPerPupil' && levy) {
+    const perStudent = (total: number) => total / levy.enrollment;
+    const todayTotal = Math.min(
+      levy.levy,
+      levyAuthority(levy, LEA.maxLevyRate, LEA.maxLevyPerPupil)
+    );
+    const planTotal = levyAuthority(levy, LEA.maxLevyRate, values.levyPerPupil);
+    const today = perStudent(todayTotal);
+    const plan = perStudent(planTotal);
+    const ceiling = (levy.av * LEA.maxLevyRate) / 1000 / levy.enrollment;
+    const scale = Math.max(ceiling, plan) * 1.08;
+    const pct = (v: number) => `${Math.max(0, Math.min(100, (100 * v) / scale))}%`;
+    const added = Math.max(0, plan - today);
+
+    return (
+      <figure>
+        <figcaption className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-ink-secondary">
+          <span className="flex items-center gap-1.5">
+            <span className="inline-block w-3 h-3 rounded-sm bg-series-state" />
+            Levy today
+          </span>
+          <span className="flex items-center gap-1.5">
+            <span className="inline-block w-3 h-3 rounded-sm bg-accent-soft" />
+            Room the new cap opens
+          </span>
+          <span className="flex items-center gap-1.5">
+            <span
+              className="inline-block w-3 border-t-2 border-dashed"
+              style={{ borderColor: '#256abf' }}
+            />
+            Tax-base ceiling
+          </span>
+        </figcaption>
+        <div className="mt-3 flex items-center gap-3">
+          <div className="w-28 shrink-0 text-right">
+            <p className="font-bold leading-tight">{name}</p>
+            <p className="text-[11px] text-ink-muted">
+              Ceiling: {fmtMoneyFull(Math.round(ceiling))}
+            </p>
+          </div>
+          <div className="relative flex-1 h-9">
+            <div className="absolute inset-0 flex items-center">
+              <div className="flex h-9 w-full">
+                <div
+                  className="h-full rounded-l bg-series-state flex items-center justify-center text-white text-sm font-semibold"
+                  style={{ width: pct(today) }}
+                >
+                  {today / scale > 0.16 && fmtMoneyFull(Math.round(today))}
+                </div>
+                {added > 0 && (
+                  <div
+                    className="h-full bg-accent-soft"
+                    style={{ width: pct(added) }}
+                  />
+                )}
+              </div>
+            </div>
+            {/* dashed tax-base ceiling marker */}
+            <div
+              className="absolute top-0 h-9 border-l-2 border-dashed"
+              style={{ left: pct(ceiling), borderColor: '#256abf' }}
+              title={`Tax-base ceiling: ${fmtMoneyFull(Math.round(ceiling))} per student`}
+            />
+          </div>
+          <div className="w-20 shrink-0 text-lg font-bold tabular-nums">
+            {fmtMoneyFull(Math.round(plan))}
+          </div>
+        </div>
+      </figure>
+    );
+  }
+
+  // LEA: what the district's own $1.50 levy raises vs the state guarantee.
+  if (lever.id === 'leaThreshold' && levy) {
+    const now = leaFor(levy, LEA.leaThresholdPerPupil);
+    const plan = leaFor(levy, values.leaThreshold);
+    const scale = Math.max(values.leaThreshold, now.capacityPerPupil) * 1.08;
+    const pct = (v: number) => `${Math.max(0, Math.min(100, (100 * v) / scale))}%`;
+    return (
+      <figure>
+        <figcaption className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-ink-secondary">
+          <span className="flex items-center gap-1.5">
+            <span className="inline-block w-3 h-3 rounded-sm bg-series-local" />
+            Their own $1.50 levy
+          </span>
+          <span className="flex items-center gap-1.5">
+            <span className="inline-block w-3 h-3 rounded-sm bg-series-state" />
+            State fills the gap
+          </span>
+        </figcaption>
+        <div className="mt-3 flex items-center gap-3">
+          <div className="w-28 shrink-0 text-right">
+            <p className="font-bold leading-tight">{name}</p>
+            <p className="text-[11px] text-ink-muted">
+              Raises {fmtMoneyFull(Math.round(now.capacityPerPupil))}
+            </p>
+          </div>
+          <div className="flex-1 h-9 flex">
+            <div
+              className="h-full rounded-l bg-series-local"
+              style={{ width: pct(Math.min(now.capacityPerPupil, values.leaThreshold)) }}
+            />
+            {plan.maxPerPupil > 0 && (
+              <div
+                className="h-full bg-series-state flex items-center justify-center text-white text-sm font-semibold"
+                style={{ width: pct(plan.maxPerPupil) }}
+              >
+                {plan.maxPerPupil / scale > 0.16 &&
+                  fmtMoneyFull(Math.round(plan.maxPerPupil))}
+              </div>
+            )}
+          </div>
+          <div className="w-20 shrink-0 text-lg font-bold tabular-nums">
+            {fmtMoneyFull(Math.round(values.leaThreshold))}
+          </div>
+        </div>
+        {plan.maxPerPupil <= 0 && (
+          <p className="mt-2 text-xs text-ink-muted">
+            {name} already raises more than the guarantee on its own, so it
+            receives no state match.
+          </p>
+        )}
+      </figure>
+    );
+  }
+
+  // Everything else: a simple today-vs-plan per-student comparison.
+  const counts: Partial<Record<LeverId, { base: number; now: number; who: string }>> = {
+    lowIncomeWeight: {
+      base: BASELINE_LAP_PER_STUDENT,
+      now: BASELINE_LAP_PER_STUDENT * values.lowIncomeWeight,
+      who: `${fmtInt(district.record.demo.lowIncome)} low-income students`,
+    },
+    povertyBonus: {
+      base: 0,
+      now: values.povertyBonus,
+      who:
+        district.record.enrollment > 0 &&
+        district.record.demo.lowIncome / district.record.enrollment >= 0.6
+          ? `${fmtInt(district.record.demo.lowIncome)} students qualify`
+          : 'This district does not qualify',
+    },
+    ellWeight: {
+      base: BASELINE_ELL_PER_STUDENT,
+      now: BASELINE_ELL_PER_STUDENT * values.ellWeight,
+      who: `${fmtInt(district.record.demo.ell)} English learners`,
+    },
+    spedMultiplier: {
+      base: 0,
+      now: BASELINE_SPED_ALLOCATION * (values.spedMultiplier - 1.12),
+      who: `${fmtInt(district.record.demo.sped)} students with disabilities`,
+    },
+    msoc: {
+      base: 1_614,
+      now: values.msoc,
+      who: `${fmtInt(Math.round(district.record.fundingEnrollment))} funding FTE`,
+    },
+  };
+  const c = counts[lever.id];
+  if (!c) return null;
+  const scale = Math.max(c.now, c.base) * 1.08 || 1;
+  const pct = (v: number) => `${Math.max(0, Math.min(100, (100 * v) / scale))}%`;
+  const added = Math.max(0, c.now - c.base);
+
+  return (
+    <figure>
+      <figcaption className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-ink-secondary">
+        <span className="flex items-center gap-1.5">
+          <span className="inline-block w-3 h-3 rounded-sm bg-series-state" />
+          Today
+        </span>
+        <span className="flex items-center gap-1.5">
+          <span className="inline-block w-3 h-3 rounded-sm bg-accent-soft" />
+          Your plan adds
+        </span>
+      </figcaption>
+      <div className="mt-3 flex items-center gap-3">
+        <div className="w-28 shrink-0 text-right">
+          <p className="font-bold leading-tight">{name}</p>
+          <p className="text-[11px] text-ink-muted">{c.who}</p>
+        </div>
+        <div className="flex-1 h-9 flex">
+          {c.base > 0 && (
+            <div
+              className="h-full rounded-l bg-series-state flex items-center justify-center text-white text-sm font-semibold"
+              style={{ width: pct(c.base) }}
+            >
+              {c.base / scale > 0.16 && fmtMoneyFull(Math.round(c.base))}
+            </div>
+          )}
+          {added > 0 && (
+            <div
+              className={`h-full bg-accent-soft ${c.base > 0 ? '' : 'rounded-l'}`}
+              style={{ width: pct(added) }}
+            />
+          )}
+        </div>
+        <div className="w-20 shrink-0 text-lg font-bold tabular-nums">
+          {fmtMoneyFull(Math.round(c.now))}
+        </div>
+      </div>
+    </figure>
+  );
+}
+
+/** One numbered policy card: slider, context, district picture, stat strip. */
+function LeverCard({
+  lever,
+  index,
+  values,
+  setValues,
+  district,
+}: {
+  lever: Lever;
+  index: number;
+  values: Values;
+  setValues: React.Dispatch<React.SetStateAction<Values>>;
+  district: SimDistrict | null;
+}) {
+  const value = values[lever.id];
+  const changed = value !== lever.baseline;
+  const impact = district ? leverImpactFor(lever.id, values, district) : null;
+  const current = district?.record.rev.total ?? 0;
+  const newMoney = impact?.newMoney ?? 0;
+
+  return (
+    <section className="card border-l-4 border-l-accent p-5 md:p-6">
+      <div className="flex items-start gap-3">
+        <span
+          className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full ${
+            changed ? 'bg-accent text-white' : 'bg-accent-wash text-accent-deep'
+          }`}
+        >
+          <LeverIcon name={lever.icon} />
+        </span>
+        <div className="min-w-0">
+          <h2 className="text-lg md:text-xl font-bold">
+            {index}. {lever.label}
+          </h2>
+          <p className="mt-0.5 text-ink-secondary">{lever.description}</p>
+        </div>
+      </div>
+
+      <div className="mt-5">
+        <div className="flex items-baseline justify-between gap-3">
+          <label htmlFor={lever.id} className="text-sm font-semibold">
+            {lever.sliderLabel}
+          </label>
+          <span className="text-lg font-bold tabular-nums text-accent">
+            {lever.effect(value)}
+          </span>
+        </div>
+        <input
+          id={lever.id}
+          type="range"
+          min={lever.min}
+          max={lever.max}
+          step={lever.step}
+          value={value}
+          onInput={(event) => {
+            const next = Number(event.currentTarget.value);
+            setValues((previous) => ({ ...previous, [lever.id]: next }));
+          }}
+          className="mt-2 w-full"
+          style={{ accentColor: '#256abf' }}
+        />
+        <div className="flex justify-between text-xs text-ink-muted">
+          <span>Today</span>
+          {changed && (
+            <button
+              type="button"
+              onClick={() =>
+                setValues((previous) => ({
+                  ...previous,
+                  [lever.id]: lever.baseline,
+                }))
+              }
+              className="text-accent hover:underline"
+            >
+              Undo
+            </button>
+          )}
+          <span>Most generous</span>
+        </div>
+      </div>
+
+      {lever.note && (
+        <p className="mt-4 text-sm text-ink-secondary">{lever.note}</p>
+      )}
+
+      {district && (
+        <div className="mt-5">
+          <LeverBar lever={lever} values={values} district={district} />
+        </div>
+      )}
+
+      {district && impact && (
+        <div className="mt-5 pt-4 border-t border-line grid grid-cols-2 md:grid-cols-4 gap-4">
+          <CardStat label="Current revenue" value={fmtMoney(current)} />
+          <CardStat
+            label={impact.local ? 'New local room' : 'New money'}
+            value={newMoney > 0 ? `+${fmtMoney(newMoney)}` : fmtMoney(0)}
+            tone={newMoney > 0 ? 'good' : 'plain'}
+          />
+          <CardStat label="New total" value={fmtMoney(current + newMoney)} />
+          <CardStat
+            label="Change"
+            value={
+              current > 0
+                ? `${newMoney > 0 ? '+' : ''}${((100 * newMoney) / current).toFixed(2)}%`
+                : '-'
+            }
+            tone={newMoney > 0 ? 'good' : 'plain'}
+          />
+        </div>
+      )}
+    </section>
+  );
+}
 
 const BASELINE = Object.fromEntries(
   LEVERS.map((lever) => [lever.id, lever.baseline])
@@ -333,266 +850,45 @@ function policyImpact(values: Values) {
     0
   );
   const localCapacity =
-    statewideLevyAuthority(values.levyCap, LEA.maxLevyPerPupil) -
+    statewideLevyAuthority(LEA.maxLevyRate, values.levyPerPupil) -
     BASELINE_LEVY_AUTHORITY;
 
   return { impacts, stateTotal, localCapacity };
 }
 
-/**
- * Walks one district through the real LEA formula with the user's threshold,
- * so the abstract slider lands on a concrete school district.
- */
-function LeaBreakdown({
-  threshold,
-  levyRate,
-}: {
-  threshold: number;
-  levyRate: number;
-}) {
-  const [code, setCode] = useState('');
-
-  useEffect(() => {
-    const saved = window.localStorage.getItem(SELECTED_DISTRICT_KEY);
-    if (saved && LEVY_DISTRICTS[saved]) setCode(saved);
-  }, []);
-
-  const districts = useMemo(
-    () =>
-      data.districts
-        .filter((d) => LEVY_DISTRICTS[d.code])
-        .map((d) => ({ code: d.code, name: d.name, county: d.county }))
-        .sort((a, b) => a.name.localeCompare(b.name)),
-    []
-  );
-  const picked = code ? LEVY_DISTRICTS[code] : null;
-  const name = districts.find((d) => d.code === code)?.name;
-
-  const choose = (next: string) => {
-    setCode(next);
-    if (next) window.localStorage.setItem(SELECTED_DISTRICT_KEY, next);
-  };
-
-  const now = picked ? leaFor(picked, LEA.leaThresholdPerPupil) : null;
-  const plan = picked ? leaFor(picked, threshold) : null;
-  // Local levy authority under the user's levy limit
-  const authorityNow = picked
-    ? levyAuthority(picked, LEA.maxLevyRate, LEA.maxLevyPerPupil)
-    : 0;
-  const authorityPlan = picked
-    ? levyAuthority(picked, levyRate, LEA.maxLevyPerPupil)
-    : 0;
-
-  return (
-    <div className="card p-5 md:p-6">
-      <div className="flex items-start justify-between gap-4 flex-wrap">
-        <div>
-          <h2 className="text-lg md:text-xl font-bold">
-            See it for one district
-          </h2>
-          <p className="mt-1 text-sm text-ink-secondary max-w-2xl">
-            The state guarantees every district a set amount per student. A
-            district&apos;s own $1.50 levy covers part of it; the state pays the
-            rest as LEA.
-          </p>
-        </div>
-        <div className="w-full md:w-80">
-          <DistrictCombobox
-            districts={districts}
-            onPick={choose}
-            selectedName={name}
-            placeholder="Choose or search for a district"
-          />
-        </div>
-      </div>
-
-      {picked && now && plan ? (
-        <div className="mt-5">
-          {/* Per-pupil: the two bars that explain the whole formula */}
-          <p className="text-xs font-semibold uppercase tracking-wide text-ink-secondary">
-            Per student
-          </p>
-          {(() => {
-            const scale = Math.max(threshold, now.capacityPerPupil) * 1.05;
-            const pctOf = (v: number) => `${Math.max(0, (100 * v) / scale)}%`;
-            return (
-              <div className="mt-2 space-y-3">
-                <div>
-                  <div className="flex justify-between text-sm">
-                    <span className="text-ink-secondary">
-                      What their own $1.50 levy raises
-                    </span>
-                    <span className="font-semibold tabular-nums">
-                      {fmtMoneyFull(Math.round(now.capacityPerPupil))}
-                    </span>
-                  </div>
-                  <div className="mt-1 h-5 rounded bg-paper overflow-hidden">
-                    <div
-                      className="h-full rounded bg-series-local"
-                      style={{ width: pctOf(now.capacityPerPupil) }}
-                    />
-                  </div>
-                </div>
-                <div>
-                  <div className="flex justify-between text-sm">
-                    <span className="text-ink-secondary">
-                      State guarantee{' '}
-                      {threshold !== LEA.leaThresholdPerPupil && '(your plan)'}
-                    </span>
-                    <span className="font-semibold tabular-nums">
-                      {fmtMoneyFull(Math.round(threshold))}
-                    </span>
-                  </div>
-                  <div className="mt-1 h-5 rounded bg-paper overflow-hidden flex" style={{ gap: 2 }}>
-                    <div
-                      className="h-full bg-series-local"
-                      style={{ width: pctOf(Math.min(now.capacityPerPupil, threshold)) }}
-                    />
-                    <div
-                      className="h-full bg-series-state"
-                      style={{ width: pctOf(plan.maxPerPupil) }}
-                    />
-                  </div>
-                </div>
-              </div>
-            );
-          })()}
-          <p className="mt-2 text-sm">
-            {plan.maxPerPupil > 0 ? (
-              <>
-                The state fills a gap of{' '}
-                <strong className="text-accent-deep">
-                  {fmtMoneyFull(Math.round(plan.maxPerPupil))} per student
-                </strong>
-                .
-              </>
-            ) : (
-              <span className="text-ink-secondary">
-                This district&apos;s property wealth already exceeds the
-                guarantee, so it receives no LEA.
-              </span>
-            )}
-          </p>
-
-          {/* Dollars: max, payable, and what they actually got */}
-          <p className="mt-5 text-xs font-semibold uppercase tracking-wide text-ink-secondary">
-            Total dollars
-          </p>
-          {(() => {
-            const bars = [
-              {
-                label: 'Maximum possible LEA',
-                value: plan.maxLea,
-                color: '#9ec5f4',
-              },
-              {
-                label: `LEA after their ${'$'}${picked.levyRate.toFixed(2)} levy rate`,
-                value: plan.payable,
-                color: '#2a78d6',
-              },
-              {
-                label: 'Actually received (2024-25)',
-                value: picked.actualLea,
-                color: '#104281',
-              },
-            ];
-            const max = Math.max(1, ...bars.map((b) => b.value));
-            return (
-              <div className="mt-2 space-y-2.5">
-                {bars.map((b) => (
-                  <div key={b.label}>
-                    <div className="flex justify-between text-sm">
-                      <span className="text-ink-secondary">{b.label}</span>
-                      <span className="font-semibold tabular-nums">
-                        {fmtMoney(b.value)}
-                      </span>
-                    </div>
-                    <div className="mt-1 h-5 rounded bg-paper overflow-hidden">
-                      <div
-                        className="h-full rounded"
-                        style={{
-                          width: `${(100 * b.value) / max}%`,
-                          background: b.color,
-                        }}
-                      />
-                    </div>
-                  </div>
-                ))}
-              </div>
-            );
-          })()}
-          <p className="mt-2 text-xs text-ink-muted">
-            {plan.effort < 1 ? (
-              <>
-                Their levy rate of ${picked.levyRate.toFixed(2)} is below the
-                $1.50 needed for a full match, so they receive{' '}
-                {Math.round(plan.effort * 100)}% of the maximum.
-              </>
-            ) : (
-              <>
-                Their levy rate of ${picked.levyRate.toFixed(2)} meets the $1.50
-                threshold, so they qualify for the full match.
-              </>
-            )}{' '}
-            &ldquo;Actually received&rdquo; is F-196 revenue code 3300 for
-            2024-25 and covers a different period than the {levyData.calendarYear}{' '}
-            estimate above.
-          </p>
-
-          {/* Local levy authority */}
-          <div className="mt-5 pt-4 border-t border-line">
-            <div className="grid sm:grid-cols-2 gap-4 text-sm">
-              <div>
-                <p className="text-ink-secondary">Local levy limit today</p>
-                <p className="font-semibold tabular-nums">
-                  {fmtMoney(authorityNow)}
-                </p>
-              </div>
-              <div>
-                <p className="text-ink-secondary">Under your levy limit</p>
-                <p className="font-semibold tabular-nums">
-                  {fmtMoney(authorityPlan)}
-                  {authorityPlan !== authorityNow && (
-                    <span className="ml-2 text-accent-deep">
-                      {fmtSignedMoney(authorityPlan - authorityNow)}
-                    </span>
-                  )}
-                </p>
-              </div>
-            </div>
-            {/* A district's limit is the LESSER of the rate cap and the
-                per-pupil cap, so raising the rate does nothing once the
-                per-pupil cap binds. Say so rather than looking broken. */}
-            {levyRate > LEA.maxLevyRate &&
-              authorityPlan === authorityNow && (
-                <p className="mt-2 text-xs text-ink-muted">
-                  Raising the rate does not help here: this district is already
-                  capped by the per-student limit of{' '}
-                  {fmtMoneyFull(Math.round(LEA.maxLevyPerPupil))}, not by the
-                  tax rate.
-                </p>
-              )}
-          </div>
-        </div>
-      ) : (
-        <p className="mt-4 text-sm text-ink-muted">
-          Pick a district to see its property wealth, its levy rate, and the
-          state match it earns.
-        </p>
-      )}
-    </div>
-  );
-}
-
 export default function Simulator() {
   const [values, setValues] = useState<Values>(BASELINE);
+  const [code, setCode] = useState('');
   const result = useMemo(() => policyImpact(values), [values]);
   const dirty = LEVERS.some(
     (lever) => values[lever.id] !== lever.baseline
   );
-  const groups = Array.from(new Set(LEVERS.map((lever) => lever.group)));
   const statePerStudent = result.stateTotal / STUDENTS;
   const statePercent = (100 * result.stateTotal) / STATE_SHARE;
+
+  // Restore whatever district the visitor picked elsewhere on the site.
+  useEffect(() => {
+    const saved = window.localStorage.getItem(SELECTED_DISTRICT_KEY);
+    if (saved && data.districts.some((d) => d.code === saved)) setCode(saved);
+  }, []);
+
+  const pickerDistricts = useMemo(
+    () =>
+      [...data.districts]
+        .map((d) => ({ code: d.code, name: d.name, county: d.county }))
+        .sort((a, b) => a.name.localeCompare(b.name)),
+    []
+  );
+  const district: SimDistrict | null = useMemo(() => {
+    const record = data.districts.find((d) => d.code === code);
+    if (!record) return null;
+    return { record, levy: LEVY_DISTRICTS[code] ?? null };
+  }, [code]);
+
+  const chooseDistrict = (next: string) => {
+    setCode(next);
+    if (next) window.localStorage.setItem(SELECTED_DISTRICT_KEY, next);
+  };
 
   return (
     <div className="max-w-site mx-auto px-4 md:px-6 pt-10">
@@ -730,122 +1026,53 @@ export default function Simulator() {
         </details>
       </section>
 
-      <div className="mt-8 grid lg:grid-cols-[1fr,27rem] gap-6 items-start">
-        <div className="space-y-6">
-          {groups.map((group) => (
-            <section key={group} className="card p-5">
-              <h2 className="font-semibold text-sm uppercase tracking-wide text-ink-secondary">
-                {group}
-              </h2>
-              <div className="mt-4 space-y-6">
-                {LEVERS.filter((lever) => lever.group === group).map(
-                  (lever) => {
-                    const value = values[lever.id];
-                    const changed = value !== lever.baseline;
-                    const leverCost = lever.impactKey
-                      ? result.impacts[lever.impactKey]
-                      : lever.id === 'levyCap'
-                        ? result.localCapacity
-                        : 0;
+      {/* Pick a district first: every card below is then shown for it. */}
+      <section className="mt-8 card p-5 md:p-6 bg-accent-wash border-accent-soft">
+        <div className="flex items-start justify-between gap-4 flex-wrap">
+          <div>
+            <h2 className="text-lg md:text-xl font-bold">
+              Start by choosing a district
+            </h2>
+            <p className="mt-1 text-sm text-ink-secondary max-w-2xl">
+              Every policy below will show what it would mean for that district:
+              its own numbers, and the money the change would add.
+            </p>
+          </div>
+          <div className="w-full md:w-80">
+            <DistrictCombobox
+              districts={pickerDistricts}
+              onPick={chooseDistrict}
+              selectedName={district?.record.name}
+              placeholder="Choose or search for a district"
+            />
+          </div>
+        </div>
+        {district && (
+          <p className="mt-3 text-sm text-ink-secondary">
+            <strong className="text-ink">{district.record.name}</strong> -{' '}
+            {fmtInt(district.record.enrollment)} students,{' '}
+            {fmtMoney(district.record.rev.total)} in general fund revenue.
+          </p>
+        )}
+      </section>
 
-                    return (
-                      <div key={lever.id}>
-                        <div className="flex items-start gap-3">
-                          <span
-                            className={`mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full ${
-                              changed
-                                ? 'bg-accent text-white'
-                                : 'bg-accent-wash text-accent-deep'
-                            }`}
-                          >
-                            <LeverIcon name={lever.icon} />
-                          </span>
-                          <div className="min-w-0 flex-1">
-                            <label
-                              htmlFor={lever.id}
-                              className="block text-sm md:text-base font-semibold"
-                            >
-                              {lever.label}
-                            </label>
-                            <p className="mt-0.5 text-sm text-ink-secondary">
-                              {lever.description}
-                            </p>
-                          </div>
-                        </div>
-
-                        {/* What the current setting actually means, in plain words */}
-                        <div className="mt-3 flex items-baseline justify-between gap-3 flex-wrap">
-                          <span
-                            className={`text-base font-bold ${
-                              changed ? 'text-accent-deep' : 'text-ink'
-                            }`}
-                          >
-                            {lever.effect(value)}
-                          </span>
-                          {changed && leverCost !== 0 && (
-                            <span className="text-sm font-semibold tabular-nums text-accent-deep">
-                              {fmtSignedMoney(leverCost)}/yr
-                              {lever.id === 'levyCap' && ' local'}
-                            </span>
-                          )}
-                        </div>
-
-                        <input
-                          id={lever.id}
-                          type="range"
-                          min={lever.min}
-                          max={lever.max}
-                          step={lever.step}
-                          value={value}
-                          onInput={(event) => {
-                            const nextValue = Number(
-                              event.currentTarget.value
-                            );
-                            setValues((previous) => ({
-                              ...previous,
-                              [lever.id]: nextValue,
-                            }));
-                          }}
-                          className="mt-2 w-full"
-                          style={{ accentColor: '#256abf' }}
-                          aria-describedby={`${lever.id}-scale`}
-                        />
-                        <div
-                          id={`${lever.id}-scale`}
-                          className="flex justify-between text-xs text-ink-muted"
-                        >
-                          <span>Today</span>
-                          {changed ? (
-                            <button
-                              type="button"
-                              onClick={() =>
-                                setValues((previous) => ({
-                                  ...previous,
-                                  [lever.id]: lever.baseline,
-                                }))
-                              }
-                              className="text-accent hover:underline"
-                            >
-                              Undo
-                            </button>
-                          ) : null}
-                          <span>Most generous</span>
-                        </div>
-                      </div>
-                    );
-                  }
-                )}
-              </div>
-              {/* The levy/LEA group gets a worked example for a real district */}
-              {group === 'Local levies and state match' && (
-                <div className="mt-5 pt-5 border-t border-line -mx-5 px-5">
-                  <LeaBreakdown
-                    threshold={values.leaThreshold}
-                    levyRate={values.levyCap}
-                  />
-                </div>
-              )}
-            </section>
+      <div className="mt-6 grid lg:grid-cols-[1fr,27rem] gap-6 items-start">
+        <div className="space-y-5">
+          {!district && (
+            <p className="card p-5 text-sm text-ink-muted">
+              Pick a district above to see each policy applied to real numbers.
+              You can still move the sliders to see statewide costs.
+            </p>
+          )}
+          {LEVERS.map((lever, i) => (
+            <LeverCard
+              key={lever.id}
+              lever={lever}
+              index={i + 1}
+              values={values}
+              setValues={setValues}
+              district={district}
+            />
           ))}
         </div>
 
