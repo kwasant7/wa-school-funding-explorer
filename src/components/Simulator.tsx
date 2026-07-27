@@ -336,9 +336,9 @@ const LEVERS = [
     baseline: 1,
     min: 1,
     max: 2,
-    // $18 increments keep the dollar display meaningful while letting the
-    // range control move smoothly instead of jumping $90 at a time.
-    step: 0.01,
+    // The control has 1,000 physical positions, so $1.80 increments keep it
+    // genuinely smooth rather than visibly snapping between dollar amounts.
+    step: 0.001,
     effect: (value: number) =>
       `$${fmtInt(Math.round(BASELINE_ELL_PER_STUDENT * value))} per English learner`,
     unit: 'per student',
