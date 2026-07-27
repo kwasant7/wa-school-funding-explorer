@@ -91,6 +91,36 @@ function levyAuthority(district: LevyDistrict, rate: number, perPupil: number) {
   return Math.min((rate * district.av) / 1000, perPupil * district.enrollment);
 }
 
+/**
+ * What raising the per-pupil cap does for one district, split by whether the
+ * money needs a new election.
+ *
+ * Many districts have already passed a levy larger than the cap lets them
+ * collect - 46 of them in 2026, Bellevue by $8.9M - so the first dollars a
+ * higher cap frees up are dollars voters ALREADY approved. Only past that
+ * point does a district have to go back to the ballot.
+ */
+function levyRoom(levy: LevyDistrict, newPerPupil: number) {
+  const approved = levy.levy;
+  const nowAuthority = levyAuthority(levy, LEA.maxLevyRate, LEA.maxLevyPerPupil);
+  const newAuthority = levyAuthority(levy, LEA.maxLevyRate, newPerPupil);
+  const collectedToday = Math.min(approved, nowAuthority);
+  const unlocked = Math.max(0, Math.min(approved, newAuthority) - collectedToday);
+  const needsVote = Math.max(0, newAuthority - Math.max(approved, nowAuthority));
+  return {
+    approved,
+    nowAuthority,
+    newAuthority,
+    collectedToday,
+    /** Voter-approved money the cap blocks today; no new election needed. */
+    unlocked,
+    /** Room beyond what voters have already said yes to. */
+    needsVote,
+    total: unlocked + needsVote,
+    cappedBelowApproved: approved > nowAuthority,
+  };
+}
+
 /** districts.json record joined with its levy/LEA inputs. */
 type DistrictRecord = (typeof data.districts)[number];
 export type SimDistrict = {
@@ -106,17 +136,25 @@ function leverImpactFor(
   leverId: LeverId,
   values: Values,
   d: SimDistrict
-): { newMoney: number; local?: boolean } | null {
+): {
+  newMoney: number;
+  local?: boolean;
+  /** Levy only: money voters already approved that the cap blocks today. */
+  unlocked?: number;
+  /** Levy only: money that would still need a new election. */
+  needsVote?: number;
+} | null {
   const r = d.record;
   switch (leverId) {
     case 'levyPerPupil': {
       if (!d.levy) return null;
-      const now = Math.min(
-        d.levy.levy,
-        levyAuthority(d.levy, LEA.maxLevyRate, LEA.maxLevyPerPupil)
-      );
-      const next = levyAuthority(d.levy, LEA.maxLevyRate, values.levyPerPupil);
-      return { newMoney: Math.max(0, next - now), local: true };
+      const room = levyRoom(d.levy, values.levyPerPupil);
+      return {
+        newMoney: room.total,
+        local: true,
+        unlocked: room.unlocked,
+        needsVote: room.needsVote,
+      };
     }
     case 'leaThreshold': {
       if (!d.levy) return null;
@@ -197,8 +235,9 @@ const LEVERS = [
         <strong className="text-ink">ESHB 2049 (2025)</strong>. It reaches{' '}
         <strong className="text-ink">$3,838 in 2026</strong> (today&apos;s
         slider default) and <strong className="text-ink">$5,035 by 2031</strong>
-        . A higher cap does not raise money by itself - voters still have to
-        approve any levy increase at the ballot.
+        . Raising the cap releases money a district&apos;s voters have already
+        approved but the cap holds back; past that point, collecting more would
+        take a new levy vote.
       </>
     ),
     impactKey: null,
@@ -238,7 +277,15 @@ const LEVERS = [
         This is a wealth test, not the district&apos;s actual levy. Washington
         checks what its property could raise at{' '}
         <strong className="text-ink">$1.50 per $1,000</strong>; where that
-        falls below the goal, the state provides Local Effort Assistance.
+        falls below the goal, the state provides Local Effort Assistance. The
+        2026 goal is{' '}
+        <strong className="text-ink">
+          {fmtMoneyFull(Math.round(LEA.leaThresholdPerPupil))} per student
+        </strong>
+        , and this slider raises it.{' '}
+        <Link href="/lea" className="font-semibold text-accent hover:underline">
+          See the full formula, step by step →
+        </Link>
       </>
     ),
     impactKey: 'lea',
@@ -249,6 +296,8 @@ const LEVERS = [
     effect: (value: number) =>
       value === 0 ? 'No increase' : `+$${fmtInt(Math.round(value))} per student`,
     unit: 'per student',
+    // The slider measures an increase, so "today" is the standing threshold.
+    todayLabel: `${fmtMoneyFull(Math.round(LEA.leaThresholdPerPupil))} goal`,
     markers: [],
   },
   {
@@ -431,8 +480,7 @@ const LEVERS = [
         Washington does not currently pay a concentration bonus. This models one:
         extra dollars only where at least{' '}
         <strong className="text-ink">60% of students are low-income</strong>,
-        on the theory that concentrated poverty costs more to address than the
-        same number of students spread across a wealthier district.
+        on the theory that concentrated poverty costs more to address.
       </>
     ),
     impactKey: 'poverty',
@@ -443,8 +491,9 @@ const LEVERS = [
     effect: (value: number) =>
       value === 0
         ? 'No bonus today'
-        : `+$${fmtInt(value)} per student in high-poverty districts`,
+        : `+$${fmtInt(value)} per low-income student`,
     unit: 'per student',
+    todayLabel: '$0 per student',
     markers: [],
   },
 ] as const;
@@ -568,28 +617,32 @@ function LeverBar({
   // tax-base ceiling ($2.50 per $1,000 of assessed value).
   if (lever.id === 'levyPerPupil' && levy) {
     const perStudent = (total: number) => total / levy.enrollment;
-    const todayTotal = Math.min(
-      levy.levy,
-      levyAuthority(levy, LEA.maxLevyRate, LEA.maxLevyPerPupil)
-    );
-    const planTotal = levyAuthority(levy, LEA.maxLevyRate, values.levyPerPupil);
-    const today = perStudent(todayTotal);
-    const plan = perStudent(planTotal);
+    const room = levyRoom(levy, values.levyPerPupil);
+    const today = perStudent(room.collectedToday);
+    const plan = perStudent(room.newAuthority);
+    const approved = perStudent(room.approved);
     const ceiling = (levy.av * LEA.maxLevyRate) / 1000 / levy.enrollment;
-    const scale = Math.max(ceiling, plan);
+    const scale = Math.max(ceiling, plan, approved);
     const pct = (v: number) => `${Math.max(0, Math.min(100, (100 * v) / scale))}%`;
-    const added = Math.max(0, plan - today);
+    const unlocked = perStudent(room.unlocked);
+    const needsVote = perStudent(room.needsVote);
 
     return (
       <figure>
         <figcaption className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-ink-secondary">
           <span className="flex items-center gap-1.5">
             <span className="inline-block w-3 h-3 rounded-sm bg-series-state" />
-            Levy today
+            Collected today
           </span>
+          {room.unlocked > 0 && (
+            <span className="flex items-center gap-1.5">
+              <span className="inline-block w-3 h-3 rounded-sm bg-series-local" />
+              Already approved, cap-blocked
+            </span>
+          )}
           <span className="flex items-center gap-1.5">
             <span className="inline-block w-3 h-3 rounded-sm bg-accent-soft" />
-            Room the new cap opens
+            Would need a new vote
           </span>
           <span className="flex items-center gap-1.5">
             <span
@@ -615,10 +668,19 @@ function LeverBar({
                 >
                   {today / scale > 0.16 && fmtMoneyFull(Math.round(today))}
                 </div>
-                {added > 0 && (
+                {unlocked > 0 && (
+                  <div
+                    className="h-full bg-series-local flex items-center justify-center text-white text-xs font-semibold"
+                    style={{ width: pct(unlocked) }}
+                  >
+                    {unlocked / scale > 0.12 &&
+                      `+${fmtMoneyFull(Math.round(unlocked))}`}
+                  </div>
+                )}
+                {needsVote > 0 && (
                   <div
                     className="h-full bg-accent-soft"
-                    style={{ width: pct(added) }}
+                    style={{ width: pct(needsVote) }}
                   />
                 )}
               </div>
@@ -634,6 +696,17 @@ function LeverBar({
             {fmtMoneyFull(Math.round(plan))}
           </div>
         </div>
+        {room.cappedBelowApproved && (
+          <p className="mt-4 text-sm text-ink-secondary">
+            {name}&apos;s voters have already approved a levy of{' '}
+            <strong className="text-ink">{fmtMoney(room.approved)}</strong>, but
+            the {fmtMoneyFull(Math.round(LEA.maxLevyPerPupil))} cap only lets it
+            collect <strong className="text-ink">{fmtMoney(room.collectedToday)}</strong>.
+            {room.unlocked > 0
+              ? ` Raising the cap frees ${fmtMoney(room.unlocked)} of that without another election.`
+              : ' Raising the cap is what would release the rest.'}
+          </p>
+        )}
       </figure>
     );
   }
@@ -690,7 +763,8 @@ function LeverBar({
               className="absolute top-0 z-10 whitespace-nowrap text-sm font-bold tabular-nums text-[#7c3aed]"
               style={{ left: labelPct(goal), transform: 'translateX(-50%)' }}
             >
-              Goal: {fmtMoneyFull(Math.round(goal))}
+              {values.leaThreshold > 0 ? 'Your goal' : 'Goal today'}:{' '}
+              {fmtMoneyFull(Math.round(goal))}
             </div>
             <div className="absolute inset-x-0 bottom-0 h-10 rounded bg-[#e2e8f0]" />
             <div className="absolute inset-x-0 bottom-0 flex h-10">
@@ -829,16 +903,33 @@ function LeverBar({
     );
   }
 
+  // The concentration bonus is all-or-nothing at 60% low-income. Below that
+  // line this district gets nothing at any slider value, so show that plainly
+  // instead of a bar implying money it will never receive.
+  if (lever.id === 'povertyBonus') {
+    const share =
+      district.record.enrollment > 0
+        ? district.record.demo.lowIncome / district.record.enrollment
+        : 0;
+    if (share < 0.6) {
+      return (
+        <p className="text-sm text-ink-secondary">
+          <strong className="text-ink">{name}</strong> is{' '}
+          <strong className="text-ink">{(100 * share).toFixed(0)}%</strong>{' '}
+          low-income, under the 60% line this bonus is built around, so it
+          receives <strong className="text-ink">nothing</strong> from this
+          policy no matter how high the amount goes.
+        </p>
+      );
+    }
+  }
+
   // Everything else: a simple today-vs-plan per-student comparison.
   const counts: Partial<Record<LeverId, { base: number; now: number; who: string }>> = {
     povertyBonus: {
       base: 0,
       now: values.povertyBonus,
-      who:
-        district.record.enrollment > 0 &&
-        district.record.demo.lowIncome / district.record.enrollment >= 0.6
-          ? `${fmtInt(district.record.demo.lowIncome)} students qualify`
-          : 'This district does not qualify',
+      who: `${fmtInt(district.record.demo.lowIncome)} low-income students`,
     },
     ellWeight: {
       base: BASELINE_ELL_PER_STUDENT,
@@ -1081,7 +1172,13 @@ function LeverCard({
           })}
         </div>
         <div className="flex justify-between text-xs text-ink-muted mt-4">
-          <span>Today</span>
+          <span>
+            Today (
+            {'todayLabel' in lever && lever.todayLabel
+              ? lever.todayLabel
+              : lever.effect(lever.baseline)}
+            )
+          </span>
           {changed && (
             <button
               type="button"
@@ -1181,6 +1278,8 @@ export default function Simulator() {
   const districtTotals = useMemo(() => {
     let state = 0;
     let local = 0;
+    let unlocked = 0;
+    let needsVote = 0;
     const zeroLevers: string[] = [];
     // Every moved lever that pays this district something, so the headline
     // number can be read back as the list of choices that produced it.
@@ -1192,13 +1291,16 @@ export default function Simulator() {
       amount: number;
       local: boolean;
     }[] = [];
-    if (!district) return { state, local, zeroLevers, breakdown };
+    if (!district)
+      return { state, local, unlocked, needsVote, zeroLevers, breakdown };
     for (const lever of LEVERS) {
       if (values[lever.id] === lever.baseline) continue;
       const impact = leverImpactFor(lever.id, values, district);
       const amount = impact?.newMoney ?? 0;
       if (impact?.local) local += amount;
       else state += amount;
+      unlocked += impact?.unlocked ?? 0;
+      needsVote += impact?.needsVote ?? 0;
       // Flag levers the user moved that do nothing here, so the difference
       // between the statewide and district totals is explained rather than
       // looking like a bug.
@@ -1214,7 +1316,7 @@ export default function Simulator() {
         });
     }
     breakdown.sort((a, b) => b.amount - a.amount);
-    return { state, local, zeroLevers, breakdown };
+    return { state, local, unlocked, needsVote, zeroLevers, breakdown };
   }, [district, values]);
 
   return (
@@ -1418,10 +1520,28 @@ export default function Simulator() {
               ? 'No money from your plan reaches this district yet.'
               : `${((100 * (districtTotals.state + districtTotals.local)) / district.record.rev.total).toFixed(2)}% on top of its ${fmtMoney(district.record.rev.total)} budget.`}
           </p>
-          {districtTotals.local > 0 && (
+          {/*
+            Levy room splits in two. Money the cap blocks today is money voters
+            have ALREADY approved, so calling all of it "if voters approve"
+            would be wrong for the 46 districts in that position.
+          */}
+          {districtTotals.unlocked > 0 && (
             <p className="mt-2 text-sm text-ink-secondary">
-              <strong className="text-ink">{fmtSignedMoney(districtTotals.local)}</strong> of
-              that is local levy room, only collected if voters approve it.
+              <strong className="text-ink">
+                {fmtSignedMoney(districtTotals.unlocked)}
+              </strong>{' '}
+              of that is local levy money{' '}
+              <strong className="text-ink">voters have already approved</strong>{' '}
+              but the cap blocks today - no new election needed.
+            </p>
+          )}
+          {districtTotals.needsVote > 0 && (
+            <p className="mt-2 text-sm text-ink-secondary">
+              <strong className="text-ink">
+                {fmtSignedMoney(districtTotals.needsVote)}
+              </strong>{' '}
+              of that is local levy room beyond what voters have approved, so it
+              would take a new levy vote.
             </p>
           )}
           {/* Which slider produced which share of the headline number. */}
