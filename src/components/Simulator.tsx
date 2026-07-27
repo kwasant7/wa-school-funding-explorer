@@ -35,29 +35,10 @@ function leaFor(district: LevyDistrict, threshold: number) {
 }
 
 /** Statewide LEA cost at a given threshold, summed from real district data. */
-function statewideLea(threshold: number) {
-  let total = 0;
-  for (const d of Object.values(LEVY_DISTRICTS)) total += leaFor(d, threshold).payable;
-  return total;
-}
-
 /** A district's maximum enrichment levy authority: lesser of rate and per-pupil cap. */
 function levyAuthority(district: LevyDistrict, rate: number, perPupil: number) {
   return Math.min((rate * district.av) / 1000, perPupil * district.enrollment);
 }
-
-function statewideLevyAuthority(rate: number, perPupil: number) {
-  let total = 0;
-  for (const d of Object.values(LEVY_DISTRICTS))
-    total += levyAuthority(d, rate, perPupil);
-  return total;
-}
-
-const BASELINE_LEA_TOTAL = statewideLea(LEA.leaThresholdPerPupil);
-const BASELINE_LEVY_AUTHORITY = statewideLevyAuthority(
-  LEA.maxLevyRate,
-  LEA.maxLevyPerPupil
-);
 
 /** districts.json record joined with its levy/LEA inputs. */
 type DistrictRecord = (typeof data.districts)[number];
@@ -137,31 +118,6 @@ function leverImpactFor(
 }
 
 const STUDENTS = data.statewide.enrollment;
-const FUNDING_FTE = data.statewide.fundingEnrollment;
-const STATE_SHARE = data.statewide.revenues.state;
-const LOCAL_REVENUE = data.statewide.revenues.local;
-
-const LOW_INCOME_STUDENTS = data.districts.reduce(
-  (sum, district) => sum + district.demo.lowIncome,
-  0
-);
-const ELL_STUDENTS = data.districts.reduce(
-  (sum, district) => sum + district.demo.ell,
-  0
-);
-const SPED_STUDENTS = data.districts.reduce(
-  (sum, district) => sum + district.demo.sped,
-  0
-);
-const HIGH_POVERTY_LOW_INCOME_STUDENTS = data.districts.reduce(
-  (sum, district) =>
-    district.enrollment > 0 &&
-    district.demo.lowIncome / district.enrollment >= 0.6
-      ? sum + district.demo.lowIncome
-      : sum,
-  0
-);
-
 const BASELINE_LAP_PER_STUDENT = 1_500;
 const BASELINE_ELL_PER_STUDENT = 1_800;
 const BASELINE_SPED_ALLOCATION = 12_000;
@@ -172,6 +128,7 @@ const LEVERS = [
     id: 'levyPerPupil',
     group: 'Local levies and state match',
     icon: 'levy',
+    color: '#256abf',
     label: 'Levy cap',
     sliderLabel: 'Per-student levy dollar cap',
     description:
@@ -199,7 +156,8 @@ const LEVERS = [
     id: 'leaThreshold',
     group: 'Local levies and state match',
     icon: 'lea',
-    label: 'State match for property-poor districts',
+    color: '#168a61',
+    label: 'Local Effort Assistance (LEA)',
     sliderLabel: 'Per-student state guarantee (LEA)',
     description:
       'The state promises every district a set amount per student. If a district’s own levy cannot reach it, the state pays the difference.',
@@ -225,6 +183,7 @@ const LEVERS = [
     id: 'lowIncomeWeight',
     group: 'Student needs',
     icon: 'lowIncome',
+    color: '#7a4bb7',
     label: 'Low-income support (LAP)',
     sliderLabel: 'LAP dollars per low-income student',
     description: 'Extra help for students from low-income families.',
@@ -247,37 +206,10 @@ const LEVERS = [
     unit: 'per student',
   },
   {
-    id: 'povertyBonus',
-    group: 'Student needs',
-    icon: 'poverty',
-    label: 'High-poverty school bonus',
-    sliderLabel: 'Bonus per student in high-poverty districts',
-    description:
-      'Extra money for schools where most students are low-income.',
-    note: (
-      <>
-        Washington does not currently pay a concentration bonus. This models one:
-        extra dollars only where at least{' '}
-        <strong className="text-ink">60% of students are low-income</strong>,
-        on the theory that concentrated poverty costs more to address than the
-        same number of students spread across a wealthier district.
-      </>
-    ),
-    impactKey: 'poverty',
-    baseline: 0,
-    min: 0,
-    max: 3_000,
-    step: 100,
-    effect: (value: number) =>
-      value === 0
-        ? 'No bonus today'
-        : `+$${fmtInt(value)} per student in high-poverty districts`,
-    unit: 'per student',
-  },
-  {
     id: 'ellWeight',
     group: 'Student needs',
     icon: 'ell',
+    color: '#009978',
     label: 'English learner support',
     sliderLabel: 'Dollars per English learner',
     description: 'Language help for students learning English.',
@@ -301,6 +233,7 @@ const LEVERS = [
     id: 'spedMultiplier',
     group: 'Student needs',
     icon: 'sped',
+    color: '#d15f78',
     label: 'Special education',
     sliderLabel: 'Special education excess-cost multiplier',
     description: 'Services for students with disabilities.',
@@ -327,7 +260,8 @@ const LEVERS = [
     id: 'msoc',
     group: 'School operations',
     icon: 'msoc',
-    label: 'Supplies & operating costs',
+    color: '#bd7600',
+    label: 'Materials, Supplies, & Operating Costs (MSOC)',
     sliderLabel: 'MSOC dollars per student',
     description: 'Curriculum, technology, utilities, and insurance.',
     note: (
@@ -349,6 +283,7 @@ const LEVERS = [
     id: 'transportation',
     group: 'School operations',
     icon: 'transportation',
+    color: '#9a6a39',
     label: 'Student transportation',
     sliderLabel: 'Transportation funding level',
     description: 'Buses, drivers, fuel, and required routes.',
@@ -368,6 +303,35 @@ const LEVERS = [
     effect: (value: number) =>
       `${fmtMoney(BASELINE_TRANSPORTATION * (value / 100))} statewide`,
     unit: 'statewide',
+  },
+  {
+    id: 'povertyBonus',
+    group: 'Student needs',
+    icon: 'poverty',
+    color: '#7257c7',
+    label: 'High-poverty school bonus',
+    sliderLabel: 'Bonus per student in high-poverty districts',
+    description:
+      'Extra money for schools where most students are low-income.',
+    note: (
+      <>
+        Washington does not currently pay a concentration bonus. This models one:
+        extra dollars only where at least{' '}
+        <strong className="text-ink">60% of students are low-income</strong>,
+        on the theory that concentrated poverty costs more to address than the
+        same number of students spread across a wealthier district.
+      </>
+    ),
+    impactKey: 'poverty',
+    baseline: 0,
+    min: 0,
+    max: 3_000,
+    step: 100,
+    effect: (value: number) =>
+      value === 0
+        ? 'No bonus today'
+        : `+$${fmtInt(value)} per student in high-poverty districts`,
+    unit: 'per student',
   },
 ] as const;
 
@@ -564,18 +528,21 @@ function LeverBar({
   if (lever.id === 'leaThreshold' && levy) {
     const now = leaFor(levy, LEA.leaThresholdPerPupil);
     const plan = leaFor(levy, values.leaThreshold);
-    const scale = Math.max(values.leaThreshold, now.capacityPerPupil) * 1.08;
+    // Keep the same scale across settings so the bar's length communicates
+    // the amount, instead of always stretching the selected value to the end.
+    const scale = Math.max(lever.max, now.capacityPerPupil) * 1.08;
     const pct = (v: number) => `${Math.max(0, Math.min(100, (100 * v) / scale))}%`;
+    const ownLevy = Math.min(now.capacityPerPupil, values.leaThreshold);
     return (
       <figure>
         <figcaption className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-ink-secondary">
           <span className="flex items-center gap-1.5">
             <span className="inline-block w-3 h-3 rounded-sm bg-series-local" />
-            Their own $1.50 levy
+            Their own $1.50 levy: {fmtMoneyFull(Math.round(ownLevy))}
           </span>
           <span className="flex items-center gap-1.5">
             <span className="inline-block w-3 h-3 rounded-sm bg-series-state" />
-            State fills the gap
+            State fills the gap: {fmtMoneyFull(Math.round(plan.maxPerPupil))}
           </span>
         </figcaption>
         <div className="mt-3 flex items-center gap-3">
@@ -585,10 +552,18 @@ function LeverBar({
               Raises {fmtMoneyFull(Math.round(now.capacityPerPupil))}
             </p>
           </div>
-          <div className="flex-1 h-9 flex">
+          <div className="relative flex-1 h-12 pt-3">
+            <div className="absolute inset-x-0 bottom-0 h-9 rounded bg-baseline/35" />
+            <div className="absolute inset-x-0 bottom-0 h-9 flex">
+              <div
+                className="absolute -top-5 text-xs font-semibold tabular-nums text-series-local"
+                style={{ width: pct(ownLevy), minWidth: '4rem', textAlign: 'center' }}
+              >
+                {fmtMoneyFull(Math.round(ownLevy))}
+              </div>
             <div
               className="h-full rounded-l bg-series-local"
-              style={{ width: pct(Math.min(now.capacityPerPupil, values.leaThreshold)) }}
+              style={{ width: pct(ownLevy) }}
             />
             {plan.maxPerPupil > 0 && (
               <div
@@ -599,6 +574,7 @@ function LeverBar({
                   fmtMoneyFull(Math.round(plan.maxPerPupil))}
               </div>
             )}
+            </div>
           </div>
           <div className="w-20 shrink-0 text-lg font-bold tabular-nums">
             {fmtMoneyFull(Math.round(values.leaThreshold))}
@@ -648,7 +624,9 @@ function LeverBar({
   };
   const c = counts[lever.id];
   if (!c) return null;
-  const scale = Math.max(c.now, c.base) * 1.08 || 1;
+  // Use the policy's comparison ceiling, not the current selection, so a
+  // short bar stays short instead of looking like it fills the whole scale.
+  const scale = Math.max(lever.max, c.now, c.base) * 1.08 || 1;
   const pct = (v: number) => `${Math.max(0, Math.min(100, (100 * v) / scale))}%`;
   const added = Math.max(0, c.now - c.base);
 
@@ -669,7 +647,7 @@ function LeverBar({
           <p className="font-bold leading-tight">{name}</p>
           <p className="text-[11px] text-ink-muted">{c.who}</p>
         </div>
-        <div className="flex-1 h-9 flex">
+        <div className="flex-1 h-9 flex rounded bg-baseline/35 overflow-hidden">
           {c.base > 0 && (
             <div
               className="h-full rounded-l bg-series-state flex items-center justify-center text-white text-sm font-semibold"
@@ -714,12 +692,17 @@ function LeverCard({
   const newMoney = impact?.newMoney ?? 0;
 
   return (
-    <section className="card border-l-4 border-l-accent p-5 md:p-6">
+    <section
+      className="card border-l-4 p-5 md:p-6"
+      style={{ borderLeftColor: lever.color }}
+    >
       <div className="flex items-start gap-3">
         <span
-          className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full ${
-            changed ? 'bg-accent text-white' : 'bg-accent-wash text-accent-deep'
-          }`}
+          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full"
+          style={{
+            backgroundColor: changed ? lever.color : `${lever.color}18`,
+            color: changed ? '#fff' : lever.color,
+          }}
         >
           <LeverIcon name={lever.icon} />
         </span>
@@ -736,7 +719,10 @@ function LeverCard({
           <label htmlFor={lever.id} className="text-sm font-semibold">
             {lever.sliderLabel}
           </label>
-          <span className="text-lg font-bold tabular-nums text-accent">
+          <span
+            className="text-lg font-bold tabular-nums"
+            style={{ color: lever.color }}
+          >
             {lever.effect(value)}
           </span>
         </div>
@@ -752,7 +738,7 @@ function LeverCard({
             setValues((previous) => ({ ...previous, [lever.id]: next }));
           }}
           className="mt-2 w-full"
-          style={{ accentColor: '#256abf' }}
+          style={{ accentColor: lever.color }}
         />
         <div className="flex justify-between text-xs text-ink-muted">
           <span>Today</span>
@@ -765,7 +751,8 @@ function LeverCard({
                   [lever.id]: lever.baseline,
                 }))
               }
-              className="text-accent hover:underline"
+              className="hover:underline"
+              style={{ color: lever.color }}
             >
               Undo
             </button>
@@ -812,59 +799,12 @@ const BASELINE = Object.fromEntries(
   LEVERS.map((lever) => [lever.id, lever.baseline])
 ) as Values;
 
-const IMPACT_SEGMENTS = [
-  { key: 'lowIncome', label: 'Low-income / LAP', color: '#2a78d6' },
-  { key: 'poverty', label: 'High-poverty bonus', color: '#7257c7' },
-  { key: 'ell', label: 'ELL', color: '#1baf7a' },
-  { key: 'sped', label: 'Special education', color: '#d15f78' },
-  { key: 'lea', label: 'LEA', color: '#387a99' },
-  { key: 'msoc', label: 'MSOC', color: '#eda100' },
-  { key: 'transportation', label: 'Transportation', color: '#9a6a39' },
-] as const;
-
-function policyImpact(values: Values) {
-  const impacts = {
-    lowIncome:
-      LOW_INCOME_STUDENTS *
-      BASELINE_LAP_PER_STUDENT *
-      (values.lowIncomeWeight - 1),
-    poverty: HIGH_POVERTY_LOW_INCOME_STUDENTS * values.povertyBonus,
-    ell:
-      ELL_STUDENTS *
-      BASELINE_ELL_PER_STUDENT *
-      (values.ellWeight - 1),
-    sped:
-      SPED_STUDENTS *
-      BASELINE_SPED_ALLOCATION *
-      (values.spedMultiplier - 1.12),
-    // Summed district by district through the real LEA formula, not a
-    // flat statewide percentage.
-    lea: statewideLea(values.leaThreshold) - BASELINE_LEA_TOTAL,
-    msoc: FUNDING_FTE * (values.msoc - 1_614),
-    transportation:
-      BASELINE_TRANSPORTATION * (values.transportation / 100 - 1),
-  };
-
-  const stateTotal = Object.values(impacts).reduce(
-    (sum, impact) => sum + impact,
-    0
-  );
-  const localCapacity =
-    statewideLevyAuthority(LEA.maxLevyRate, values.levyPerPupil) -
-    BASELINE_LEVY_AUTHORITY;
-
-  return { impacts, stateTotal, localCapacity };
-}
-
 export default function Simulator() {
   const [values, setValues] = useState<Values>(BASELINE);
   const [code, setCode] = useState('');
-  const result = useMemo(() => policyImpact(values), [values]);
   const dirty = LEVERS.some(
     (lever) => values[lever.id] !== lever.baseline
   );
-  const statePerStudent = result.stateTotal / STUDENTS;
-  const statePercent = (100 * result.stateTotal) / STATE_SHARE;
 
   // Restore whatever district the visitor picked elsewhere on the site.
   useEffect(() => {
@@ -1080,207 +1020,81 @@ export default function Simulator() {
         )}
       </section>
 
-      <div className="mt-6 grid lg:grid-cols-[1fr,27rem] gap-6 items-start">
-        <div className="space-y-5">
-          {!district && (
-            <p className="card p-5 text-sm text-ink-muted">
-              Pick a district above to see each policy applied to real numbers.
-              You can still move the sliders to see statewide costs.
-            </p>
-          )}
-          {LEVERS.map((lever, i) => (
-            <LeverCard
-              key={lever.id}
-              lever={lever}
-              index={i + 1}
-              values={values}
-              setValues={setValues}
-              district={district}
-            />
-          ))}
-        </div>
-
-        <aside className="lg:sticky lg:top-6 space-y-4">
-          {/* District total first: on a district-first page, the statewide
-              number alone reads as if it were this district's. */}
-          {district && (
-            <div className="card p-5 border-l-4 border-l-accent">
-              <h2 className="text-sm text-ink-secondary">
-                For{' '}
-                <strong className="text-ink">
-                  {district.record.name.replace(/ School District.*$/, '')}
-                </strong>
-              </h2>
-              <p
-                className={`mt-1 text-4xl font-bold tracking-tight ${
-                  districtTotals.state > 0 ? 'text-accent-deep' : 'text-ink'
-                }`}
-              >
-                {fmtSignedMoney(districtTotals.state)}
-                {Math.round(districtTotals.state) !== 0 && (
-                  <span className="text-base font-normal text-ink-secondary">
-                    {' '}
-                    / year
-                  </span>
-                )}
-              </p>
-              <p className="mt-1 text-sm text-ink-secondary">
-                {districtTotals.state === 0
-                  ? 'No state money from your plan reaches this district yet.'
-                  : `${((100 * districtTotals.state) / district.record.rev.total).toFixed(2)}% on top of its ${fmtMoney(district.record.rev.total)} budget.`}
-              </p>
-              {districtTotals.local > 0 && (
-                <p className="mt-2 text-sm text-ink-secondary">
-                  Plus{' '}
-                  <strong className="text-ink">
-                    {fmtSignedMoney(districtTotals.local)}
-                  </strong>{' '}
-                  of local levy room, if voters approve it.
-                </p>
-              )}
-              {districtTotals.zeroLevers.length > 0 && (
-                <p className="mt-3 pt-3 border-t border-line text-xs text-ink-muted">
-                  Nothing from{' '}
-                  {districtTotals.zeroLevers.map((l, i) => (
-                    <span key={l}>
-                      {i > 0 && (i === districtTotals.zeroLevers.length - 1 ? ' or ' : ', ')}
-                      <strong className="text-ink-secondary">{l}</strong>
-                    </span>
-                  ))}
-                  : this district does not qualify.
-                </p>
-              )}
-            </div>
-          )}
-
-          <div className="card p-5">
-            <h2 className="text-sm text-ink-secondary">
-              {district ? 'Statewide, all districts' : 'Added state funding in your plan'}
-            </h2>
-            <p className="mt-1 text-4xl font-bold tracking-tight text-accent-deep">
-              {fmtSignedMoney(result.stateTotal)}
-              {Math.round(result.stateTotal) !== 0 && (
-                <span className="text-base font-normal text-ink-secondary">
-                  {' '}
-                  / year
-                </span>
-              )}
-            </p>
-            <p className="mt-1 text-sm text-ink-secondary">
-              {result.stateTotal === 0
-                ? 'Increase a policy weight to build your plan.'
-                : `${fmtSignedMoney(statePerStudent)} per student averaged across all ${fmtInt(data.statewide.districts)} districts, or ${statePercent.toFixed(1)}% more than the current state share.`}
-            </p>
-
-            <dl className="mt-4 grid grid-cols-2 gap-3 text-sm border-t border-line pt-4">
-              <div>
-                <dt className="text-ink-secondary">Local levy capacity</dt>
-                <dd className="font-semibold tabular-nums">
-                  {fmtSignedMoney(result.localCapacity)}
-                </dd>
-              </div>
-              <div>
-                <dt className="text-ink-secondary">Policies changed</dt>
-                <dd className="font-semibold tabular-nums">
-                  {
-                    LEVERS.filter(
-                      (lever) => values[lever.id] !== lever.baseline
-                    ).length
-                  }{' '}
-                  of {LEVERS.length}
-                </dd>
-              </div>
-            </dl>
-            <p className="mt-3 text-xs text-ink-muted">
-              Levy capacity is shown separately because it would be raised
-              locally with voter approval, not paid from the state budget.
-            </p>
-          </div>
-
-          <div className="card p-5">
-            <h2 className="text-sm font-semibold text-ink-secondary">
-              Where your added state dollars go
-            </h2>
-            {result.stateTotal > 0 ? (
-              <>
-                <div
-                  className="mt-4 flex h-7 rounded overflow-hidden"
-                  style={{ gap: 2 }}
-                  role="img"
-                  aria-label={IMPACT_SEGMENTS.filter(
-                    (segment) => result.impacts[segment.key] > 0
-                  )
-                    .map(
-                      (segment) =>
-                        `${segment.label}: ${fmtMoney(result.impacts[segment.key])}`
-                    )
-                    .join(', ')}
-                >
-                  {IMPACT_SEGMENTS.filter(
-                    (segment) => result.impacts[segment.key] > 0
-                  ).map((segment) => (
-                    <div
-                      key={segment.key}
-                      style={{
-                        width: `${(100 * result.impacts[segment.key]) / result.stateTotal}%`,
-                        background: segment.color,
-                      }}
-                      title={`${segment.label}: ${fmtMoney(result.impacts[segment.key])}`}
-                    />
-                  ))}
-                </div>
-                <div className="mt-4 space-y-2">
-                  {IMPACT_SEGMENTS.filter(
-                    (segment) => result.impacts[segment.key] > 0
-                  )
-                    .sort(
-                      (a, b) =>
-                        result.impacts[b.key] - result.impacts[a.key]
-                    )
-                    .map((segment) => (
-                      <div
-                        key={segment.key}
-                        className="flex items-center justify-between gap-3 text-sm"
-                      >
-                        <span className="flex items-center gap-2 text-ink-secondary">
-                          <span
-                            className="inline-block w-2.5 h-2.5 rounded-sm"
-                            style={{ background: segment.color }}
-                            aria-hidden
-                          />
-                          {segment.label}
-                        </span>
-                        <span className="font-semibold tabular-nums">
-                          {fmtMoney(result.impacts[segment.key])}
-                        </span>
-                      </div>
-                    ))}
-                </div>
-              </>
-            ) : (
-              <p className="mt-3 text-sm text-ink-muted">
-                Your funding mix will appear here as you add policy changes.
-              </p>
+      {district && (
+        <section className="mt-6 card p-5 border-l-4 border-l-accent">
+          <h2 className="text-sm text-ink-secondary">
+            Your plan for{' '}
+            <strong className="text-ink">
+              {district.record.name.replace(/ School District.*$/, '')}
+            </strong>
+          </h2>
+          <p
+            className={`mt-1 text-4xl font-bold tracking-tight ${
+              districtTotals.state > 0 ? 'text-accent-deep' : 'text-ink'
+            }`}
+          >
+            {fmtSignedMoney(districtTotals.state)}
+            {Math.round(districtTotals.state) !== 0 && (
+              <span className="text-base font-normal text-ink-secondary"> / year</span>
             )}
-          </div>
-
-          {dirty && (
-            <button
-              type="button"
-              onClick={() => setValues(BASELINE)}
-              className="w-full card px-4 py-2.5 text-sm font-medium text-accent hover:border-accent transition-colors"
-            >
-              Reset all policies to current law
-            </button>
-          )}
-
-          <p className="text-xs text-ink-muted">
-            Want lawmakers to consider your priorities?{' '}
-            <Link href="/take-action" className="text-accent hover:underline">
-              Tell your legislators →
-            </Link>
           </p>
-        </aside>
+          <p className="mt-1 text-sm text-ink-secondary">
+            {districtTotals.state === 0
+              ? 'No state money from your plan reaches this district yet.'
+              : `${((100 * districtTotals.state) / district.record.rev.total).toFixed(2)}% on top of its ${fmtMoney(district.record.rev.total)} budget.`}
+          </p>
+          {districtTotals.local > 0 && (
+            <p className="mt-2 text-sm text-ink-secondary">
+              Plus <strong className="text-ink">{fmtSignedMoney(districtTotals.local)}</strong>{' '}
+              of local levy room, if voters approve it.
+            </p>
+          )}
+          {districtTotals.zeroLevers.length > 0 && (
+            <p className="mt-3 pt-3 border-t border-line text-xs text-ink-muted">
+              Nothing from{' '}
+              {districtTotals.zeroLevers.map((label, i) => (
+                <span key={label}>
+                  {i > 0 && (i === districtTotals.zeroLevers.length - 1 ? ' or ' : ', ')}
+                  <strong className="text-ink-secondary">{label}</strong>
+                </span>
+              ))}
+              : this district does not qualify.
+            </p>
+          )}
+        </section>
+      )}
+
+      <div className="mt-6 space-y-5">
+        {!district && (
+          <p className="card p-5 text-sm text-ink-muted">
+            Pick a district above to see each policy applied to real numbers.
+          </p>
+        )}
+        {LEVERS.map((lever, i) => (
+          <LeverCard
+            key={lever.id}
+            lever={lever}
+            index={i + 1}
+            values={values}
+            setValues={setValues}
+            district={district}
+          />
+        ))}
+        {dirty && (
+          <button
+            type="button"
+            onClick={() => setValues(BASELINE)}
+            className="w-full card px-4 py-2.5 text-sm font-medium text-accent hover:border-accent transition-colors"
+          >
+            Reset all policies to current law
+          </button>
+        )}
+        <p className="text-xs text-ink-muted">
+          Want lawmakers to consider your priorities?{' '}
+          <Link href="/take-action" className="text-accent hover:underline">
+            Tell your legislators →
+          </Link>
+        </p>
       </div>
     </div>
   );
