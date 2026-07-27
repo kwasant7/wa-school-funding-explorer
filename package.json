@@ -8,6 +8,7 @@
     "start": "next start",
     "lint": "next lint",
     "fetch-data": "node scripts/fetch-data.mjs",
+    "fetch-spending": "node scripts/build-program-spending.mjs",
     "fetch-legislators": "node scripts/fetch-legislators.mjs"
   },
   "license": "MIT",

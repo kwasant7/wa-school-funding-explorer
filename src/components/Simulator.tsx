@@ -4,14 +4,66 @@ import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import data from '@/data/districts.json';
 import levyData from '@/data/levy.json';
+import spendingData from '@/data/spending.json';
 import DistrictCombobox from '@/components/DistrictCombobox';
 import { fmtInt, fmtMoney, fmtMoneyFull, fmtSignedMoney } from '@/lib/format';
 
 const SELECTED_DISTRICT_KEY = 'wa-selected-district';
 
+/** Positions on every slider, independent of the lever's own units. */
+const SLIDER_STEPS = 1000;
+
+/**
+ * Rounds a slider position back onto the lever's natural increment, measured
+ * from its own minimum (mins like $3,838.26 are not step multiples), while
+ * still letting the very top of the range land exactly on max.
+ */
+function snapTo(value: number, min: number, step: number, max: number) {
+  if (value >= max - step / 2) return max;
+  const snapped = min + Math.round((value - min) / step) * step;
+  return Math.min(max, Number(snapped.toFixed(6)));
+}
+
+/**
+ * Where to park a floating chart label, held a little inside both ends so it
+ * cannot clip off the edge of the bar.
+ */
+function markerPct(value: number, scale: number) {
+  return `${Math.max(8, Math.min(92, (100 * value) / scale))}%`;
+}
+
 const LEA = levyData.assumptions;
 type LevyDistrict = (typeof levyData.districts)[keyof typeof levyData.districts];
 const LEVY_DISTRICTS = levyData.districts as Record<string, LevyDistrict>;
+
+/** F-196 actual 2024-25 spending, per district, for the levers that have it. */
+type DistrictSpending = (typeof spendingData.districts)[keyof typeof spendingData.districts];
+const SPENDING = spendingData.districts as Record<string, DistrictSpending>;
+
+/**
+ * What a district actually spent per unit on a lever's program, so the chart
+ * can show the real cost next to what the state formula pays. Returns null for
+ * levers with no comparable F-196 line.
+ */
+function actualSpendPerUnit(leverId: LeverId, code: string): number | null {
+  const spend = SPENDING[code];
+  if (!spend) return null;
+  switch (leverId) {
+    case 'spedMultiplier':
+      // Expressed as the multiplier that would fully fund actual spending.
+      return spend.spedPerStudent > 0
+        ? spend.spedPerStudent / BASELINE_SPED_ALLOCATION
+        : null;
+    case 'msoc':
+      return spend.msocPerStudent > 0 ? spend.msocPerStudent : null;
+    case 'transportation':
+      return spend.transportationPerStudent > 0
+        ? spend.transportationPerStudent
+        : null;
+    default:
+      return null;
+  }
+}
 
 /**
  * Washington's Local Effort Assistance formula, exactly as OSPI computes it
@@ -271,7 +323,10 @@ const LEVERS = [
     impactKey: 'sped',
     baseline: 1.16,
     min: 1.16,
-    max: 1.5,
+    // Reaches 3.00x so the slider can always close the gap to what a district
+    // actually spends: statewide that takes about 1.57x, and the highest-cost
+    // large districts (Bellevue, Seattle) 2.4-2.7x.
+    max: 3,
     step: 0.01,
     effect: (value: number) => `${value.toFixed(2)}× basic education`,
     unit: 'multiplier',
@@ -309,9 +364,11 @@ const LEVERS = [
     impactKey: 'msoc',
     baseline: 1_614,
     min: 1_614,
-    max: 3_000,
-    step: 50,
-    effect: (value: number) => `$${fmtInt(value)} per student`,
+    // Districts report about $3,445 per FTE of non-salary spending, so the
+    // slider has to clear that to show what full funding would take.
+    max: 4_500,
+    step: 25,
+    effect: (value: number) => `$${fmtInt(Math.round(value))} per student`,
     unit: 'per student',
     markers: [],
   },
@@ -348,7 +405,7 @@ const LEVERS = [
     impactKey: 'transportation',
     baseline: BASELINE_TRANSPORTATION_PER_STUDENT,
     min: BASELINE_TRANSPORTATION_PER_STUDENT,
-    max: BASELINE_TRANSPORTATION_PER_STUDENT * 1.4,
+    max: 2_500,
     step: 25,
     effect: (value: number) => `$${fmtInt(Math.round(value))} per student`,
     unit: 'per student',
@@ -684,11 +741,16 @@ function LeverBar({
   }
 
   // Special education is expressed as the excess-cost multiplier used in the
-  // formula, rather than as a made-up dollar amount per student.
+  // formula, rather than as a made-up dollar amount per student. The dashed
+  // line is the multiplier that would cover what this district really spends.
   if (lever.id === 'spedMultiplier') {
-    const scale = lever.max;
+    const spent = actualSpendPerUnit('spedMultiplier', district.record.code);
+    const spentPerStudent = SPENDING[district.record.code]?.spedPerStudent ?? 0;
+    // Headroom keeps the dashed spending rule off the bar's right edge.
+    const scale = Math.max(lever.max, spent ? spent * 1.02 : 0);
     const pct = (v: number) => `${Math.max(0, Math.min(100, (100 * v) / scale))}%`;
     const added = values.spedMultiplier - lever.baseline;
+    const covered = spent != null && values.spedMultiplier >= spent;
     return (
       <figure>
         <figcaption className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-ink-secondary">
@@ -700,34 +762,69 @@ function LeverBar({
             <span className="inline-block w-3 h-3 rounded-sm bg-[#f9c7d1]" />
             Your increase
           </span>
+          {spent != null && (
+            <span className="flex items-center gap-1.5">
+              <span className="inline-block w-3 border-t-2 border-dashed border-ink" />
+              What they actually spend
+            </span>
+          )}
         </figcaption>
-        <div className="mt-3 flex items-center gap-3">
+        <div className="mt-4 flex items-center gap-3">
           <div className="w-28 shrink-0 text-right">
             <p className="font-bold leading-tight">{name}</p>
             <p className="text-[11px] text-ink-muted">
               {fmtInt(district.record.demo.sped)} students served
             </p>
           </div>
-          <div className="flex-1 h-9 flex rounded overflow-hidden">
-            <div
-              className="h-full bg-[#d15f78] flex items-center justify-center text-sm font-semibold text-white"
-              style={{ width: pct(lever.baseline) }}
-            >
-              {lever.baseline / scale > 0.16 && `${lever.baseline.toFixed(2)}×`}
-            </div>
-            {added > 0 && (
+          <div className="relative flex-1 h-16 pt-6">
+            {spent != null && (
               <div
-                className="h-full bg-[#f9c7d1] flex items-center justify-center text-sm font-semibold text-[#831843]"
-                style={{ width: pct(added) }}
+                className="absolute top-0 z-10 whitespace-nowrap text-sm font-bold tabular-nums text-ink"
+                style={{ left: markerPct(spent, scale), transform: 'translateX(-50%)' }}
               >
-                {added / scale > 0.16 && `+${added.toFixed(2)}×`}
+                Actually spends: {spent.toFixed(2)}×
               </div>
+            )}
+            <div className="absolute inset-x-0 bottom-0 flex h-10 rounded overflow-hidden">
+              <div
+                className="h-full bg-[#d15f78] flex items-center justify-center text-sm font-semibold text-white"
+                style={{ width: pct(lever.baseline) }}
+              >
+                {lever.baseline / scale > 0.16 && `${lever.baseline.toFixed(2)}×`}
+              </div>
+              {added > 0 && (
+                <div
+                  className="h-full bg-[#f9c7d1] flex items-center justify-center text-sm font-semibold text-[#831843]"
+                  style={{ width: pct(added) }}
+                >
+                  {added / scale > 0.16 && `+${added.toFixed(2)}×`}
+                </div>
+              )}
+            </div>
+            {spent != null && (
+              <div
+                className="absolute bottom-0 h-10 border-l-[3px] border-dashed border-ink"
+                style={{ left: pct(spent) }}
+                title={`Actually spent: ${spent.toFixed(2)}x basic education`}
+              />
             )}
           </div>
           <div className="w-20 shrink-0 text-lg font-bold tabular-nums">
             {values.spedMultiplier.toFixed(2)}×
           </div>
         </div>
+        {spent != null && (
+          <p className="mt-4 text-sm text-ink-secondary">
+            {name} spends{' '}
+            <strong className="text-ink">{fmtMoneyFull(spentPerStudent)}</strong>{' '}
+            per student with a disability - about{' '}
+            <strong className="text-ink">{spent.toFixed(2)}×</strong> basic
+            education.{' '}
+            {covered
+              ? 'Your plan covers that in full.'
+              : `Today's ${lever.baseline.toFixed(2)}× formula leaves the rest for the district to cover out of other money.`}
+          </p>
+        )}
       </figure>
     );
   }
@@ -761,9 +858,15 @@ function LeverBar({
   };
   const c = counts[lever.id];
   if (!c) return null;
-  const scale = Math.max(c.now, c.base) || 1;
+  // MSOC and transportation have a real F-196 spending line to compare with;
+  // the rest are formula-only, so the chart stays a plain today-vs-plan bar.
+  const spent = actualSpendPerUnit(lever.id, district.record.code);
+  // A hair of headroom past the spending line so its dashed rule never sits
+  // on the bar's right edge, where it would render half outside.
+  const scale = Math.max(c.now, c.base, spent ? spent * 1.02 : 0) || 1;
   const pct = (v: number) => `${Math.max(0, Math.min(100, (100 * v) / scale))}%`;
   const added = Math.max(0, c.now - c.base);
+  const covered = spent != null && c.now >= spent;
 
   return (
     <figure>
@@ -776,34 +879,86 @@ function LeverBar({
           <span className="inline-block w-3 h-3 rounded-sm bg-series-local" />
           Your plan adds
         </span>
+        {spent != null && (
+          <span className="flex items-center gap-1.5">
+            <span className="inline-block w-3 border-t-2 border-dashed border-ink" />
+            What they actually spend
+          </span>
+        )}
       </figcaption>
-      <div className="mt-3 flex items-center gap-3">
+      <div className={`flex items-center gap-3 ${spent != null ? 'mt-4' : 'mt-3'}`}>
         <div className="w-28 shrink-0 text-right">
           <p className="font-bold leading-tight">{name}</p>
           <p className="text-[11px] text-ink-muted">{c.who}</p>
         </div>
-        <div className="flex-1 h-9 flex rounded overflow-hidden">
-          {c.base > 0 && (
+        {spent == null ? (
+          <div className="flex-1 h-9 flex rounded overflow-hidden">
+            {c.base > 0 && (
+              <div
+                className="h-full rounded-l bg-series-state flex items-center justify-center text-white text-sm font-semibold"
+                style={{ width: pct(c.base) }}
+              >
+                {c.base / scale > 0.16 && fmtMoneyFull(Math.round(c.base))}
+              </div>
+            )}
+            {added > 0 && (
+              <div
+                className={`h-full bg-series-local flex items-center justify-center text-sm font-semibold text-white ${c.base > 0 ? '' : 'rounded-l'}`}
+                style={{ width: pct(added) }}
+              >
+                {added / scale > 0.1 && `+${fmtMoneyFull(Math.round(added))}`}
+              </div>
+            )}
+          </div>
+        ) : (
+          <div className="relative flex-1 h-16 pt-6">
             <div
-              className="h-full rounded-l bg-series-state flex items-center justify-center text-white text-sm font-semibold"
-              style={{ width: pct(c.base) }}
+              className="absolute top-0 z-10 whitespace-nowrap text-sm font-bold tabular-nums text-ink"
+              style={{ left: markerPct(spent, scale), transform: 'translateX(-50%)' }}
             >
-              {c.base / scale > 0.16 && fmtMoneyFull(Math.round(c.base))}
+              Actually spends: {fmtMoneyFull(Math.round(spent))}
             </div>
-          )}
-          {added > 0 && (
+            <div className="absolute inset-x-0 bottom-0 flex h-10 rounded overflow-hidden">
+              {c.base > 0 && (
+                <div
+                  className="h-full bg-series-state flex items-center justify-center text-white text-sm font-semibold"
+                  style={{ width: pct(c.base) }}
+                >
+                  {c.base / scale > 0.16 && fmtMoneyFull(Math.round(c.base))}
+                </div>
+              )}
+              {added > 0 && (
+                <div
+                  className="h-full bg-series-local flex items-center justify-center text-sm font-semibold text-white"
+                  style={{ width: pct(added) }}
+                >
+                  {added / scale > 0.1 && `+${fmtMoneyFull(Math.round(added))}`}
+                </div>
+              )}
+            </div>
             <div
-              className={`h-full bg-series-local flex items-center justify-center text-sm font-semibold text-white ${c.base > 0 ? '' : 'rounded-l'}`}
-              style={{ width: pct(added) }}
-            >
-              {added / scale > 0.1 && `+${fmtMoneyFull(Math.round(added))}`}
-            </div>
-          )}
-        </div>
+              className="absolute bottom-0 h-10 border-l-[3px] border-dashed border-ink"
+              style={{ left: pct(spent) }}
+              title={`Actually spent: ${fmtMoneyFull(Math.round(spent))} per student`}
+            />
+          </div>
+        )}
         <div className="w-20 shrink-0 text-lg font-bold tabular-nums">
           {fmtMoneyFull(Math.round(c.now))}
         </div>
       </div>
+      {spent != null && (
+        <p className="mt-4 text-sm text-ink-secondary">
+          {name} spends{' '}
+          <strong className="text-ink">{fmtMoneyFull(Math.round(spent))}</strong>{' '}
+          per student here, against{' '}
+          <strong className="text-ink">{fmtMoneyFull(Math.round(c.base))}</strong>{' '}
+          from the formula.{' '}
+          {covered
+            ? 'Your plan covers that in full.'
+            : `Closing the gap takes ${fmtMoneyFull(Math.round(spent - c.base))} more per student.`}
+        </p>
+      )}
     </figure>
   );
 }
@@ -869,22 +1024,36 @@ function LeverCard({
           </span>
         </div>
         <div className="relative mt-2">
+          {/*
+            The slider runs on a normalized 0-1000 position rather than the
+            lever's own units. A raw `step` that does not divide evenly into
+            (max - min) leaves the top of the range unreachable - the levy cap
+            stopped at $5,988 of $6,000 - and coarse steps feel notchy. One
+            thousand positions is smooth and always lands exactly on max.
+          */}
           <input
             id={lever.id}
             type="range"
-            min={lever.min}
-            max={lever.max}
-            step={lever.step}
-            value={value}
+            min={0}
+            max={SLIDER_STEPS}
+            step={1}
+            value={Math.round(
+              ((value - lever.min) / (lever.max - lever.min)) * SLIDER_STEPS
+            )}
             onInput={(event) => {
-              const next = Number(event.currentTarget.value);
-              setValues((previous) => ({ ...previous, [lever.id]: next }));
+              const position = Number(event.currentTarget.value);
+              const next =
+                lever.min + (position / SLIDER_STEPS) * (lever.max - lever.min);
+              setValues((previous) => ({
+                ...previous,
+                [lever.id]: snapTo(next, lever.min, lever.step, lever.max),
+              }));
             }}
             className="range-slider w-full"
             style={
               {
                 '--track-color': lever.color,
-                '--fill': `${((value - lever.min) / (lever.max - lever.min)) * 100}%`,
+                '--fill': `${(value - lever.min) / (lever.max - lever.min)}`,
               } as React.CSSProperties
             }
           />
@@ -1013,7 +1182,17 @@ export default function Simulator() {
     let state = 0;
     let local = 0;
     const zeroLevers: string[] = [];
-    if (!district) return { state, local, zeroLevers };
+    // Every moved lever that pays this district something, so the headline
+    // number can be read back as the list of choices that produced it.
+    const breakdown: {
+      id: LeverId;
+      label: string;
+      color: string;
+      effect: string;
+      amount: number;
+      local: boolean;
+    }[] = [];
+    if (!district) return { state, local, zeroLevers, breakdown };
     for (const lever of LEVERS) {
       if (values[lever.id] === lever.baseline) continue;
       const impact = leverImpactFor(lever.id, values, district);
@@ -1024,8 +1203,18 @@ export default function Simulator() {
       // between the statewide and district totals is explained rather than
       // looking like a bug.
       if (Math.round(amount) === 0) zeroLevers.push(lever.label);
+      else
+        breakdown.push({
+          id: lever.id,
+          label: lever.label,
+          color: lever.color,
+          effect: lever.effect(values[lever.id]),
+          amount,
+          local: Boolean(impact?.local),
+        });
     }
-    return { state, local, zeroLevers };
+    breakdown.sort((a, b) => b.amount - a.amount);
+    return { state, local, zeroLevers, breakdown };
   }, [district, values]);
 
   return (
@@ -1160,6 +1349,18 @@ export default function Simulator() {
               The far end of each slider is a comparison ceiling, not a
               recommendation or a prediction.
             </li>
+            <li>
+              &ldquo;What they actually spend&rdquo; on special education,
+              MSOC and transportation is this district&apos;s own{' '}
+              <strong className="text-ink">2024-25 F-196</strong> General Fund
+              actuals: special education is programs 21/22/24/26, MSOC is every
+              non-salary, non-benefit object (5, 7, 8 and 9), and transportation
+              is program 99. Because those are{' '}
+              <strong className="text-ink">General Fund only</strong>,
+              transportation excludes buses bought through the Transportation
+              Vehicle Fund and so understates the true cost - for most districts
+              it lands below the modeled state allocation for that reason.
+            </li>
           </ul>
         </details>
       </section>
@@ -1222,6 +1423,46 @@ export default function Simulator() {
               <strong className="text-ink">{fmtSignedMoney(districtTotals.local)}</strong> of
               that is local levy room, only collected if voters approve it.
             </p>
+          )}
+          {/* Which slider produced which share of the headline number. */}
+          {districtTotals.breakdown.length > 0 && (
+            <ul className="mt-4 pt-4 border-t border-line space-y-2.5">
+              {districtTotals.breakdown.map((item) => {
+                const total = districtTotals.state + districtTotals.local;
+                const share = total > 0 ? (100 * item.amount) / total : 0;
+                return (
+                  <li key={item.id}>
+                    <div className="flex items-baseline justify-between gap-3 text-sm">
+                      <span className="min-w-0">
+                        <span
+                          className="mr-2 inline-block h-2.5 w-2.5 shrink-0 rounded-sm align-middle"
+                          style={{ backgroundColor: item.color }}
+                        />
+                        <strong className="text-ink">{item.label}</strong>{' '}
+                        <span className="text-ink-muted">- {item.effect}</span>
+                      </span>
+                      <span className="shrink-0 font-bold tabular-nums text-ink">
+                        {fmtSignedMoney(item.amount)}
+                        {item.local && (
+                          <span className="ml-1 font-normal text-xs text-ink-muted">
+                            local
+                          </span>
+                        )}
+                      </span>
+                    </div>
+                    <div className="mt-1 ml-[18px] h-1.5 rounded-full bg-baseline/40">
+                      <div
+                        className="h-full rounded-full"
+                        style={{
+                          width: `${Math.max(2, share)}%`,
+                          backgroundColor: item.color,
+                        }}
+                      />
+                    </div>
+                  </li>
+                );
+              })}
+            </ul>
           )}
           {districtTotals.zeroLevers.length > 0 && (
             <p className="mt-3 pt-3 border-t border-line text-xs text-ink-muted">

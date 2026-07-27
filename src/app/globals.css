@@ -31,10 +31,15 @@ body {
   }
 }
 
-/* Custom range slider: the fill is a CSS gradient driven by --fill and
-   --track-color, so it always reaches exactly to the thumb (native
-   accent-color fills leave a visible gap at the max end in some browsers). */
+/* Custom range slider. --fill is a 0-1 fraction, not a percentage: the fill
+   edge is placed at the thumb's CENTER, which travels between half a thumb in
+   from each end, so the colored track meets the handle exactly at every
+   position instead of drifting ahead of it. */
 .range-slider {
+  --thumb-size: 20px;
+  --fill-edge: calc(
+    (var(--thumb-size) / 2) + var(--fill) * (100% - var(--thumb-size))
+  );
   -webkit-appearance: none;
   appearance: none;
   width: 100%;
@@ -42,43 +47,60 @@ body {
   border-radius: 9999px;
   background: linear-gradient(
     to right,
-    var(--track-color) var(--fill),
-    #e2e8f0 var(--fill)
+    var(--track-color) var(--fill-edge),
+    #e2e8f0 var(--fill-edge)
   );
   outline: none;
   cursor: pointer;
-  transition: background 0.05s linear;
 }
 .range-slider::-webkit-slider-thumb {
   -webkit-appearance: none;
   appearance: none;
-  width: 20px;
-  height: 20px;
+  width: var(--thumb-size);
+  height: var(--thumb-size);
   border-radius: 9999px;
   background: var(--track-color);
   border: 3px solid white;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.35);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
   cursor: pointer;
-  margin-top: 0;
+  transition: transform 0.12s ease, box-shadow 0.12s ease;
+}
+.range-slider:hover::-webkit-slider-thumb,
+.range-slider:focus-visible::-webkit-slider-thumb {
+  transform: scale(1.15);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+}
+.range-slider:active::-webkit-slider-thumb {
+  transform: scale(1.05);
 }
 .range-slider::-moz-range-thumb {
-  width: 20px;
-  height: 20px;
+  width: var(--thumb-size);
+  height: var(--thumb-size);
   border: 3px solid white;
   border-radius: 9999px;
   background: var(--track-color);
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.35);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
   cursor: pointer;
+  transition: transform 0.12s ease;
+}
+.range-slider:hover::-moz-range-thumb {
+  transform: scale(1.15);
 }
 .range-slider::-moz-range-track {
   height: 8px;
   border-radius: 9999px;
   background: transparent;
 }
+/* Firefox would otherwise paint its own fill on top of the gradient. */
 .range-slider::-moz-range-progress {
-  height: 8px;
-  border-radius: 9999px;
-  background: var(--track-color);
+  background: transparent;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .range-slider::-webkit-slider-thumb,
+  .range-slider::-moz-range-thumb {
+    transition: none;
+  }
 }
 
 @keyframes rise {
