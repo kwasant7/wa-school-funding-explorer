@@ -15,11 +15,12 @@
  *                        headcount enrollment. GENERAL FUND ONLY: buses
  *                        bought through the Transportation Vehicle Fund are
  *                        excluded, so this understates the full cost.
- *   MSOC               - Objects 5 (supplies and instructional resources),
- *                        7 (purchased services), 8 (travel) and 9 (capital
- *                        outlay): every non-salary, non-benefit dollar, which
- *                        is the spending MSOC is meant to cover. Divided by
- *                        funding FTE.
+ *   MSOC               - Non-employee operating costs in basic education:
+ *                        objects 5/7/8 in programs 01–03 plus purchased
+ *                        services and travel (7/8) in districtwide support
+ *                        (program 97). This excludes capital outlay, special
+ *                        education, food service, and transportation. Divided
+ *                        by funding FTE.
  *
  * Run: npm run fetch-spending
  */
@@ -38,7 +39,16 @@ const SCHOOL_YEAR = '2024-2025';
 
 const SPED_PROGRAMS = new Set(['21', '22', '24', '26']);
 const TRANSPORTATION_PROGRAMS = new Set(['99']);
-const MSOC_OBJECTS = new Set(['5', '7', '8', '9']);
+const MSOC_BASIC_PROGRAMS = new Set(['01', '02', '03']);
+const MSOC_BASIC_OBJECTS = new Set(['5', '7', '8']);
+const MSOC_DISTRICTWIDE_OBJECTS = new Set(['7', '8']);
+
+function isMsocCost(program, object) {
+  return (
+    (MSOC_BASIC_PROGRAMS.has(program) && MSOC_BASIC_OBJECTS.has(object)) ||
+    (program === '97' && MSOC_DISTRICTWIDE_OBJECTS.has(object))
+  );
+}
 
 async function ensureFile(name, url) {
   const file = path.join(RAW_DIR, name);
@@ -113,7 +123,7 @@ async function main() {
     const amount = num(row['Amount']);
     if (SPED_PROGRAMS.has(program)) add(code, 'sped', amount);
     if (TRANSPORTATION_PROGRAMS.has(program)) add(code, 'transportation', amount);
-    if (MSOC_OBJECTS.has(object)) add(code, 'msoc', amount);
+    if (isMsocCost(program, object)) add(code, 'msoc', amount);
   }
 
   const districts = JSON.parse(
@@ -151,7 +161,7 @@ async function main() {
     source: {
       file: EXPENDITURE_URL,
       note:
-        'OSPI F-196 General Fund expenditure actuals, 2024-25. Special education = programs 21/22/24/26; transportation = program 99 (general fund only, excludes the Transportation Vehicle Fund); MSOC = objects 5/7/8/9 (all non-salary, non-benefit spending).',
+        'OSPI F-196 General Fund expenditure actuals, 2024-25. Special education = programs 21/22/24/26; transportation = program 99 (general fund only, excludes the Transportation Vehicle Fund); MSOC = objects 5/7/8 in basic-education programs 01/02/03 plus objects 7/8 in districtwide support program 97; excludes capital outlay, special education, food service, and transportation.',
     },
     statewide: {
       sped: Math.round(statewide.sped),
