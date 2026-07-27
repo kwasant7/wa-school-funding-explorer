@@ -230,14 +230,17 @@ const LEVERS = [
     ),
     note: (
       <>
-        This is a statewide cap, the same for every district under 40,000
-        students, set on a schedule by{' '}
-        <strong className="text-ink">ESHB 2049 (2025)</strong>. It reaches{' '}
+        Set on a schedule by{' '}
+        <strong className="text-ink">ESHB 2049 (2025)</strong> in{' '}
+        <strong className="text-ink">RCW 84.52.0531</strong>: it reaches{' '}
         <strong className="text-ink">$3,838 in 2026</strong> (today&apos;s
-        slider default) and <strong className="text-ink">$5,035 by 2031</strong>
-        . Raising the cap releases money a district&apos;s voters have already
-        approved but the cap holds back; past that point, collecting more would
-        take a new levy vote.
+        slider default), then a flat{' '}
+        <strong className="text-ink">$5,035 in 2031</strong>, when the statute
+        drops the district-size split and the same limit applies everywhere.
+        Until then districts above 40,000 students - only Seattle - have a
+        higher cap than the figure modeled here. Raising the cap releases money
+        a district&apos;s voters have already approved but the cap holds back;
+        past that point, collecting more would take a new levy vote.
       </>
     ),
     impactKey: null,
