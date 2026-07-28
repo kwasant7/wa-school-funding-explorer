@@ -100,7 +100,11 @@ function DistrictOverview({
       <div className="mt-6 grid lg:grid-cols-[1fr,22rem] gap-4 items-stretch">
         <div className="grid grid-cols-2 gap-3">
           <StatTile label={`Districts & charters (${year})`} value={String(s.districts)} />
-          <StatTile label="Students statewide" value={fmtInt(s.enrollment)} />
+          <StatTile
+            label="Students statewide"
+            value={fmtInt(Math.round(s.fundingEnrollment))}
+            note="Funding FTE, not October headcount"
+          />
           <StatTile label="Total funding" value={fmtMoney(s.revenues.total)} />
           <StatTile
             label="Median per student"
@@ -139,8 +143,9 @@ function DistrictOverview({
       </div>
       <p className="mt-3 text-xs text-ink-muted max-w-2xl">
         Per-student figures divide general fund revenues by OSPI&apos;s final
-        annual-average funding FTE, including Running Start college FTE.
-        Student totals remain the Report Card&apos;s October headcount.
+        annual-average funding FTE, including Running Start college FTE. The
+        student total above is that same funding FTE, not the Report
+        Card&apos;s October headcount.
       </p>
     </div>
   );
@@ -425,8 +430,8 @@ function DistrictDetail({
       <div className="mt-6 grid grid-cols-1 sm:grid-cols-3 gap-3">
         <StatTile
           label={`Students (${year})`}
-          value={fmtInt(d.enrollment)}
-          note="October headcount"
+          value={fmtInt(Math.round(d.fundingEnrollment))}
+          note="Funding FTE, not October headcount"
         />
         <StatTile label="Total funding" value={fmtMoney(d.rev.total)} note="general fund revenues" />
         <StatTile
@@ -509,10 +514,11 @@ function DistrictDetail({
       </div>
 
       <p className="mt-4 text-xs text-ink-muted max-w-2xl">
-        <strong>Why the numbers differ:</strong> per-student funding uses
-        annual-average funding FTE, which counts part-time participation such
-        as Running Start proportionally. The student total above is the normal
-        October headcount.
+        <strong>Why the numbers differ:</strong> the student total above and
+        the per-student figure both use annual-average funding FTE, which
+        counts part-time participation such as Running Start proportionally.
+        The enrollment chart below instead tracks the Report Card&apos;s
+        October headcount, so it will not match the total above exactly.
       </p>
 
       <p className="mt-3 text-xs text-ink-muted max-w-2xl">
