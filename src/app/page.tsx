@@ -39,8 +39,8 @@ export default function HomePage() {
           />
           <StatTile
             label="Students"
-            value={<CountUp value={s.enrollment} kind="int" />}
-            note="October headcount"
+            value={<CountUp value={Math.round(s.fundingEnrollment)} kind="int" />}
+            note="Funding FTE, not October headcount"
           />
           <StatTile
             label="Districts & charters"
@@ -49,7 +49,7 @@ export default function HomePage() {
           <StatTile
             label="Average per student"
             value={<CountUp value={s.avgPerPupil} kind="moneyFull" />}
-            note="Uses funding FTE - not the student headcount shown here"
+            note="Same funding FTE as above"
           />
         </div>
       </section>
