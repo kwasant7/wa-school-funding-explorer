@@ -337,7 +337,7 @@ export default function LanguageSwitcher() {
       )}
       {status === 'unavailable' && (
         <span
-          className="text-xs text-bad"
+          className="text-xs text-critical"
           title="Automatic translation requires a browser with the Translator API, such as Chrome 138 or newer."
         >
           Not supported

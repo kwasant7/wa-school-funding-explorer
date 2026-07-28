@@ -490,7 +490,7 @@ export default function WaMap({
               <span className="text-good font-medium">strong savings</span>
             </span>
             <span className="text-ink-muted">
-              | tick = the 4-5% minimum experts recommend
+              | tick = 5%, the minimum experts recommend
             </span>
           </>
         )}

@@ -6,7 +6,12 @@ import { fmtInt, fmtMoney, fmtMoneyFull } from '@/lib/format';
 
 type SchoolType = 'elementary' | 'middle' | 'high';
 
-/** Base staffing allocations in RCW 28A.150.260. */
+/**
+ * Base staffing allocations per prototypical school, RCW 28A.150.260(5)(a) as
+ * currently in effect - i.e. including the counselor, nurse and office-support
+ * increases from 2SHB 1664 (2022), which finished phasing in for 2024-25, the
+ * school year this site's district data covers.
+ */
 const MODELS: Record<SchoolType, {
   label: string;
   grades: string;
@@ -17,17 +22,17 @@ const MODELS: Record<SchoolType, {
   elementary: {
     label: 'Elementary', grades: 'K-6 · state prototype: 400 students', proto: 400,
     teachersPerStudent: (4 / 7) / 17 + (3 / 7) / 27,
-    perStudent: { Principals: 1.253 / 400, Counselors: 0.493 / 400, 'Teacher-librarians': 0.663 / 400, 'Office staff': 2.012 / 400, Custodians: 1.657 / 400, Nurses: 0.076 / 400 },
+    perStudent: { Principals: 1.253 / 400, Counselors: 0.993 / 400, 'Teacher-librarians': 0.663 / 400, 'Office staff': 2.088 / 400, Custodians: 1.657 / 400, Nurses: 0.585 / 400 },
   },
   middle: {
     label: 'Middle', grades: '7-8 · state prototype: 432 students', proto: 432,
     teachersPerStudent: 1 / 28.53,
-    perStudent: { Principals: 1.353 / 432, Counselors: 1.216 / 432, 'Teacher-librarians': 0.519 / 432, 'Office staff': 2.325 / 432, Custodians: 1.942 / 432, Nurses: 0.06 / 432 },
+    perStudent: { Principals: 1.353 / 432, Counselors: 1.716 / 432, 'Teacher-librarians': 0.519 / 432, 'Office staff': 2.401 / 432, Custodians: 1.942 / 432, Nurses: 0.888 / 432 },
   },
   high: {
     label: 'High school', grades: '9-12 · state prototype: 600 students', proto: 600,
     teachersPerStudent: 1 / 28.74,
-    perStudent: { Principals: 1.88 / 600, Counselors: 2.539 / 600, 'Teacher-librarians': 0.523 / 600, 'Office staff': 3.269 / 600, Custodians: 2.965 / 600, Nurses: 0.096 / 600 },
+    perStudent: { Principals: 1.88 / 600, Counselors: 3.039 / 600, 'Teacher-librarians': 0.523 / 600, 'Office staff': 3.345 / 600, Custodians: 2.965 / 600, Nurses: 0.824 / 600 },
   },
 };
 
@@ -104,7 +109,12 @@ function ModelCard({
       {staff.map(({ role, fte }) => <div key={role}>
         <div className="flex items-baseline gap-2 flex-wrap"><span className="w-36 shrink-0 text-sm font-semibold">{role}</span><span className="text-sm tabular-nums font-bold text-accent-deep w-12">{fmtFte(fte)}</span>
           {role === 'Counselors' && <span className="text-xs text-ink-muted">1 for every {Math.round(fundingFte / fte).toLocaleString()} students · experts recommend 1 per 250</span>}
-          {role === 'Nurses' && <span className="text-xs text-ink-muted">≈ {(fte * 40).toFixed(1)} hours of nurse time per week</span>}
+          {/*
+            Stated per prototypical school, not per district: the district-wide
+            total ("1,574 hours a week" for Seattle) is a true number that tells
+            a reader nothing. The rate below is the same at any district size.
+          */}
+          {role === 'Nurses' && <span className="text-xs text-ink-muted">≈ {Math.round(model.perStudent.Nurses * model.proto * 40)} hours of nurse time a week in a {model.proto}-student school</span>}
         </div>
         <div className="mt-1.5 pl-0 md:pl-36"><StaffIcons count={fte} /></div>
       </div>)}
@@ -181,10 +191,13 @@ export default function SchoolBuilder({ district }: { district?: District | null
       ))}
     </div>
     <p className="mt-5 text-xs text-ink-muted">
-      Base prototypical-school formula only. These estimates do not include
-      regionalization, benefits, special education, LAP, bilingual education,
-      transportation, materials and operating costs, or district staffing
-      choices. Actual staffing can differ.
+      Base prototypical-school formula only, using the allocations currently in
+      RCW 28A.150.260. The roles shown are a subset: the statute also funds
+      social workers, psychologists, student-safety staff, and (in elementary
+      schools) parent involvement coordinators, which are not counted here.
+      These estimates also exclude regionalization, benefits, special education,
+      LAP, bilingual education, transportation, and materials and operating
+      costs. Actual staffing can differ.
     </p>
   </div>;
 }

@@ -234,7 +234,9 @@ export default function LeaPage() {
             OSPI Enrichment Levy Pre-Ballot Approval worksheet
           </a>{' '}
           - the LevyCalc tab supplies every assumption used here: max per pupil{' '}
-          {fmtMoneyFull(LEA.maxLevyPerPupil)}, LEA max per pupil{' '}
+          {fmtMoneyFull(LEA.maxLevyPerPupil)} (
+          {fmtMoneyFull(LEA.maxLevyPerPupilLarge)} for districts of 40,000 or
+          more students, which is Seattle alone), LEA max per pupil{' '}
           {fmtMoneyFull(LEA.leaThresholdPerPupil)}, LEA max rate $
           {LEA.leaMaxRate.toFixed(2)}, max levy rate $
           {LEA.maxLevyRate.toFixed(2)}.

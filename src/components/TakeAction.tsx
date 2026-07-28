@@ -47,7 +47,7 @@ const PASSED_BILLS = [
   {
     bill: 'ESSB 5998',
     name: '2026 supplemental operating budget',
-    status: 'Signed April 1, 2026',
+    status: 'Signed April 1, 2026 (partial veto) - Chapter 268, Laws of 2026',
     summary:
       'Revised the state budget that pays for public-school operations, including general apportionment, transportation, special education, food service, and statewide programs.',
     significance:
@@ -57,9 +57,10 @@ const PASSED_BILLS = [
   {
     bill: 'ESSB 6260',
     name: 'Public education funding changes',
-    status: 'Signed - Chapter 267, Laws of 2026',
+    status:
+      'Signed April 1, 2026 - Chapter 267, Laws of 2026 (effective June 11, 2026)',
     summary:
-      'Changed school-bus depreciation rules, limited Transition to Kindergarten funding, and reduced the combined maximum funded Running Start enrollment from 1.4 FTE under the conditions written into the law.',
+      'Stretched the assumed lifetime of school buses so the state reimburses their cost more slowly, directed OSPI to prioritize limited Transition to Kindergarten funding, and cut the combined maximum funded Running Start enrollment from 1.4 FTE to 1.3 FTE beginning in 2026-27 - it would have dropped to 1.2 FTE had the companion revenue bill not been enacted by June 30, 2026.',
     significance:
       'The major standalone funding law of 2026 focused mostly on savings and eligibility rules, so some districts may receive less than they would have under the previous formulas.',
     url: 'https://app.leg.wa.gov/billsummary?BillNumber=6260&Year=2025',

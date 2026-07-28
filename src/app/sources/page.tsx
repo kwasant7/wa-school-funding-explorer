@@ -299,7 +299,9 @@ export default function SourcesPage() {
             calculation reproduces that workbook&apos;s LevyCalc sheet
             (capacity per pupil, maximum LEA per pupil, levy rate, and payable
             LEA), and the LEA a district actually received is F-196 revenue code
-            3300. Script:{' '}
+            3300. The per-student levy cap has two tiers: $3,838.26 for 2026,
+            and $4,505.91 for districts of 40,000 or more FTE students, which
+            under RCW 84.52.0531 means Seattle and no one else. Script:{' '}
             <code className="text-ink">scripts/build-levy-lea.py</code>.
           </p>
         </div>
@@ -395,9 +397,13 @@ export default function SourcesPage() {
             averages (labeled as such on the page), not a fiscal model.
           </li>
           <li>
-            Staffing values in the explainer are base statutory values from RCW
-            28A.150.260; the Legislature has enriched some since (e.g., HB
-            1664).
+            Staffing values in the explainer are the base allocations currently
+            in RCW 28A.150.260, including the counselor, nurse, and office
+            support increases from HB 1664 (2022) that finished phasing in for
+            2024-25. The School Builder shows a subset of the roles the statute
+            funds - social workers, psychologists, student-safety staff, and
+            parent involvement coordinators are omitted - and excludes
+            regionalization, benefits, and every categorical program.
           </li>
         </ul>
       </section>

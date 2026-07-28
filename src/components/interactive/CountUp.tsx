@@ -10,6 +10,8 @@ const FORMATS = {
   plain: (v: number) => String(Math.round(v)),
 } as const;
 
+const DURATION = 1100;
+
 /** Animates a number from 0 to `value` the first time it scrolls into view. */
 export default function CountUp({
   value,
@@ -26,25 +28,44 @@ export default function CountUp({
   useEffect(() => {
     const el = ref.current;
     if (!el || started.current) return;
+    // Reduced motion: keep the real figure on screen, never animate it.
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+
+    let frame = 0;
+    let settle: ReturnType<typeof setTimeout>;
+
     const io = new IntersectionObserver(
       ([entry]) => {
         if (!entry.isIntersecting || started.current) return;
         started.current = true;
         io.disconnect();
         const t0 = performance.now();
-        const dur = 1100;
         const tick = (t: number) => {
-          const p = Math.min(1, (t - t0) / dur);
+          const p = Math.min(1, (t - t0) / DURATION);
           const eased = 1 - Math.pow(1 - p, 3);
           setDisplay(value * eased);
-          if (p < 1) requestAnimationFrame(tick);
+          if (p < 1) frame = requestAnimationFrame(tick);
         };
-        requestAnimationFrame(tick);
+        frame = requestAnimationFrame(tick);
+        // Browsers pause requestAnimationFrame while a tab is hidden. Without
+        // this backstop, switching tabs mid-animation leaves the number frozen
+        // partway - showing, say, $4.5B for a $21.0B total - and it never
+        // recovers, because the observer has already disconnected. Timers are
+        // throttled in background tabs but still fire, so the true value lands
+        // either way.
+        settle = setTimeout(() => {
+          cancelAnimationFrame(frame);
+          setDisplay(value);
+        }, DURATION + 150);
       },
       { threshold: 0.4 }
     );
     io.observe(el);
-    return () => io.disconnect();
+    return () => {
+      io.disconnect();
+      cancelAnimationFrame(frame);
+      clearTimeout(settle);
+    };
   }, [value]);
 
   return <span ref={ref}>{format(display)}</span>;

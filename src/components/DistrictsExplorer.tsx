@@ -149,9 +149,13 @@ function DistrictOverview({
 function FundBalanceCard({ district: d, year }: { district: District; year: string }) {
   const surplus = d.surplus;
   const deficit = surplus < 0;
-  // 6-year running total: net added to / drawn from reserves since 2019-20
+  // Running total: net added to / drawn from reserves across every year this
+  // district reported. Districts that opened mid-series cover a shorter span,
+  // so the sentence below names their own first year rather than assuming
+  // 2019-20.
   const netSeries = districtSeries(d.code, (x) => x.surplus);
   const cumulative = netSeries.reduce((sum, p) => sum + (p.value ?? 0), 0);
+  const firstYear = netSeries.find((p) => p.value != null)?.label ?? YEARS[0];
   const maxAbs = Math.max(1, ...netSeries.map((p) => Math.abs(p.value ?? 0)));
 
   return (
@@ -209,8 +213,8 @@ function FundBalanceCard({ district: d, year }: { district: District; year: stri
               rr >= 5
                 ? 'Healthy cushion'
                 : rr >= 0
-                  ? 'Thin — below the 4-5% experts recommend'
-                  : 'Negative — no cushion left';
+                  ? 'Thin - under the 5% experts treat as a safe minimum'
+                  : 'Negative - no cushion left';
             return (
               <div className={`rounded-lg border p-4 ${cls}`}>
                 <div className="text-sm text-ink-secondary">Reserve ratio</div>
@@ -259,7 +263,7 @@ function FundBalanceCard({ district: d, year }: { district: District; year: stri
       </div>
 
       <p className="mt-4 text-sm text-ink-secondary">
-        Since 2019-20, {d.name} has{' '}
+        Since {firstYear}, {d.name} has{' '}
         <strong className={cumulative < 0 ? 'text-critical' : 'text-good'}>
           {cumulative < 0 ? 'spent down' : 'added'} {fmtMoney(Math.abs(cumulative))}
         </strong>{' '}
@@ -288,7 +292,8 @@ function FundBalanceCard({ district: d, year }: { district: District; year: stri
  * district - no hand-written per-district claims.
  */
 function TrendAnalysis({ district: d }: { district: District }) {
-  const pp = districtSeries(d.code, (x) => x.perPupil)
+  const ppSeries = districtSeries(d.code, (x) => x.perPupil);
+  const pp = ppSeries
     .map((p) => p.value)
     .filter((v): v is number => v != null);
   const enr = districtSeries(d.code, (x) => x.enrollment)
@@ -298,6 +303,9 @@ function TrendAnalysis({ district: d }: { district: District }) {
     .map((p) => p.value)
     .filter((v): v is number => v != null);
   if (pp.length < 2 || enr.length < 2) return null;
+  // Districts that opened mid-series (charters, new compact schools) have no
+  // 2019-20 row, so anchor the comparison on their own first year of data.
+  const firstYear = ppSeries.find((p) => p.value != null)?.label ?? YEARS[0];
 
   const ppPct = ((pp[pp.length - 1] - pp[0]) / pp[0]) * 100;
   const enrPct = ((enr[enr.length - 1] - enr[0]) / enr[0]) * 100;
@@ -311,20 +319,20 @@ function TrendAnalysis({ district: d }: { district: District }) {
   // 1. The headline trend
   if (ppPct > 2) {
     sentences.push(
-      `${name}'s funding per student has risen about ${Math.round(ppPct)}% since 2019-20 (from ${fmtMoneyFull(pp[0])} to ${fmtMoneyFull(pp[pp.length - 1])}).`
+      `${name}'s funding per student has risen about ${Math.round(ppPct)}% since ${firstYear} (from ${fmtMoneyFull(pp[0])} to ${fmtMoneyFull(pp[pp.length - 1])}).`
     );
   } else if (ppPct < -2) {
     sentences.push(
-      `${name}'s funding per student has fallen about ${Math.round(Math.abs(ppPct))}% since 2019-20.`
+      `${name}'s funding per student has fallen about ${Math.round(Math.abs(ppPct))}% since ${firstYear}.`
     );
   } else {
-    sentences.push(`${name}'s funding per student has held roughly flat since 2019-20.`);
+    sentences.push(`${name}'s funding per student has held roughly flat since ${firstYear}.`);
   }
 
   // 2. The context that complicates the headline
   if (ppPct > 2 && drewDown) {
     sentences.push(
-      `That upward line looks reassuring, but it doesn't mean the district is flush: it spent more than it took in in ${deficitYears} of the last ${surp.length} years, drawing down about ${fmtMoney(Math.abs(cumNet))} net from reserves. Per-student funding rising while savings shrink usually means the increases aren't keeping pace with real costs.`
+      `That upward line looks reassuring, but it doesn't mean the district is flush: it spent more than it took in during ${deficitYears} of the last ${surp.length} years, drawing down about ${fmtMoney(Math.abs(cumNet))} net from reserves. Per-student funding rising while savings shrink usually means the increases aren't keeping pace with real costs.`
     );
   } else if (ppPct > 2 && enrPct < -3) {
     sentences.push(
@@ -351,7 +359,7 @@ function TrendAnalysis({ district: d }: { district: District }) {
     );
   } else if (d.reserveRatio != null && d.reserveRatio < 5) {
     sentences.push(
-      `Its reserve ratio has slipped to ${d.reserveRatio.toFixed(1)}%, below the 4-5% experts treat as a safe minimum — a single bad year could force cuts.`
+      `Its reserve ratio has slipped to ${d.reserveRatio.toFixed(1)}%, under the 5% experts treat as a safe minimum - a single bad year could force cuts.`
     );
   } else {
     sentences.push(
@@ -392,6 +400,13 @@ function DistrictDetail({
   const statePct = (key: keyof District['demo']) =>
     (100 * data.districts.reduce((sum, x) => sum + x.demo[key], 0)) / s.enrollment;
 
+  // Charter and compact schools that opened after 2019-20 have a shorter
+  // series, so label the charts with the first year this district reported.
+  const perPupilSeries = districtSeries(d.code, (x) => x.perPupil);
+  const enrollmentSeries = districtSeries(d.code, (x) => x.enrollment);
+  const firstYear =
+    perPupilSeries.find((p) => p.value != null)?.label ?? YEARS[0];
+
   return (
     <div className="max-w-site mx-auto px-4 md:px-6 pt-8">
       <div className="flex items-center justify-between gap-4 flex-wrap">
@@ -425,19 +440,21 @@ function DistrictDetail({
 
       <div className="mt-4 grid lg:grid-cols-2 gap-4 items-start">
         <div className="card p-5">
-          <h2 className="font-semibold mb-1">Funding per student since 2019-20</h2>
+          <h2 className="font-semibold mb-1">
+            Funding per student since {firstYear}
+          </h2>
           <p className="text-xs text-ink-muted mb-3">Nominal dollars · hover for values</p>
           <TrendChart
-            points={districtSeries(d.code, (x) => x.perPupil)}
+            points={perPupilSeries}
             format={(v) => `$${fmtInt(Math.round(v))}`}
             ariaLabel={`${d.name} funding per student by year`}
           />
         </div>
         <div className="card p-5">
-          <h2 className="font-semibold mb-1">Enrollment since 2019-20</h2>
+          <h2 className="font-semibold mb-1">Enrollment since {firstYear}</h2>
           <p className="text-xs text-ink-muted mb-3">October headcount · hover for values</p>
           <TrendChart
-            points={districtSeries(d.code, (x) => x.enrollment)}
+            points={enrollmentSeries}
             format={(v) => fmtInt(Math.round(v))}
             ariaLabel={`${d.name} enrollment by year`}
           />

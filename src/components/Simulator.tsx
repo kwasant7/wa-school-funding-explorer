@@ -14,14 +14,16 @@ const SELECTED_DISTRICT_KEY = 'wa-selected-district';
 const SLIDER_STEPS = 1000;
 
 /**
- * Rounds a slider position back onto the lever's natural increment, measured
- * from its own minimum (mins like $3,838.26 are not step multiples), while
- * still letting the very top of the range land exactly on max.
+ * Maps a 0-1000 slider position onto a lever's own units. The value stays
+ * continuous - quantizing it back onto a lever's display increment is what
+ * made these feel notchy (the English learner slider had only 21 stops across
+ * its whole range). Labels round for display; the value underneath does not.
+ * Position 0 and 1000 land exactly on min and max.
  */
-function snapTo(value: number, min: number, step: number, max: number) {
-  if (value >= max - step / 2) return max;
-  const snapped = min + Math.round((value - min) / step) * step;
-  return Math.min(max, Number(snapped.toFixed(6)));
+function valueAtPosition(position: number, min: number, max: number) {
+  if (position <= 0) return min;
+  if (position >= SLIDER_STEPS) return max;
+  return min + (position / SLIDER_STEPS) * (max - min);
 }
 
 /**
@@ -91,6 +93,21 @@ function levyAuthority(district: LevyDistrict, rate: number, perPupil: number) {
   return Math.min((rate * district.av) / 1000, perPupil * district.enrollment);
 }
 
+const LARGE_DISTRICTS = new Set<string>(LEA.largeDistrictCodes);
+
+/**
+ * The per-pupil levy cap a district actually lives under today. RCW 84.52.0531
+ * gives districts of 40,000+ FTE students a higher limit - Seattle is the only
+ * one, and OSPI's own LevyCalc sheet hardcodes that same split. Using the
+ * standard cap for Seattle would understate what it can legally collect by
+ * about $33M, so the district-specific figure is what the cards use.
+ */
+function currentCapFor(code: string) {
+  return LARGE_DISTRICTS.has(code)
+    ? LEA.maxLevyPerPupilLarge
+    : LEA.maxLevyPerPupil;
+}
+
 /**
  * What raising the per-pupil cap does for one district, split by whether the
  * money needs a new election.
@@ -100,10 +117,16 @@ function levyAuthority(district: LevyDistrict, rate: number, perPupil: number) {
  * higher cap frees up are dollars voters ALREADY approved. Only past that
  * point does a district have to go back to the ballot.
  */
-function levyRoom(levy: LevyDistrict, newPerPupil: number) {
+function levyRoom(levy: LevyDistrict, newPerPupil: number, currentCap: number) {
   const approved = levy.levy;
-  const nowAuthority = levyAuthority(levy, LEA.maxLevyRate, LEA.maxLevyPerPupil);
-  const newAuthority = levyAuthority(levy, LEA.maxLevyRate, newPerPupil);
+  const nowAuthority = levyAuthority(levy, LEA.maxLevyRate, currentCap);
+  // A district already above the standard cap keeps its own higher limit until
+  // the slider passes it, so moving the slider never *lowers* its authority.
+  const newAuthority = levyAuthority(
+    levy,
+    LEA.maxLevyRate,
+    Math.max(newPerPupil, currentCap)
+  );
   const collectedToday = Math.min(approved, nowAuthority);
   const unlocked = Math.max(0, Math.min(approved, newAuthority) - collectedToday);
   const needsVote = Math.max(0, newAuthority - Math.max(approved, nowAuthority));
@@ -148,7 +171,11 @@ function leverImpactFor(
   switch (leverId) {
     case 'levyPerPupil': {
       if (!d.levy) return null;
-      const room = levyRoom(d.levy, values.levyPerPupil);
+      const room = levyRoom(
+        d.levy,
+        values.levyPerPupil,
+        currentCapFor(r.code)
+      );
       return {
         newMoney: room.total,
         local: true,
@@ -237,8 +264,9 @@ const LEVERS = [
         slider default), then a flat{' '}
         <strong className="text-ink">$5,035 in 2031</strong>, when the statute
         drops the district-size split and the same limit applies everywhere.
-        Until then districts above 40,000 students - only Seattle - have a
-        higher cap than the figure modeled here. Raising the cap releases money
+        Until then districts of 40,000 or more students - Seattle is the only
+        one - get a higher cap, <strong className="text-ink">$4,506</strong> in
+        2026, and the cards below use it. Raising the cap releases money
         a district&apos;s voters have already approved but the cap holds back;
         past that point, collecting more would take a new levy vote.
       </>
@@ -418,8 +446,11 @@ const LEVERS = [
     impactKey: 'msoc',
     baseline: 1_614,
     min: 1_614,
-    // Districts report about $3,445 per FTE of non-salary spending, so the
-    // slider has to clear that to show what full funding would take.
+    // Statewide, districts spend about $1,955 per FTE on the basic-education
+    // and district-support side of MSOC; the median district runs $2,414 and
+    // small districts far more, because fixed costs spread over few students.
+    // $4,500 clears all but the smallest 65 of 315 (only 3 of the 113
+    // districts above 2,000 students).
     max: 4_500,
     step: 25,
     effect: (value: number) => `$${fmtInt(Math.round(value))} per student`,
@@ -496,7 +527,7 @@ const LEVERS = [
     effect: (value: number) =>
       value === 0
         ? 'No bonus today'
-        : `+$${fmtInt(value)} per low-income student`,
+        : `+$${fmtInt(Math.round(value))} per low-income student`,
     unit: 'per student',
     todayLabel: '$0 per student',
     markers: [],
@@ -622,7 +653,8 @@ function LeverBar({
   // tax-base ceiling ($2.50 per $1,000 of assessed value).
   if (lever.id === 'levyPerPupil' && levy) {
     const perStudent = (total: number) => total / levy.enrollment;
-    const room = levyRoom(levy, values.levyPerPupil);
+    const cap = currentCapFor(district.record.code);
+    const room = levyRoom(levy, values.levyPerPupil, cap);
     const today = perStudent(room.collectedToday);
     const plan = perStudent(room.newAuthority);
     const approved = perStudent(room.approved);
@@ -705,8 +737,12 @@ function LeverBar({
           <p className="mt-4 text-sm text-ink-secondary">
             {name}&apos;s voters have already approved a levy of{' '}
             <strong className="text-ink">{fmtMoney(room.approved)}</strong>, but
-            the {fmtMoneyFull(Math.round(LEA.maxLevyPerPupil))} cap only lets it
-            collect <strong className="text-ink">{fmtMoney(room.collectedToday)}</strong>.
+            the {fmtMoneyFull(Math.round(cap))} cap
+            {cap !== LEA.maxLevyPerPupil
+              ? ' it qualifies for as a district above 40,000 students'
+              : ''}{' '}
+            only lets it collect{' '}
+            <strong className="text-ink">{fmtMoney(room.collectedToday)}</strong>.
             {room.unlocked > 0
               ? ` Raising the cap frees ${fmtMoney(room.unlocked)} of that without another election.`
               : ' Raising the cap is what would release the rest.'}
@@ -902,6 +938,7 @@ function LeverBar({
             {covered
               ? 'Your plan covers that in full.'
               : `Today's ${lever.baseline.toFixed(2)}× formula leaves the rest for the district to cover out of other money.`}
+            {spent > lever.max && ' Fully funding it is past the top of this slider.'}
           </p>
         )}
       </figure>
@@ -1053,6 +1090,7 @@ function LeverBar({
           {covered
             ? 'Your plan covers that in full.'
             : `Closing the gap takes ${fmtMoneyFull(Math.round(spent - c.base))} more per student.`}
+          {spent > lever.max && ' That is past the top of this slider.'}
         </p>
       )}
     </figure>
@@ -1075,6 +1113,14 @@ function LeverCard({
 }) {
   const value = values[lever.id];
   const changed = value !== lever.baseline;
+  // Seattle already sits above the standard levy cap, so its effective policy
+  // is its own higher limit until the slider passes it. Showing the raw slider
+  // value there would contradict both the "Today" label and the $0 impact.
+  const districtCap =
+    lever.id === 'levyPerPupil' && district
+      ? currentCapFor(district.record.code)
+      : null;
+  const shownValue = districtCap != null ? Math.max(value, districtCap) : value;
   const impact = district ? leverImpactFor(lever.id, values, district) : null;
   const current = district?.record.rev.total ?? 0;
   const newMoney = impact?.newMoney ?? 0;
@@ -1116,7 +1162,7 @@ function LeverCard({
             className="text-lg font-bold tabular-nums"
             style={{ color: lever.color }}
           >
-            {lever.effect(value)}
+            {lever.effect(shownValue)}
           </span>
         </div>
         <div className="relative mt-2">
@@ -1138,11 +1184,9 @@ function LeverCard({
             )}
             onInput={(event) => {
               const position = Number(event.currentTarget.value);
-              const next =
-                lever.min + (position / SLIDER_STEPS) * (lever.max - lever.min);
               setValues((previous) => ({
                 ...previous,
-                [lever.id]: snapTo(next, lever.min, lever.step, lever.max),
+                [lever.id]: valueAtPosition(position, lever.min, lever.max),
               }));
             }}
             className="range-slider w-full"
@@ -1181,24 +1225,11 @@ function LeverCard({
             Today (
             {'todayLabel' in lever && lever.todayLabel
               ? lever.todayLabel
-              : lever.effect(lever.baseline)}
+              : // Seattle's levy cap is higher than every other district's, so
+                // "today" for this lever depends on who is selected.
+                lever.effect(districtCap ?? lever.baseline)}
             )
           </span>
-          {changed && (
-            <button
-              type="button"
-              onClick={() =>
-                setValues((previous) => ({
-                  ...previous,
-                  [lever.id]: lever.baseline,
-                }))
-              }
-              className="hover:underline"
-              style={{ color: lever.color }}
-            >
-              Undo
-            </button>
-          )}
           <span>{lever.effect(lever.max)}</span>
         </div>
       </div>
@@ -1460,13 +1491,28 @@ export default function Simulator() {
               &ldquo;What they actually spend&rdquo; on special education,
               MSOC and transportation is this district&apos;s own{' '}
               <strong className="text-ink">2024-25 F-196</strong> General Fund
-              actuals: special education is programs 21/22/24/26, MSOC is every
-              non-salary, non-benefit object (5, 7, 8 and 9), and transportation
-              is program 99. Because those are{' '}
+              actuals: special education is programs 21/22/24/26, MSOC is the
+              non-salary, non-benefit objects (5, 7, 8 and 9){' '}
+              <strong className="text-ink">within basic education</strong>{' '}
+              (programs 01 and 02) and district-wide support (program 97), and
+              transportation is program 99. Restricting MSOC to those programs
+              matters: counting the same objects everywhere would pull in the
+              non-salary share of special education, transportation, and food
+              service, double-counting the other two lines. Because these are{' '}
               <strong className="text-ink">General Fund only</strong>,
               transportation excludes buses bought through the Transportation
               Vehicle Fund and so understates the true cost - for most districts
               it lands below the modeled state allocation for that reason.
+            </li>
+            <li>
+              The MSOC slider starts at the{' '}
+              <strong className="text-ink">$1,614 per-student</strong> rate set
+              for 2025-26, while the spending it is compared against is 2024-25
+              actuals, so the two sit one year apart. The slider also models a
+              single flat rate and leaves out the separate{' '}
+              <strong className="text-ink">~$215 per-student</strong> add-on the
+              formula pays for grades 9-12, so it understates what districts
+              with high schools actually receive.
             </li>
           </ul>
         </details>
@@ -1598,7 +1644,7 @@ export default function Simulator() {
                   <strong className="text-ink-secondary">{label}</strong>
                 </span>
               ))}
-              : this district does not qualify.
+              : at these settings this district receives nothing.
             </p>
           )}
         </section>

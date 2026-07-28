@@ -44,6 +44,15 @@ LEA_MAX_RATE = 1.50  # LevyCalc assumption D ($ per $1,000 AV)
 MAX_LEVY_PER_PUPIL = 3838.26  # assumption A
 MAX_LEVY_RATE = 2.50  # assumption B
 
+# RCW 84.52.0531 sets a higher per-pupil levy limit for districts with 40,000+
+# FTE students, and Seattle (17001) is the only one. OSPI's LevyCalc cell C17
+# hardcodes exactly that split:
+#   IF(A1="17001", ROUND(3896.8*(1+CPI)+500, 2), ROUND(3247.33*(1+CPI)+500, 2))
+# with the CY2026 levy CPI of 2.8%, giving 4505.91 and 3838.26 respectively.
+# The two converge at a flat $5,035 in 2031, when the statute drops the split.
+LARGE_DISTRICT_CODES = ['17001']
+MAX_LEVY_PER_PUPIL_LARGE = 4505.91
+
 
 def ensure_workbook():
     if not os.path.exists(WORKBOOK):
@@ -157,6 +166,8 @@ def main():
             'leaThresholdPerPupil': LEA_THRESHOLD,
             'leaMaxRate': LEA_MAX_RATE,
             'maxLevyPerPupil': MAX_LEVY_PER_PUPIL,
+            'maxLevyPerPupilLarge': MAX_LEVY_PER_PUPIL_LARGE,
+            'largeDistrictCodes': LARGE_DISTRICT_CODES,
             'maxLevyRate': MAX_LEVY_RATE,
         },
         'sources': {
