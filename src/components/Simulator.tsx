@@ -446,10 +446,10 @@ const LEVERS = [
     impactKey: 'msoc',
     baseline: 1_614,
     min: 1_614,
-    // Statewide, districts spend about $1,955 per FTE on the basic-education
-    // and district-support side of MSOC; the median district runs $2,414 and
-    // small districts far more, because fixed costs spread over few students.
-    // $4,500 clears all but the smallest 65 of 315 (only 3 of the 113
+    // Statewide, districts spend about $1,776 per FTE on the operating costs
+    // MSOC is meant to cover; the median district runs $2,179 and small
+    // districts far more, because fixed costs spread over few students.
+    // $4,500 clears all but the smallest 60 of 315 (only 3 of the 113
     // districts above 2,000 students).
     max: 4_500,
     step: 25,
@@ -1491,14 +1491,16 @@ export default function Simulator() {
               &ldquo;What they actually spend&rdquo; on special education,
               MSOC and transportation is this district&apos;s own{' '}
               <strong className="text-ink">2024-25 F-196</strong> General Fund
-              actuals: special education is programs 21/22/24/26, MSOC is the
-              non-salary, non-benefit objects (5, 7, 8 and 9){' '}
+              actuals: special education is programs 21/22/24/26, MSOC is
+              supplies, purchased services and travel (objects 5, 7 and 8){' '}
               <strong className="text-ink">within basic education</strong>{' '}
-              (programs 01 and 02) and district-wide support (program 97), and
-              transportation is program 99. Restricting MSOC to those programs
-              matters: counting the same objects everywhere would pull in the
-              non-salary share of special education, transportation, and food
-              service, double-counting the other two lines. Because these are{' '}
+              (programs 01, 02 and 03) plus purchased services and travel
+              (objects 7 and 8) in district-wide support (program 97), and
+              transportation is program 99. Scoping MSOC that way matters:
+              counting every non-salary object across every program would pull
+              in capital outlay and the non-salary share of special education,
+              transportation, and food service, double-counting the other two
+              lines. Because these are{' '}
               <strong className="text-ink">General Fund only</strong>,
               transportation excludes buses bought through the Transportation
               Vehicle Fund and so understates the true cost - for most districts
