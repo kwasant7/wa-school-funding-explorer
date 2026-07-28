@@ -37,6 +37,9 @@ const SEGMENTS: { key: keyof SourceSlices; label: string; color: string; blurb: 
   },
 ];
 
+/** Below this share a segment is too narrow to hold its own label legibly. */
+const INSIDE_LABEL_MIN = 8;
+
 export default function SourceShareBar({
   slices,
   caption,
@@ -46,12 +49,27 @@ export default function SourceShareBar({
 }) {
   const [hover, setHover] = useState<string | null>(null);
   const total = SEGMENTS.reduce((s, seg) => s + slices[seg.key], 0);
+
+  // Midpoint of each too-narrow-to-label segment, as a percentage across the
+  // bar, so its callout can sit directly beneath it.
+  const callouts: { key: string; share: number; center: number; color: string }[] = [];
+  if (total) {
+    let run = 0;
+    for (const seg of SEGMENTS) {
+      const share = (100 * slices[seg.key]) / total;
+      if (share > 0 && share < INSIDE_LABEL_MIN) {
+        callouts.push({ key: seg.key, share, center: run + share / 2, color: seg.color });
+      }
+      if (share > 0) run += share;
+    }
+  }
+
   if (!total) return null;
 
   return (
     <figure>
       <div
-        className="flex h-6 rounded overflow-hidden bg-paper"
+        className="flex h-7 rounded overflow-hidden bg-paper"
         style={{ gap: 2 }}
         role="img"
         aria-label={`Funding sources: ${SEGMENTS.map(
@@ -73,7 +91,7 @@ export default function SourceShareBar({
               onMouseEnter={() => setHover(seg.key)}
               onMouseLeave={() => setHover(null)}
             >
-              {share >= 12 && (
+              {share >= INSIDE_LABEL_MIN && (
                 <span className="text-xs font-semibold text-white select-none">
                   {Math.round(share)}%
                 </span>
@@ -82,6 +100,29 @@ export default function SourceShareBar({
           );
         })}
       </div>
+      {/*
+        Segments too narrow to hold a label get one underneath instead, tied to
+        the segment by colour and pinned to its midpoint. Every source is worth
+        a number even when it is a sliver - a 3% federal share is still tens of
+        millions of dollars.
+      */}
+      {callouts.length > 0 && (
+        <div className="relative h-4" aria-hidden>
+          {callouts.map((c) => (
+            <span
+              key={c.key}
+              className="absolute top-0 -translate-x-1/2 whitespace-nowrap text-[11px] font-semibold tabular-nums leading-4"
+              style={{
+                left: `${Math.min(97, Math.max(3, c.center))}%`,
+                color: c.color,
+                opacity: hover && hover !== c.key ? 0.45 : 1,
+              }}
+            >
+              {c.share < 1 ? '<1' : Math.round(c.share)}%
+            </span>
+          ))}
+        </div>
+      )}
       <div className="mt-3 flex flex-wrap gap-x-5 gap-y-2">
         {SEGMENTS.map((seg) => {
           const v = slices[seg.key];

@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { OVERSIGHT_CHECKED_ON } from '@/data/oversight';
 
 export const metadata: Metadata = {
   title: 'Sources & Methodology',
@@ -166,19 +167,27 @@ export default function SourcesPage() {
           script applies. Open it in any spreadsheet app and compare against
           this site&apos;s numbers directly.
         </p>
-        <div className="mt-5 card p-5 max-w-2xl">
-          <h3 className="font-semibold">Why two enrollment numbers?</h3>
-          <p className="mt-2 text-sm text-ink-secondary">
-            The student total shown throughout the site remains the Report
-            Card&apos;s October headcount. For per-student funding, we use
-            OSPI&apos;s final annual-average funding FTE from the P-223/P-223RS
-            system. That means part-time participation - including Running
-            Start - is counted at its reported FTE instead of automatically as
-            one full student.
+        <div className="mt-5 card p-5 md:p-6 grid gap-x-8 gap-y-3 md:grid-cols-3">
+          <h3 className="font-semibold md:col-span-3">
+            Why two enrollment numbers?
+          </h3>
+          <p className="text-sm text-ink-secondary">
+            Student counts across the site are OSPI&apos;s final annual-average
+            funding FTE from the P-223/P-223RS system - the same measure the
+            per-student dollar figures divide by, so the two always agree.
+            Part-time participation, including Running Start, is counted at its
+            reported FTE instead of automatically as one full student.
           </p>
-          <p className="mt-2 text-sm text-ink-secondary">
-            The denominator is the workbook&apos;s K-12 FTE (including ALE)
-            plus separately reported Running Start-at-college FTE. See the{' '}
+          <p className="text-sm text-ink-secondary">
+            The Report Card&apos;s October headcount is still used where a
+            headcount is the right unit: the enrollment trend chart on each
+            district page, and the demographic shares (low income, multilingual,
+            special education) which are reported as counts of students, not
+            FTE. Those will not match the FTE totals exactly.
+          </p>
+          <p className="text-sm text-ink-secondary">
+            The denominator is the workbook&apos;s K-12 FTE (including ALE) plus
+            separately reported Running Start-at-college FTE. See the{' '}
             <Ext href="https://ospi.k12.wa.us/sites/default/files/2024-11/historical-enrollment-summary-2001-02.xlsx">
               Final Enrollment Summary workbook
             </Ext>{' '}
@@ -186,14 +195,10 @@ export default function SourcesPage() {
             <Ext href="https://ospi.k12.wa.us/policy-funding/school-apportionment/guidance-and-tools/enrollment-reporting">
               enrollment reporting guidance
             </Ext>
-            .
-          </p>
-          <p className="mt-2 text-sm text-ink-secondary">
-            We also retain the K-3, grades 4-6, grades 7-8, and grades
-            9-12 subtotals to personalize the prototypical-school explainer
-            for the district selected on the How It Works page. Running Start
-            college FTE is displayed separately rather than treated as an
-            on-campus model school.
+            . We also retain the K-3, grades 4-6, grades 7-8, and grades 9-12
+            subtotals to personalize the prototypical-school explainer, and show
+            Running Start college FTE separately rather than as an on-campus
+            model school.
           </p>
         </div>
       </section>
@@ -303,6 +308,45 @@ export default function SourcesPage() {
             and $4,505.91 for districts of 40,000 or more FTE students, which
             under RCW 84.52.0531 means Seattle and no one else. Script:{' '}
             <code className="text-ink">scripts/build-levy-lea.py</code>.
+          </p>
+        </div>
+
+        <div className="mt-4 card p-5 text-sm text-ink-secondary space-y-2">
+          <p className="font-semibold text-ink">
+            What the state allocation pays for (the 7-step walkthrough)
+          </p>
+          <p>
+            The breakdown of a district&apos;s state allocation into salaries,
+            benefits, materials and operating costs, special education,
+            transportation and the categorical programs comes from OSPI&apos;s{' '}
+            <Ext href="https://ospi.k12.wa.us/safs-data-files">
+              Apportionment Final Extract
+            </Ext>{' '}
+            for 2024-25 - the data behind the 1191 Apportionment Summary each
+            district receives. State general-fund allotments only: federal codes
+            and Transportation Vehicle Fund depreciation are excluded, so the
+            total runs slightly under the state revenue the same district reports
+            on its F-196. Salaries, benefits and MSOC come from the
+            workbook&apos;s Basic Ed sheet; the rest of the basic-education line
+            is reported as a single residual rather than modeled. Script:{' '}
+            <code className="text-ink">scripts/build-state-allocation.py</code>.
+          </p>
+        </div>
+
+        <div className="mt-4 card p-5 text-sm text-ink-secondary space-y-2">
+          <p className="font-semibold text-ink">
+            Binding conditions &amp; financial oversight
+          </p>
+          <p>
+            Districts flagged as being on binding conditions or under enhanced
+            state oversight are transcribed by hand from OSPI&apos;s{' '}
+            <Ext href="https://ospi.k12.wa.us/policy-funding/school-apportionment/guidance-and-tools/school-district-budget-challenges-and-financial-insolvency">
+              School District Budget Challenges and Financial Insolvency
+            </Ext>{' '}
+            page, which publishes a letter per district rather than a
+            machine-readable list. The status shown here was checked on{' '}
+            <strong className="text-ink">{OVERSIGHT_CHECKED_ON}</strong>; check
+            that page for anything more recent.
           </p>
         </div>
 

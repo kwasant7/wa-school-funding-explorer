@@ -5,6 +5,7 @@ import Link from 'next/link';
 import data from '@/data/districts.json';
 import levyData from '@/data/levy.json';
 import spendingData from '@/data/spending.json';
+import allocationData from '@/data/allocation.json';
 import DistrictCombobox from '@/components/DistrictCombobox';
 import { fmtInt, fmtMoney, fmtMoneyFull, fmtSignedMoney } from '@/lib/format';
 
@@ -32,6 +33,20 @@ function valueAtPosition(position: number, min: number, max: number) {
  */
 function markerPct(value: number, scale: number) {
   return `${Math.max(8, Math.min(92, (100 * value) / scale))}%`;
+}
+
+/** Inline citation link, styled to read as emphasis rather than decoration. */
+function StatuteLink({ href, children }: { href: string; children: React.ReactNode }) {
+  return (
+    <a
+      href={href}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="font-semibold text-ink underline underline-offset-2 hover:text-accent"
+    >
+      {children}
+    </a>
+  );
 }
 
 const LEA = levyData.assumptions;
@@ -228,7 +243,18 @@ function leverImpactFor(
 const STUDENTS = data.statewide.enrollment;
 const BASELINE_ELL_PER_STUDENT = 1_800;
 const BASELINE_SPED_ALLOCATION = 12_000;
-const BASELINE_TRANSPORTATION = 1_200_000_000;
+/*
+  Pupil transportation operations, summed from every district's actual 2024-25
+  state allotment (revenue code 4199) rather than a rounded guess at the size
+  of the program. The previous hard-coded $1.2B was about a third too high,
+  which pushed the slider's starting point to roughly $1,085 per student when
+  the real figure is nearer $718. Bus purchases are excluded: those run through
+  the Transportation Vehicle Fund, not the general fund.
+*/
+const BASELINE_TRANSPORTATION = Object.values(allocationData.districts).reduce(
+  (sum, d) => sum + d.transportation,
+  0
+);
 const BASELINE_TRANSPORTATION_PER_STUDENT = BASELINE_TRANSPORTATION / STUDENTS;
 
 const LEVERS = [
@@ -258,8 +284,14 @@ const LEVERS = [
     note: (
       <>
         Set on a schedule by{' '}
-        <strong className="text-ink">ESHB 2049 (2025)</strong> in{' '}
-        <strong className="text-ink">RCW 84.52.0531</strong>: it reaches{' '}
+        <StatuteLink href="https://app.leg.wa.gov/billsummary?BillNumber=2049&Year=2025">
+          ESHB 2049 (2025)
+        </StatuteLink>{' '}
+        in{' '}
+        <StatuteLink href="https://app.leg.wa.gov/rcw/default.aspx?cite=84.52.0531">
+          RCW 84.52.0531
+        </StatuteLink>
+        : it reaches{' '}
         <strong className="text-ink">$3,838 in 2026</strong> (today&apos;s
         slider default), then a flat{' '}
         <strong className="text-ink">$5,035 in 2031</strong>, when the statute
@@ -355,9 +387,13 @@ const LEVERS = [
     ),
     note: (
       <>
-        The Transitional Bilingual Instruction Program funds language support
-        until a student tests out. Districts with recent immigration or refugee
-        resettlement carry most of this cost.
+        The{' '}
+        <StatuteLink href="https://app.leg.wa.gov/rcw/default.aspx?cite=28A.180">
+          Transitional Bilingual Instruction Program
+        </StatuteLink>{' '}
+        (RCW 28A.180) funds language support until a student tests out.
+        Districts with recent immigration or refugee resettlement carry most of
+        this cost.
       </>
     ),
     impactKey: 'ell',
@@ -396,10 +432,17 @@ const LEVERS = [
     ),
     note: (
       <>
-        Special education is funded as a multiplier on top of basic education.
-        Districts have long reported spending more than the formula provides;
-        2025's <strong className="text-ink">SB 5263</strong> raised it and
-        removed the enrollment cap, but the gap is still debated.
+        Special education is funded as a multiplier on top of basic education,
+        under{' '}
+        <StatuteLink href="https://app.leg.wa.gov/rcw/default.aspx?cite=28A.150.390">
+          RCW 28A.150.390
+        </StatuteLink>
+        . Districts have long reported spending more than the formula provides;
+        2025&apos;s{' '}
+        <StatuteLink href="https://app.leg.wa.gov/billsummary?BillNumber=5263&Year=2025">
+          E2SSB 5263
+        </StatuteLink>{' '}
+        raised it and removed the enrollment cap, but the gap is still debated.
       </>
     ),
     impactKey: 'sped',
@@ -481,10 +524,20 @@ const LEVERS = [
     ),
     note: (
       <>
-        Transportation is funded by a separate formula based on the students a
-        district actually carries and how far. Rural districts with long routes
-        and districts running required special education routes feel changes
-        here most.
+        Transportation is funded by a separate formula (
+        <StatuteLink href="https://app.leg.wa.gov/rcw/default.aspx?cite=28A.160.192">
+          RCW 28A.160.192
+        </StatuteLink>
+        ) based on the students a district actually carries and how far. Rural
+        districts with long routes and districts running required special
+        education routes feel changes here most.{' '}
+        <strong className="text-ink">
+          Both figures here are per enrolled student, not per bus rider
+        </strong>{' '}
+        - most students never board a bus, so the cost of actually carrying one
+        is far higher than these numbers suggest. Bus purchases are excluded
+        too: those run through the Transportation Vehicle Fund rather than the
+        general fund.
       </>
     ),
     impactKey: 'transportation',
@@ -507,16 +560,24 @@ const LEVERS = [
       'Extra money for schools where most students are low-income.',
     bill: (
       <>
-        This is a modeled policy proposal; Washington does not currently have a
-        statewide high-poverty concentration-bonus law.
+        This is a modeled policy proposal, not current law: Washington has no
+        statewide high-poverty concentration bonus. It is modeled on{' '}
+        <StatuteLink href="https://www.cde.ca.gov/fg/aa/lc/lcffoverview.asp">
+          California&apos;s Local Control Funding Formula
+        </StatuteLink>
+        .
       </>
     ),
     note: (
       <>
-        Washington does not currently pay a concentration bonus. This models one:
-        extra dollars only where at least{' '}
-        <strong className="text-ink">60% of students are low-income</strong>,
-        on the theory that concentrated poverty costs more to address.
+        California&apos;s LCFF pays a{' '}
+        <strong className="text-ink">concentration grant</strong> to districts
+        where more than 55% of students are low-income, English learners, or in
+        foster care - on the theory that concentrated poverty costs more to
+        address than the same students spread thinly. This slider models the
+        same idea for Washington at a{' '}
+        <strong className="text-ink">60% low-income</strong> threshold. It is an
+        all-or-nothing cliff: a district just under the line receives nothing.
       </>
     ),
     impactKey: 'poverty',
@@ -1125,6 +1186,24 @@ function LeverCard({
   const current = district?.record.rev.total ?? 0;
   const newMoney = impact?.newMoney ?? 0;
 
+  /*
+    Two levers have a real eligibility test: LEA is a wealth test, and the
+    poverty bonus has a 60% cliff. For a district that fails the test, showing
+    "+$1,800 per student" next to the slider - and again at the top of its
+    range - reads as money arriving when the actual answer is zero. Those
+    labels become "Does not qualify" instead.
+  */
+  const gated = lever.id === 'leaThreshold' || lever.id === 'povertyBonus';
+  const failsAt = (v: number) =>
+    !!district &&
+    gated &&
+    v !== lever.baseline &&
+    Math.round(
+      leverImpactFor(lever.id, { ...values, [lever.id]: v }, district)?.newMoney ?? 0
+    ) === 0;
+  const disqualified = failsAt(value);
+  const disqualifiedAtMax = failsAt(lever.max);
+
   return (
     <section
       className={`card border-l-4 p-5 md:p-6 ${
@@ -1158,12 +1237,18 @@ function LeverCard({
           <label htmlFor={lever.id} className="text-sm font-semibold">
             {lever.sliderLabel}
           </label>
-          <span
-            className="text-lg font-bold tabular-nums"
-            style={{ color: lever.color }}
-          >
-            {lever.effect(shownValue)}
-          </span>
+          {disqualified ? (
+            <span className="text-lg font-bold text-ink-muted">
+              Does not qualify
+            </span>
+          ) : (
+            <span
+              className="text-lg font-bold tabular-nums"
+              style={{ color: lever.color }}
+            >
+              {lever.effect(shownValue)}
+            </span>
+          )}
         </div>
         <div className="relative mt-2">
           {/*
@@ -1230,7 +1315,11 @@ function LeverCard({
                 lever.effect(districtCap ?? lever.baseline)}
             )
           </span>
-          <span>{lever.effect(lever.max)}</span>
+          <span>
+            {disqualifiedAtMax
+              ? 'Still does not qualify'
+              : lever.effect(lever.max)}
+          </span>
         </div>
       </div>
 

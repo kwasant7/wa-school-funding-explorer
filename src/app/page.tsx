@@ -124,11 +124,12 @@ export default function HomePage() {
       {/* Steps */}
       <section className="py-8">
         <h2 className="text-2xl md:text-3xl font-bold">
-          How money reaches {selectedDistrict.name}, in 7 steps
+          How state money reaches {selectedDistrict.name}, in 7 steps
         </h2>
         <p className="mt-2 max-w-2xl text-ink-secondary">
-          Follow the path from student enrollment to a real district budget -
-          each step shows what happens and why it matters.
+          The prototypical model is a state formula, so this path ends at the
+          state allocation - not the district&apos;s whole budget, which also
+          includes local levy and federal money.
         </p>
         <FundingJourney district={selectedDistrict} />
       </section>

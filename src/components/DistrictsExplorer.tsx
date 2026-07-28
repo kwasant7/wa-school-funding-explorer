@@ -8,7 +8,10 @@ import StatTile from '@/components/StatTile';
 import SourceShareBar from '@/components/charts/SourceShareBar';
 import CompareBar from '@/components/charts/CompareBar';
 import TrendChart from '@/components/charts/TrendChart';
+import RevenueTrendChart from '@/components/charts/RevenueTrendChart';
+import NeedVsFundingChart, { NeedPoint } from '@/components/charts/NeedVsFundingChart';
 import WaMap from '@/components/charts/WaMap';
+import { oversightFor, OVERSIGHT_SOURCE, OVERSIGHT_CHECKED_ON } from '@/data/oversight';
 import { fmtInt, fmtMoney, fmtMoneyFull, fmtSignedMoney, pct } from '@/lib/format';
 
 function YearSelect({ year, onChange }: { year: string; onChange: (y: string) => void }) {
@@ -372,6 +375,8 @@ function TrendAnalysis({ district: d }: { district: District }) {
     );
   }
 
+  const oversight = oversightFor(d.code);
+
   return (
     <div className="mt-4 rounded-xl border border-accent-soft bg-accent-wash p-4 md:p-5">
       <p className="text-xs font-semibold uppercase tracking-wide text-accent-deep">
@@ -380,10 +385,40 @@ function TrendAnalysis({ district: d }: { district: District }) {
       <p className="mt-2 text-sm md:text-base text-ink-secondary leading-relaxed">
         {sentences.join(' ')}
       </p>
+      {/*
+        Binding conditions is the one hard, official judgement about a
+        district's finances - worth surfacing above our own generated read of
+        the numbers.
+      */}
+      {oversight && (
+        <div className="mt-3 rounded-lg border border-critical/40 bg-red-50 p-3">
+          <p className="text-sm font-semibold text-critical">
+            {oversight.level === 'enhanced'
+              ? 'Under enhanced state financial oversight'
+              : 'On state binding conditions'}
+          </p>
+          <p className="mt-1 text-sm text-ink-secondary">
+            {oversight.detail} Districts that cannot adopt a balanced budget must
+            request binding conditions from OSPI, which then sets fund-balance
+            targets and requires more frequent financial reporting.{' '}
+            <a
+              href={OVERSIGHT_SOURCE}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="font-semibold text-accent hover:underline"
+            >
+              OSPI status documents ↗
+            </a>
+          </p>
+        </div>
+      )}
       <p className="mt-2 text-xs text-ink-muted">
         Auto-generated from this district&apos;s own funding, enrollment, and
         surplus/deficit data - a starting point for interpretation, not a formal
         fiscal assessment.
+        {oversight
+          ? ` Oversight status transcribed from OSPI on ${OVERSIGHT_CHECKED_ON}.`
+          : ''}
       </p>
     </div>
   );
@@ -411,6 +446,33 @@ function DistrictDetail({
   const enrollmentSeries = districtSeries(d.code, (x) => x.enrollment);
   const firstYear =
     perPupilSeries.find((p) => p.value != null)?.label ?? YEARS[0];
+
+  const revenueYears = useMemo(
+    () =>
+      districtSeries(d.code, (x) => x.rev)
+        .filter((p) => p.value != null)
+        .map((p) => ({ label: p.label, ...p.value! })),
+    [d.code]
+  );
+
+  // Every district in the selected year, for the need-vs-funding scatter.
+  // State revenue only: local levy capacity is what the formula is supposed to
+  // be correcting for, so mixing it in would hide the pattern.
+  const needPoints = useMemo<NeedPoint[]>(
+    () =>
+      data.districts
+        .filter((x) => x.fundingEnrollment > 0 && x.enrollment > 0)
+        .map((x) => ({
+          code: x.code,
+          name: x.name,
+          perStudent: x.rev.state / x.fundingEnrollment,
+          lowIncome: x.demo.lowIncome / x.enrollment,
+          ell: x.demo.ell / x.enrollment,
+          sped: x.demo.sped / x.enrollment,
+          enrollment: x.enrollment,
+        })),
+    [data]
+  );
 
   return (
     <div className="max-w-site mx-auto px-4 md:px-6 pt-8">
@@ -467,6 +529,31 @@ function DistrictDetail({
       </div>
 
       <TrendAnalysis district={d} />
+
+      <div className="mt-4 card p-5">
+        <h2 className="font-semibold mb-1">
+          Where the money came from, {firstYear} to {LATEST}
+        </h2>
+        <p className="text-xs text-ink-muted mb-4">
+          Share of each year&apos;s general-fund revenue · total above each bar
+        </p>
+        <RevenueTrendChart years={revenueYears} />
+        <p className="mt-3 text-xs text-ink-muted">
+          Federal share peaks in the pandemic years and falls back as ESSER
+          money expires - a bulge districts had to plan around, not a permanent
+          increase.
+        </p>
+      </div>
+
+      <div className="mt-4 card p-5">
+        <h2 className="font-semibold mb-1">
+          Does student need change what a district gets?
+        </h2>
+        <p className="text-xs text-ink-muted mb-4">
+          Every Washington district in {year} · {d.name} highlighted
+        </p>
+        <NeedVsFundingChart points={needPoints} highlight={d.code} />
+      </div>
 
       <div className="mt-4 grid lg:grid-cols-2 gap-4 items-start">
         <div className="card p-5">

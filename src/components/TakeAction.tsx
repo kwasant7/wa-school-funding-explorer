@@ -225,6 +225,12 @@ const RESOURCE_GROUPS = [
         url: 'https://www.ltgov.wa.gov/legislative-youth-advisory-council',
       },
       {
+        label: 'Youth in Action',
+        detail:
+          'League of Education Voters hub for students organizing on education policy.',
+        url: 'https://hub.educationvoters.org/youth-in-action/',
+      },
+      {
         label: 'Legislature civic education programs',
         detail: 'Pages, internships, classroom materials, and other ways to participate.',
         url: 'https://leg.wa.gov/learn-and-participate/civic-education-programs/',
@@ -297,11 +303,22 @@ export default function TakeAction() {
   );
   const match =
     representation.schoolDistricts[selectedCode as DistrictCode] ?? null;
-  const legislators = match
-    ? representation.legislators[
-        String(match.legislativeDistrict) as keyof typeof representation.legislators
-      ]
-    : null;
+  /*
+    A school district usually sits in several legislative districts - Bellevue
+    spans the 41st and the 48th - and every one of those delegations votes on
+    school funding. Listing only the largest would send a family to the wrong
+    legislators about half the time.
+  */
+  const delegations = (match?.legislativeDistricts ?? [])
+    .map((entry) => ({
+      district: entry.district,
+      share: entry.share,
+      members:
+        representation.legislators[
+          String(entry.district) as keyof typeof representation.legislators
+        ] ?? [],
+    }))
+    .filter((entry) => entry.members.length > 0);
   const personalizedEmail = selectedDistrict
     ? EMAIL_TEMPLATE.replace('[YOUR SCHOOL DISTRICT]', selectedDistrict.name)
     : EMAIL_TEMPLATE;
@@ -352,56 +369,92 @@ export default function TakeAction() {
           </div>
         </div>
 
-        {selectedDistrict && match && legislators ? (
+        {selectedDistrict && delegations.length > 0 ? (
           <div className="mt-5">
             <p className="text-sm text-ink-secondary">
-              <strong className="text-ink">{selectedDistrict.name}</strong> is
-              centered in Washington Legislative District{' '}
-              <strong className="text-ink">{match.legislativeDistrict}</strong>.
+              <strong className="text-ink">{selectedDistrict.name}</strong>{' '}
+              {delegations.length > 1 ? (
+                <>
+                  spans{' '}
+                  <strong className="text-ink">
+                    {delegations.length} legislative districts
+                  </strong>{' '}
+                  ({delegations.map((entry) => entry.district).join(', ')}), so
+                  every delegation below votes on its funding.
+                </>
+              ) : (
+                <>
+                  sits in Washington Legislative District{' '}
+                  <strong className="text-ink">{delegations[0].district}</strong>.
+                </>
+              )}
             </p>
-            <div className="mt-3 grid md:grid-cols-3 gap-3">
-              {legislators.map((legislator) => (
-                <article key={legislator.name} className="card p-4 bg-surface flex gap-3">
-                  {legislator.photo && (
-                    <img
-                      src={`${BASE_PATH}/legislators/${legislator.photo}`}
-                      alt={`Official portrait of ${legislator.chamber} ${legislator.name}`}
-                      width={240}
-                      height={320}
-                      loading="lazy"
-                      className="w-16 h-[5.33rem] shrink-0 rounded-md border border-line object-cover object-top bg-paper"
-                    />
-                  )}
-                  <div className="min-w-0">
-                    <p className="text-xs uppercase tracking-wide text-ink-muted">
-                      {legislator.chamber}
-                    </p>
-                    <h3 className="mt-0.5 font-bold text-lg leading-tight">
-                      {legislator.name}
+
+            <div className="mt-4 space-y-5">
+              {delegations.map((entry) => (
+                <div key={entry.district}>
+                  <div className="flex items-baseline gap-2">
+                    <h3 className="font-bold">
+                      Legislative District {entry.district}
                     </h3>
-                    <p className="text-sm text-ink-secondary">
-                      {legislator.party} · District {match.legislativeDistrict}
-                    </p>
-                    <a
-                      href={legislator.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="mt-2 inline-block text-sm font-semibold text-accent hover:underline"
-                    >
-                      Contact ↗
-                    </a>
+                    {delegations.length > 1 && (
+                      <span className="text-xs text-ink-muted">
+                        about {Math.round(entry.share * 100)}% of the school
+                        district&apos;s area
+                      </span>
+                    )}
                   </div>
-                </article>
+                  <div className="mt-2 grid md:grid-cols-3 gap-3">
+                    {entry.members.map((legislator) => (
+                      <article
+                        key={`${entry.district}-${legislator.name}`}
+                        className="card p-4 bg-surface flex gap-3"
+                      >
+                        {legislator.photo && (
+                          <img
+                            src={`${BASE_PATH}/legislators/${legislator.photo}`}
+                            alt={`Official portrait of ${legislator.chamber} ${legislator.name}`}
+                            width={240}
+                            height={320}
+                            loading="lazy"
+                            className="w-16 h-[5.33rem] shrink-0 rounded-md border border-line object-cover object-top bg-paper"
+                          />
+                        )}
+                        <div className="min-w-0">
+                          <p className="text-xs uppercase tracking-wide text-ink-muted">
+                            {legislator.chamber}
+                          </p>
+                          <h4 className="mt-0.5 font-bold text-lg leading-tight">
+                            {legislator.name}
+                          </h4>
+                          <p className="text-sm text-ink-secondary">
+                            {legislator.party} · District {entry.district}
+                          </p>
+                          <a
+                            href={legislator.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="mt-2 inline-block text-sm font-semibold text-accent hover:underline"
+                          >
+                            Contact ↗
+                          </a>
+                        </div>
+                      </article>
+                    ))}
+                  </div>
+                </div>
               ))}
             </div>
-            <p className="mt-2 text-xs text-ink-muted">
+
+            <p className="mt-3 text-xs text-ink-muted">
               Official member portraits: Washington State Legislature
               (Legislative Support Services).
             </p>
             <div className="mt-4 pt-4 border-t border-accent-soft text-sm text-ink-secondary">
-              School and legislative boundaries do not line up exactly. These
-              lawmakers represent the legislative district containing the
-              school district&apos;s official geographic center.{' '}
+              Shares are the portion of the school district&apos;s{' '}
+              <strong className="text-ink">area</strong> in each legislative
+              district, not its population, and the two boundary sets do not
+              line up exactly.{' '}
               <a
                 href="https://app.leg.wa.gov/DistrictFinder/"
                 target="_blank"
@@ -483,18 +536,35 @@ export default function TakeAction() {
           Every title below links to the Legislature&apos;s official history.
         </p>
 
-        <h3 className="mt-7 text-xl font-bold">Passed</h3>
-        <div className="mt-3 grid lg:grid-cols-2 gap-4">
-          {PASSED_BILLS.map((bill) => (
-            <BillCard key={bill.bill} bill={bill} passed />
-          ))}
-        </div>
-
-        <h3 className="mt-8 text-xl font-bold">Did not pass</h3>
-        <div className="mt-3 grid lg:grid-cols-2 gap-4">
-          {DID_NOT_PASS_BILLS.map((bill) => (
-            <BillCard key={bill.bill} bill={bill} passed={false} />
-          ))}
+        {/* Two columns side by side: what survived against what did not is the
+            comparison worth making, and it keeps the section from running long. */}
+        <div className="mt-6 grid gap-6 lg:grid-cols-2 items-start">
+          <div>
+            <h3 className="text-xl font-bold">
+              Passed{' '}
+              <span className="text-sm font-normal text-ink-muted">
+                ({PASSED_BILLS.length})
+              </span>
+            </h3>
+            <div className="mt-3 space-y-4">
+              {PASSED_BILLS.map((bill) => (
+                <BillCard key={bill.bill} bill={bill} passed />
+              ))}
+            </div>
+          </div>
+          <div>
+            <h3 className="text-xl font-bold">
+              Did not pass{' '}
+              <span className="text-sm font-normal text-ink-muted">
+                ({DID_NOT_PASS_BILLS.length})
+              </span>
+            </h3>
+            <div className="mt-3 space-y-4">
+              {DID_NOT_PASS_BILLS.map((bill) => (
+                <BillCard key={bill.bill} bill={bill} passed={false} />
+              ))}
+            </div>
+          </div>
         </div>
       </section>
 

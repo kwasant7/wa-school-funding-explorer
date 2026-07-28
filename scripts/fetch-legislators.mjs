@@ -109,16 +109,75 @@ async function fetchRoster() {
   return legislators;
 }
 
+function bbox(geometry) {
+  let minX = Infinity;
+  let minY = Infinity;
+  let maxX = -Infinity;
+  let maxY = -Infinity;
+  const rings =
+    geometry.type === 'Polygon'
+      ? geometry.coordinates
+      : geometry.coordinates.flat();
+  for (const ring of rings) {
+    for (const [x, y] of ring) {
+      if (x < minX) minX = x;
+      if (y < minY) minY = y;
+      if (x > maxX) maxX = x;
+      if (y > maxY) maxY = y;
+    }
+  }
+  return [minX, minY, maxX, maxY];
+}
+
+/**
+ * How a school district's area splits across legislative districts.
+ *
+ * A school district rarely sits inside one legislative district - Bellevue
+ * spans the 41st and the 48th - so picking the LD containing the centroid
+ * hides half of a family's representation. Instead this lays a grid over the
+ * school district's bounding box, keeps the points that fall inside the
+ * district, and asks which legislative district each one lands in. The share
+ * of points is a good approximation of the share of area, and it naturally
+ * discards the slivers you get where two agencies digitised the same boundary
+ * slightly differently.
+ */
+function districtShares(schoolGeometry, legislativeFeatures, steps = 46) {
+  const [minX, minY, maxX, maxY] = bbox(schoolGeometry);
+  const counts = new Map();
+  let inside = 0;
+
+  for (let i = 0; i < steps; i += 1) {
+    for (let j = 0; j < steps; j += 1) {
+      // Offset by half a cell so points never sit exactly on a shared edge.
+      const x = minX + ((i + 0.5) / steps) * (maxX - minX);
+      const y = minY + ((j + 0.5) / steps) * (maxY - minY);
+      if (!containsPoint(schoolGeometry, [x, y])) continue;
+      inside += 1;
+      const match = legislativeFeatures.find((f) => containsPoint(f.geometry, [x, y]));
+      const ld = Number(match?.properties?.District);
+      if (Number.isFinite(ld)) counts.set(ld, (counts.get(ld) ?? 0) + 1);
+    }
+  }
+
+  if (!inside) return [];
+  return [...counts.entries()]
+    .map(([district, n]) => ({ district, share: n / inside }))
+    // Below 2% is almost always a boundary sliver rather than real overlap.
+    .filter((d) => d.share >= 0.02)
+    .sort((a, b) => b.share - a.share);
+}
+
 async function main() {
-  console.log('Fetching OSPI school-district centroids...');
+  console.log('Fetching OSPI school-district boundaries...');
   const schoolData = await fetchJson(SCHOOL_DISTRICTS, {
     where: '1=1',
     outFields: 'LEACode_1,LEAName_1',
-    returnGeometry: 'false',
-    returnCentroid: 'true',
+    returnGeometry: 'true',
     outSR: '4326',
+    maxAllowableOffset: '0.002',
+    geometryPrecision: '5',
     resultRecordCount: '2000',
-    f: 'json',
+    f: 'geojson',
   });
 
   console.log('Fetching Washington 2024 legislative districts...');
@@ -133,30 +192,37 @@ async function main() {
 
   console.log('Fetching the current Legislature roster...');
   const legislators = await fetchRoster();
+  const legislativeFeatures = legislativeData.features ?? [];
   const schoolDistricts = {};
 
+  console.log('Overlaying school districts on legislative districts...');
   for (const feature of schoolData.features ?? []) {
-    const codeRaw = feature.attributes?.LEACode_1;
-    const centroid = feature.centroid;
-    if (codeRaw == null || !centroid) continue;
+    const codeRaw = feature.properties?.LEACode_1;
+    if (codeRaw == null || !feature.geometry) continue;
 
-    const match = legislativeData.features?.find((legislativeFeature) =>
-      containsPoint(legislativeFeature.geometry, [centroid.x, centroid.y])
-    );
-    const legislativeDistrict = Number(match?.properties?.District);
-    if (!Number.isFinite(legislativeDistrict)) continue;
+    const shares = districtShares(feature.geometry, legislativeFeatures);
+    if (!shares.length) continue;
 
     const code = String(codeRaw).padStart(5, '0');
     schoolDistricts[code] = {
-      name: feature.attributes?.LEAName_1 ?? '',
-      legislativeDistrict,
+      name: feature.properties?.LEAName_1 ?? '',
+      // Kept for anything still reading a single district: the largest share.
+      legislativeDistrict: shares[0].district,
+      legislativeDistricts: shares.map((s) => ({
+        district: s.district,
+        share: Number(s.share.toFixed(3)),
+      })),
     };
   }
+
+  const spans = Object.values(schoolDistricts).filter(
+    (d) => d.legislativeDistricts.length > 1
+  ).length;
 
   const out = {
     generated: new Date().toISOString().slice(0, 10),
     methodology:
-      "Uses the legislative district containing each OSPI school district polygon's official centroid. School and legislative boundaries do not match, so users should verify representation with a home address.",
+      'Every legislative district overlapping each OSPI school district polygon, found by sampling a grid of points inside the school district and recording which legislative district each falls in. The share is the fraction of sampled points, an approximation of area - not population. Overlaps under 2% are treated as boundary slivers and dropped. School and legislative boundaries do not match, so users should still verify representation with a home address.',
     sources: {
       schoolDistricts: SCHOOL_DISTRICTS.replace(/\/query$/, ''),
       legislativeDistricts: LEGISLATIVE_DISTRICTS.replace(/\/query$/, ''),
@@ -165,6 +231,7 @@ async function main() {
     schoolDistricts,
     legislators,
   };
+  console.log(`  ${spans} school districts span more than one legislative district.`);
 
   await writeFile(OUT_FILE, `${JSON.stringify(out, null, 2)}\n`);
   console.log(

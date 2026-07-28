@@ -13,13 +13,19 @@ type MapFile = {
   water?: { name?: string; d: string }[];
 };
 
-// Sequential blue ramp (light -> dark); districts are colored on a continuous
-// gradient by their percentile rank of per-student funding.
-const RAMP = ['#cde2fb', '#9ec5f4', '#5598e7', '#256abf', '#104281'];
+// Blue -> purple ramp: blue is the least funded per student, purple the most.
+// Deliberately not the green/red of the reserve-ratio scale, because low
+// per-student funding is not automatically "bad" the way an empty reserve is -
+// small rural districts sit at the top of this scale for cost reasons.
+const RAMP = ['#bcd7f7', '#7aa8e6', '#6f7fd6', '#8a5fc4', '#6b21a8'];
 const NO_DATA = '#e1e0d9';
 
 // How far past the state extent you can zoom out (breathing room around WA)
 const MAX_OUT = 1.45;
+
+// Tooltip footprint, used to decide which side of the cursor it sits on.
+const TOOLTIP_W = 190;
+const TOOLTIP_H = 46;
 
 function lerpColor(a: string, b: string, t: number) {
   const pa = [1, 3, 5].map((i) => parseInt(a.slice(i, i + 2), 16));
@@ -91,7 +97,7 @@ export default function WaMap({
   const [view, setView] = useState<{ x: number; y: number; w: number; h: number } | null>(null);
   const [metric, setMetric] = useState<Metric>('perPupil');
   const [hovered, setHovered] = useState<string | null>(null);
-  const [hoverPoint, setHoverPoint] = useState<{ x: number; y: number; below: boolean } | null>(null);
+  const [hoverPoint, setHoverPoint] = useState<{ x: number; y: number; below: boolean; left: boolean } | null>(null);
   const dragged = useRef(false);
   const svgRef = useRef<SVGSVGElement>(null);
   const pointers = useRef(new Map<number, { x: number; y: number }>());
@@ -229,15 +235,24 @@ export default function WaMap({
     zoomAt(rect.left + rect.width / 2, rect.top + rect.height / 2, factor);
   }
 
+  /**
+   * The tooltip trails the cursor closely and sits below-right of it by
+   * default. It used to be a wide card centred above the pointer, which
+   * covered the district immediately north of the one being inspected -
+   * exactly the comparison a reader is usually making. It flips to the other
+   * side only when it would run off an edge.
+   */
   function updateHoverPoint(clientX: number, clientY: number) {
     const svg = svgRef.current;
     if (!svg) return;
     const rect = svg.getBoundingClientRect();
-    const horizontalPadding = Math.min(125, rect.width * 0.3);
+    const x = clientX - rect.left;
+    const y = clientY - rect.top;
     setHoverPoint({
-      x: Math.min(Math.max(clientX - rect.left, horizontalPadding), rect.width - horizontalPadding),
-      y: clientY - rect.top,
-      below: clientY - rect.top < 90,
+      x,
+      y,
+      below: y < rect.height - TOOLTIP_H - 16,
+      left: x > rect.width - TOOLTIP_W - 16,
     });
   }
 
@@ -382,53 +397,44 @@ export default function WaMap({
           </g>
         </svg>
 
-        {/* hover tooltip */}
+        {/* hover tooltip - compact, tucked beside the cursor */}
         {hovered && hoverPoint && (
           <div
-            className="pointer-events-none absolute z-10 w-max max-w-[min(16rem,80%)] card px-3 py-2 shadow-md"
+            className="pointer-events-none absolute z-10 rounded-md border border-line bg-surface px-2 py-1.5 shadow-md"
             style={{
               left: hoverPoint.x,
               top: hoverPoint.y,
-              transform: hoverPoint.below
-                ? 'translate(-50%, 12px)'
-                : 'translate(-50%, calc(-100% - 12px))',
+              width: TOOLTIP_W,
+              transform: `translate(${hoverPoint.left ? 'calc(-100% - 14px)' : '14px'}, ${
+                hoverPoint.below ? '10px' : 'calc(-100% - 10px)'
+              })`,
             }}
           >
-            <p className="text-sm font-semibold">
+            <p className="truncate text-xs font-semibold leading-tight">
               {info.get(hovered)?.name ??
                 map.districts.find((district) => district.code === hovered)?.name}
             </p>
             {info.get(hovered) ? (
-              <>
-                <p className="mt-0.5 text-xs text-ink-muted">
-                  {info.get(hovered)!.county} County
-                </p>
-                <p className="mt-1 text-xs text-ink-secondary">
-                  {fmtMoneyFull(info.get(hovered)!.perPupil)} per funding FTE ·{' '}
-                  {fmtInt(info.get(hovered)!.enrollment)} students
-                </p>
-                <p className="mt-0.5 text-xs text-ink-secondary">
-                  Reserve ratio:{' '}
-                  {info.get(hovered)!.reserveRatio == null ? (
-                    <span className="text-ink-muted">not reported</span>
-                  ) : (
-                    <strong
-                      className={
-                        info.get(hovered)!.reserveRatio! < 0
-                          ? 'text-critical'
-                          : info.get(hovered)!.reserveRatio! < 5
-                            ? 'text-amber-600'
-                            : 'text-good'
-                      }
-                    >
-                      {info.get(hovered)!.reserveRatio!.toFixed(1)}%
-                    </strong>
-                  )}
-                </p>
-                <p className="mt-1 text-xs font-medium text-accent">Click to open →</p>
-              </>
+              <p className="mt-0.5 text-[11px] leading-tight text-ink-secondary tabular-nums">
+                {fmtMoneyFull(info.get(hovered)!.perPupil)}/FTE ·{' '}
+                {info.get(hovered)!.reserveRatio == null ? (
+                  <span className="text-ink-muted">reserve n/a</span>
+                ) : (
+                  <span
+                    className={
+                      info.get(hovered)!.reserveRatio! < 0
+                        ? 'text-critical'
+                        : info.get(hovered)!.reserveRatio! < 5
+                          ? 'text-amber-600'
+                          : 'text-good'
+                    }
+                  >
+                    {info.get(hovered)!.reserveRatio!.toFixed(1)}% reserve
+                  </span>
+                )}
+              </p>
             ) : (
-              <p className="mt-1 text-xs text-ink-muted">No data for {year}</p>
+              <p className="mt-0.5 text-[11px] text-ink-muted">No data for {year}</p>
             )}
           </div>
         )}
@@ -458,13 +464,20 @@ export default function WaMap({
           <>
             <span className="font-medium text-ink">Funding per student ({year}):</span>
             <span className="flex items-center gap-2">
-              lower per student
+              <span className="font-medium" style={{ color: RAMP[1] }}>
+                lower
+              </span>
               <span
                 className="inline-block h-3 w-32 md:w-44 rounded-sm"
                 style={{ background: `linear-gradient(to right, ${RAMP.join(', ')})` }}
                 aria-hidden
               />
-              higher per student
+              <span className="font-medium" style={{ color: RAMP[4] }}>
+                higher
+              </span>
+            </span>
+            <span className="text-ink-muted">
+              | ranked against every district, not an absolute scale
             </span>
           </>
         ) : (
