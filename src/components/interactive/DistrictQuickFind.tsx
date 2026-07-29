@@ -165,14 +165,16 @@ export default function DistrictQuickFind({
               {fmtMoneyFull(Math.abs(diff)).slice(1)} vs state average
             </div>
             <div className="text-xs text-ink-muted mt-1">
-              Uses funding FTE - not the headcount shown next to it
+              Both figures use funding FTE, the same denominator
             </div>
           </div>
           <div className="card px-4 py-3">
             <div className="text-xs text-ink-secondary">School district students</div>
-            <div className="text-2xl font-bold">{fmtInt(picked.enrollment)}</div>
+            <div className="text-2xl font-bold">
+              {fmtInt(Math.round(picked.fundingEnrollment))}
+            </div>
             <div className="text-xs text-ink-muted mt-0.5">
-              {picked.name} · October headcount
+              {picked.name} · funding FTE, not October headcount
             </div>
           </div>
           <Link
