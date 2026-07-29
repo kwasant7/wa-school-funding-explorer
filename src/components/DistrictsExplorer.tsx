@@ -53,17 +53,35 @@ export default function DistrictsExplorer() {
     return <DistrictDetail district={selected} year={year} onYearChange={setYear} />;
   }
   if (selectedCode) {
-    // District exists in another year but not this one
+    // District exists in another year but not this one. Offer the most
+    // recent year it actually has data for - which is not always LATEST: a
+    // district that closed, merged, or lost its charter after an earlier year
+    // has no record in 2024-25 either, and "Switch to 2024-25" would just
+    // land back on the same empty page.
+    const yearsWithData = YEARS.filter((y) =>
+      yearData(y).districts.some((d) => d.code === selectedCode)
+    );
+    const fallbackYear = yearsWithData[yearsWithData.length - 1];
     return (
       <div className="max-w-site mx-auto px-4 md:px-6 pt-10">
         <Link href="/districts" className="text-sm text-accent hover:underline">
           ← District Explorer
         </Link>
         <p className="mt-6 text-ink-secondary">
-          No data for this district in {year}.{' '}
-          <button className="text-accent hover:underline" onClick={() => setYear(LATEST)}>
-            Switch to {LATEST}
-          </button>
+          {fallbackYear ? (
+            <>
+              No data for this district in {year}.{' '}
+              <button
+                className="text-accent hover:underline"
+                onClick={() => setYear(fallbackYear)}
+              >
+                Switch to {fallbackYear}
+              </button>
+              , the most recent year it&apos;s on record.
+            </>
+          ) : (
+            "This district isn't in any year of this data - it may have moved, closed, or changed codes."
+          )}
         </p>
       </div>
     );
@@ -535,7 +553,8 @@ function DistrictDetail({
           Where the money came from, {firstYear} to {LATEST}
         </h2>
         <p className="text-xs text-ink-muted mb-4">
-          Share of each year&apos;s general-fund revenue · total above each bar
+          Share of each year&apos;s general-fund revenue · hover a year for
+          exact amounts
         </p>
         <RevenueTrendChart years={revenueYears} />
         <p className="mt-3 text-xs text-ink-muted">

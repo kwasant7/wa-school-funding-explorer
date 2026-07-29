@@ -414,26 +414,39 @@ export default function WaMap({
               {info.get(hovered)?.name ??
                 map.districts.find((district) => district.code === hovered)?.name}
             </p>
-            {info.get(hovered) ? (
-              <p className="mt-0.5 text-[11px] leading-tight text-ink-secondary tabular-nums">
-                {fmtMoneyFull(info.get(hovered)!.perPupil)}/FTE ·{' '}
-                {info.get(hovered)!.reserveRatio == null ? (
-                  <span className="text-ink-muted">reserve n/a</span>
-                ) : (
-                  <span
-                    className={
-                      info.get(hovered)!.reserveRatio! < 0
-                        ? 'text-critical'
-                        : info.get(hovered)!.reserveRatio! < 5
-                          ? 'text-amber-600'
-                          : 'text-good'
-                    }
-                  >
-                    {info.get(hovered)!.reserveRatio!.toFixed(1)}% reserve
-                  </span>
-                )}
-              </p>
-            ) : (
+            {info.get(hovered) ? (() => {
+              const d = info.get(hovered)!;
+              const perFte = <span key="perFte">{fmtMoneyFull(d.perPupil)}/FTE</span>;
+              const reserve = (
+                <span key="reserve">
+                  {d.reserveRatio == null ? (
+                    <span className="text-ink-muted">reserve n/a</span>
+                  ) : (
+                    <span
+                      className={
+                        d.reserveRatio < 0
+                          ? 'text-critical'
+                          : d.reserveRatio < 5
+                            ? 'text-amber-600'
+                            : 'text-good'
+                      }
+                    >
+                      {d.reserveRatio.toFixed(1)}% reserve
+                    </span>
+                  )}
+                </span>
+              );
+              // Whichever metric the map is currently colored by leads the
+              // tooltip - a reader hovering the reserve-ratio view wants that
+              // number first, not funding per student.
+              const [first, second] =
+                metric === 'reserveRatio' ? [reserve, perFte] : [perFte, reserve];
+              return (
+                <p className="mt-0.5 text-[11px] leading-tight text-ink-secondary tabular-nums">
+                  {first} · {second}
+                </p>
+              );
+            })() : (
               <p className="mt-0.5 text-[11px] text-ink-muted">No data for {year}</p>
             )}
           </div>

@@ -410,29 +410,38 @@ function AllocationBar({
           State allocation by component, {allocationData.schoolYear}
         </caption>
         <tbody>
-          {parts.map((p) => (
-            <tr
-              key={p.key}
-              className="border-t border-line"
-              onMouseEnter={() => setHover(p.key)}
-              onMouseLeave={() => setHover(null)}
-            >
-              <td className="py-1.5 pr-2">
-                <span
-                  className="mr-2 inline-block h-2.5 w-2.5 rounded-sm align-middle"
-                  style={{ background: p.color }}
-                  aria-hidden
-                />
-                <span className="text-ink-secondary">{p.label}</span>
-              </td>
-              <td className="py-1.5 text-right tabular-nums">
-                {fmtMoneyFull(p.value)}
-              </td>
-              <td className="w-14 py-1.5 text-right tabular-nums text-ink-muted">
-                {Math.round((100 * p.value) / total)}%
-              </td>
-            </tr>
-          ))}
+          {parts.map((p) => {
+            const isHover = p.key === hover;
+            return (
+              <tr
+                key={p.key}
+                className="border-t border-line"
+                onMouseEnter={() => setHover(p.key)}
+                onMouseLeave={() => setHover(null)}
+              >
+                <td className="py-1.5 pr-2">
+                  <span
+                    className="mr-2 inline-block h-2.5 w-2.5 rounded-sm align-middle"
+                    style={{ background: p.color }}
+                    aria-hidden
+                  />
+                  <span className={isHover ? 'font-bold text-ink' : 'text-ink-secondary'}>
+                    {p.label}
+                  </span>
+                </td>
+                <td
+                  className={`py-1.5 text-right tabular-nums ${isHover ? 'font-bold text-ink' : ''}`}
+                >
+                  {fmtMoneyFull(p.value)}
+                </td>
+                <td
+                  className={`w-14 py-1.5 text-right tabular-nums ${isHover ? 'font-bold text-ink' : 'text-ink-muted'}`}
+                >
+                  {Math.round((100 * p.value) / total)}%
+                </td>
+              </tr>
+            );
+          })}
           <tr className="border-t-2 border-line font-bold">
             <td className="py-2">Total state allocation</td>
             <td className="py-2 text-right tabular-nums">{fmtMoneyFull(total)}</td>
