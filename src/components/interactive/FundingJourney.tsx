@@ -437,8 +437,23 @@ function AllocationBar({
   );
 }
 
-export default function FundingJourney({ district }: { district: District }) {
-  const allocation = ALLOCATION[district.code] ?? null;
+export default function FundingJourney({
+  district,
+  year,
+}: {
+  district: District;
+  year?: string;
+}) {
+  /*
+    The apportionment extract this breakdown comes from only exists for
+    2024-25. Showing it beside another year's revenue would silently pair two
+    different years, so for any other year the steps fall back to their
+    non-allocation variants and the composition card is left out entirely.
+  */
+  const allocation =
+    !year || year === allocationData.schoolYear
+      ? ALLOCATION[district.code] ?? null
+      : null;
 
   return (
     <div className="mt-6">

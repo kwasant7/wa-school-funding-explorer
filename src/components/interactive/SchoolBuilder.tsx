@@ -126,7 +126,13 @@ function ModelCard({
   </article>;
 }
 
-export default function SchoolBuilder({ district }: { district?: District | null }) {
+export default function SchoolBuilder({
+  district,
+  year = '2024-25',
+}: {
+  district?: District | null;
+  year?: string;
+}) {
   const modelSchoolTotal = district
     ? district.fundingFte.elementary / MODELS.elementary.proto +
       district.fundingFte.middle / MODELS.middle.proto +
@@ -141,7 +147,7 @@ export default function SchoolBuilder({ district }: { district?: District | null
     </h3>
     <p className="mt-1 text-sm text-ink-secondary">
       {district
-        ? `The state applies the same prototype recipe to ${district.name}'s actual 2024-25 funding FTE by grade span. The results below are formula equivalents - not the district's literal number of buildings or employees.`
+        ? `The state applies the same prototype recipe to ${district.name}'s actual ${year} funding FTE by grade span. The results below are formula equivalents - not the district's literal number of buildings or employees.`
         : 'RCW 28A.150.260 defines a prototype for each grade span. These are the base staffing allocations for all three; faded figures are fractions of a full-time position.'}
     </p>
 
@@ -150,7 +156,7 @@ export default function SchoolBuilder({ district }: { district?: District | null
         <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-3">
           <div>
             <p className="text-xs text-ink-secondary">
-              Actual general-fund total (2024-25)
+              Actual general-fund total ({year})
             </p>
             <p className="mt-0.5 text-xl font-bold">{fmtMoney(district.rev.total)}</p>
           </div>

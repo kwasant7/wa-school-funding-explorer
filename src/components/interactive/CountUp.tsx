@@ -23,7 +23,27 @@ export default function CountUp({
   const ref = useRef<HTMLSpanElement>(null);
   const [display, setDisplay] = useState(value);
   const started = useRef(false);
+  const mounted = useRef(false);
   const format = FORMATS[kind];
+  // The animation reads the newest value rather than the one captured when the
+  // observer was created, so a value that changes mid-flight still lands right.
+  const valueRef = useRef(value);
+  valueRef.current = value;
+
+  /*
+    After the intro animation has run, `started` stays true forever - so a
+    later change to `value` (switching school year) used to be ignored
+    entirely, leaving the old figure on screen under a new year's label.
+    Replaying the count-up on every switch would be noise, so the number just
+    updates in place.
+  */
+  useEffect(() => {
+    if (!mounted.current) {
+      mounted.current = true;
+      return;
+    }
+    setDisplay(value);
+  }, [value]);
 
   useEffect(() => {
     const el = ref.current;
@@ -43,7 +63,7 @@ export default function CountUp({
         const tick = (t: number) => {
           const p = Math.min(1, (t - t0) / DURATION);
           const eased = 1 - Math.pow(1 - p, 3);
-          setDisplay(value * eased);
+          setDisplay(valueRef.current * eased);
           if (p < 1) frame = requestAnimationFrame(tick);
         };
         frame = requestAnimationFrame(tick);
@@ -55,7 +75,7 @@ export default function CountUp({
         // either way.
         settle = setTimeout(() => {
           cancelAnimationFrame(frame);
-          setDisplay(value);
+          setDisplay(valueRef.current);
         }, DURATION + 150);
       },
       { threshold: 0.4 }

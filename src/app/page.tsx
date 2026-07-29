@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import data from '@/data/districts.json';
+import { District, LATEST, YEARS, yearData } from '@/lib/data';
 import StatTile from '@/components/StatTile';
 import SourceShareBar from '@/components/charts/SourceShareBar';
 import CountUp from '@/components/interactive/CountUp';
@@ -12,20 +12,39 @@ import ClassSizeViz from '@/components/interactive/ClassSizeViz';
 import FundingJourney from '@/components/interactive/FundingJourney';
 
 export default function HomePage() {
-  const s = data.statewide;
-  const [selectedDistrict, setSelectedDistrict] = useState<
-    (typeof data.districts)[number] | null
-  >(null);
+  const [year, setYear] = useState(LATEST);
+  const [selectedDistrict, setSelectedDistrict] = useState<District | null>(null);
+  const s = yearData(year).statewide;
   return (
     <div className="max-w-site mx-auto px-4 md:px-6">
       {/* Hero */}
       <section className="pt-10 md:pt-14 pb-8">
-        <p className="text-sm font-semibold text-accent uppercase tracking-wide">
-          How it works · play with everything on this page
-        </p>
-        <h1 className="mt-2 text-3xl md:text-5xl font-bold tracking-tight max-w-3xl">
-          How K-12 schools are funded
-        </h1>
+        <div className="flex items-start justify-between gap-4 flex-wrap">
+          <div>
+            <p className="text-sm font-semibold text-accent uppercase tracking-wide">
+              How it works · play with everything on this page
+            </p>
+            <h1 className="mt-2 text-3xl md:text-5xl font-bold tracking-tight max-w-3xl">
+              How K-12 schools are funded
+            </h1>
+          </div>
+          {/* Same placement as the District Explorer: ahead of the figures it
+              governs, so the year is read before the numbers. */}
+          <label className="shrink-0 inline-flex items-center gap-2 text-sm text-ink-secondary md:pt-2">
+            School year
+            <select
+              value={year}
+              onChange={(event) => setYear(event.target.value)}
+              className="card px-3 py-2 text-base font-medium text-ink cursor-pointer"
+            >
+              {YEARS.map((option) => (
+                <option key={option} value={option}>
+                  {option}
+                </option>
+              ))}
+            </select>
+          </label>
+        </div>
         <p className="mt-4 max-w-2xl text-lg text-ink-secondary">
           The state doesn&apos;t fund the schools that exist - it funds a
           make-believe &ldquo;prototypical school&rdquo; and uses it as a recipe
@@ -33,9 +52,9 @@ export default function HomePage() {
         </p>
         <div className="mt-6 grid grid-cols-2 lg:grid-cols-4 gap-3">
           <StatTile
-            label="This year's funding"
+            label="Funding this year"
             value={<CountUp value={s.revenues.total} kind="money" />}
-            note="entire Washington state general-fund total, 2024-25"
+            note={`entire Washington state general-fund total, ${year}`}
           />
           <StatTile
             label="Students"
@@ -56,7 +75,7 @@ export default function HomePage() {
 
       {/* Personalize */}
       <section className="pb-8">
-        <DistrictQuickFind onPick={setSelectedDistrict} />
+        <DistrictQuickFind onPick={setSelectedDistrict} year={year} />
       </section>
 
       {selectedDistrict ? (
@@ -68,7 +87,7 @@ export default function HomePage() {
             How <span data-no-translate>{selectedDistrict.name}</span>&apos;s funding is split
           </h2>
           <p className="mt-1 text-sm text-ink-secondary">
-            Actual 2024-25 general-fund revenue by source. Hover the bar for
+            Actual {year} general-fund revenue by source. Hover the bar for
             exact amounts and shares.
           </p>
           <div className="mt-4">
@@ -116,7 +135,7 @@ export default function HomePage() {
               These are funding allocations, not a required staffing plan. Districts can organize schools differently, but must cover anything beyond the formula with other available revenue.
             </p>
           </div>
-          <SchoolBuilder district={selectedDistrict} />
+          <SchoolBuilder district={selectedDistrict} year={year} />
           <ClassSizeViz />
         </div>
       </section>
@@ -131,7 +150,7 @@ export default function HomePage() {
           state allocation - not the district&apos;s whole budget, which also
           includes local levy and federal money.
         </p>
-        <FundingJourney district={selectedDistrict} />
+        <FundingJourney district={selectedDistrict} year={year} />
       </section>
 
 

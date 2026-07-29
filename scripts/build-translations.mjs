@@ -31,10 +31,60 @@ const TEXT_PROPERTIES = new Set([
   'note',
   'callout',
   'explanation',
+  // Props that render visible copy on this site specifically: stat captions,
+  // slider labels, scatter-axis titles, and the status/why-it-matters lines on
+  // the bill cards.
+  'cap',
+  'ariaLabel',
+  'sliderLabel',
+  'todayLabel',
+  'axis',
+  'noun',
+  'significance',
+  'status',
 ]);
 
+/*
+  JSX text arrives from the TypeScript AST exactly as written in the source,
+  entities and all - "Washington&apos;s" - but the browser hands the runtime
+  the decoded character, "Washington's". Keying the dictionary on the raw form
+  meant those strings could never be looked up at runtime, which is why whole
+  paragraphs stayed in English on a translated page.
+*/
+const ENTITIES = {
+  // Straight apostrophe (U+0027), which is what the browser renders - not the
+  // typographic ’ (U+2019). Getting this wrong would leave the key subtly
+  // different from the DOM text and the lookup would still miss.
+  '&apos;': "'",
+  '&quot;': '"',
+  '&ldquo;': '“',
+  '&rdquo;': '”',
+  '&lsquo;': '‘',
+  '&rsquo;': '’',
+  '&nbsp;': ' ',
+  '&mdash;': '—',
+  '&ndash;': '–',
+  '&hellip;': '…',
+  '&times;': '×',
+  '&lt;': '<',
+  '&gt;': '>',
+  // Must run last so it cannot re-introduce an entity from decoded output.
+  '&amp;': '&',
+};
+
+function decodeEntities(value) {
+  let out = value.replace(/&#x([0-9a-fA-F]+);/g, (_, hex) =>
+    String.fromCodePoint(parseInt(hex, 16))
+  );
+  out = out.replace(/&#(\d+);/g, (_, dec) => String.fromCodePoint(Number(dec)));
+  for (const [entity, char] of Object.entries(ENTITIES)) {
+    out = out.split(entity).join(char);
+  }
+  return out;
+}
+
 function normalize(value) {
-  return value.replace(/\s+/g, ' ').trim();
+  return decodeEntities(value).replace(/\s+/g, ' ').trim();
 }
 
 function looksLikeProse(value) {
@@ -103,8 +153,19 @@ function collectStrings(sourceText, filename, collection) {
       }
 
       if (ts.isJsxAttribute(parent)) {
+        /*
+          Props carrying visible copy count too, not just the accessibility
+          attributes. <StatTile label="Students" note="Funding FTE, not
+          October headcount" /> renders both of those on screen, and only
+          checking aria-label/placeholder/title/alt meant every stat tile,
+          card heading and caption passed as a prop was missing from the
+          dictionary and stayed in English on a translated page.
+        */
         const attribute = parent.name.getText(source);
-        if (['aria-label', 'placeholder', 'title', 'alt'].includes(attribute)) {
+        if (
+          ['aria-label', 'placeholder', 'title', 'alt'].includes(attribute) ||
+          TEXT_PROPERTIES.has(attribute)
+        ) {
           addText(collection, node.text);
         }
       } else if (ts.isPropertyAssignment(parent)) {

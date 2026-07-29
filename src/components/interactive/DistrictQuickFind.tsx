@@ -2,21 +2,22 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
-import data from '@/data/districts.json';
+import { District, LATEST, yearData } from '@/lib/data';
 import { fmtInt, fmtMoneyFull } from '@/lib/format';
-
-type District = (typeof data.districts)[number];
 
 export default function DistrictQuickFind({
   onPick,
+  year = LATEST,
 }: {
   onPick?: (district: District | null) => void;
+  year?: string;
 }) {
   const [query, setQuery] = useState('');
   const [picked, setPicked] = useState<District | null>(null);
   const [open, setOpen] = useState(false);
   const [activeIndex, setActiveIndex] = useState(0);
   const selectorRef = useRef<HTMLDivElement>(null);
+  const data = yearData(year);
 
   const matches = useMemo(() => {
     const q =
@@ -27,7 +28,22 @@ export default function DistrictQuickFind({
           d.name.toLowerCase().includes(q) || d.county.toLowerCase().includes(q)
       )
       .sort((a, b) => a.name.localeCompare(b.name));
-  }, [query]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [query, year]);
+
+  /*
+    A district picked in one year may not exist in another - charters open and
+    close - so re-resolve the selection whenever the year changes, and clear it
+    if this year has no record of it.
+  */
+  useEffect(() => {
+    if (!picked) return;
+    const next = data.districts.find((d) => d.code === picked.code) ?? null;
+    setPicked(next);
+    setQuery(next ? next.name : '');
+    onPick?.(next);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [year]);
 
   useEffect(() => {
     const closeOnOutsideClick = (event: MouseEvent) => {
