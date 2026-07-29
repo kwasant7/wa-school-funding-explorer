@@ -109,14 +109,27 @@ function DistrictOverview({
 
   return (
     <div className="max-w-site mx-auto px-4 md:px-6 pt-10">
-      <h1 className="text-3xl md:text-4xl font-bold tracking-tight">
-        District Explorer
-      </h1>
-      <p className="mt-3 max-w-2xl text-ink-secondary">
-        Funding for every school district and charter school in Washington,
-        from the F-196 financial reports, any year since 2019-20. Pick your
-        district on the map - its full profile opens on this page.
-      </p>
+      {/*
+        The year control belongs up here, not buried in the map card: every
+        figure on this page - the four stat tiles included - is for the
+        selected year, so the reader needs to see what year they are looking
+        at before the numbers, not after.
+      */}
+      <div className="flex items-start justify-between gap-4 flex-wrap">
+        <div>
+          <h1 className="text-3xl md:text-4xl font-bold tracking-tight">
+            District Explorer
+          </h1>
+          <p className="mt-3 max-w-2xl text-ink-secondary">
+            Funding for every school district and charter school in Washington,
+            from the F-196 financial reports, any year since 2019-20. Pick your
+            district on the map - its full profile opens on this page.
+          </p>
+        </div>
+        <div className="shrink-0 md:pt-2">
+          <YearSelect year={year} onChange={onYearChange} />
+        </div>
+      </div>
 
       <div className="mt-6 grid lg:grid-cols-[1fr,22rem] gap-4 items-stretch">
         <div className="grid grid-cols-2 gap-3">
@@ -151,15 +164,10 @@ function DistrictOverview({
       </div>
 
       <div className="mt-6 card p-5">
-        <div className="flex items-start justify-between gap-4 flex-wrap">
-          <div>
-            <h2 className="font-semibold">Find your district on the map</h2>
-            <p className="mt-0.5 mb-4 text-sm text-ink-secondary">
-              Pick from the dropdown or click your district to open its profile.
-            </p>
-          </div>
-          <YearSelect year={year} onChange={onYearChange} />
-        </div>
+        <h2 className="font-semibold">Find your district on the map</h2>
+        <p className="mt-0.5 mb-4 text-sm text-ink-secondary">
+          Pick from the dropdown or click your district to open its profile.
+        </p>
         <WaMap year={year} onSelect={onSelect} />
       </div>
       <p className="mt-3 text-xs text-ink-muted max-w-2xl">

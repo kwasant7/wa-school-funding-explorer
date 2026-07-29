@@ -246,9 +246,9 @@ const BASELINE_SPED_ALLOCATION = 12_000;
 /*
   Pupil transportation operations, summed from every district's actual 2024-25
   state allotment (revenue code 4199) rather than a rounded guess at the size
-  of the program. The previous hard-coded $1.2B was about a third too high,
+  of the program. The previous hard-coded $1.2B was about half again too high,
   which pushed the slider's starting point to roughly $1,085 per student when
-  the real figure is nearer $718. Bus purchases are excluded: those run through
+  the real figure is nearer $708. Bus purchases are excluded: those run through
   the Transportation Vehicle Fund, not the general fund.
 */
 const BASELINE_TRANSPORTATION = Object.values(allocationData.districts).reduce(
