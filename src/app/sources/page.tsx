@@ -313,6 +313,29 @@ export default function SourcesPage() {
 
         <div className="mt-4 card p-5 text-sm text-ink-secondary space-y-2">
           <p className="font-semibold text-ink">
+            What districts actually spend (the simulator&apos;s comparison lines)
+          </p>
+          <p>
+            The &ldquo;what they actually spend&rdquo; markers on the special
+            education, MSOC, and transportation sliders come from the{' '}
+            <Ext href="https://ospi.k12.wa.us/safs-data-files">
+              Actuals - General Fund Expenditures
+            </Ext>{' '}
+            CSV for 2024-25, broken out by the F-196 Program and Object
+            dimensions. Special education is programs 21/22/24/26 divided by the
+            October headcount of students with disabilities; transportation is
+            program 99 divided by headcount enrollment; MSOC is objects 5/7/8
+            within basic-education programs 01/02/03 plus objects 7/8 in
+            districtwide support (program 97), divided by funding FTE. All three
+            are <strong className="text-ink">general fund only</strong>, so
+            transportation excludes buses bought through the Transportation
+            Vehicle Fund. Script:{' '}
+            <code className="text-ink">scripts/build-program-spending.mjs</code>.
+          </p>
+        </div>
+
+        <div className="mt-4 card p-5 text-sm text-ink-secondary space-y-2">
+          <p className="font-semibold text-ink">
             What the state allocation pays for (the 7-step walkthrough)
           </p>
           <p>
@@ -381,6 +404,21 @@ export default function SourcesPage() {
             </Ext>
             ), joined by district code. Reserve ratios below the 4-5% experts
             treat as a safe minimum are flagged on each district profile.
+            Script: <code className="text-ink">scripts/build-fund-balance.py</code>.
+          </p>
+        </div>
+
+        <div className="mt-4 card p-5 text-sm text-ink-secondary space-y-2">
+          <p className="font-semibold text-ink">Translations</p>
+          <p>
+            The non-English versions of this site&apos;s interface text are
+            machine translations, generated once at build time via Google
+            Translate and checked into the repository (script:{' '}
+            <code className="text-ink">scripts/build-translations.mjs</code>).
+            No data values are translated - only labels and explanatory copy -
+            and no text is sent anywhere while you browse. Machine translation
+            makes mistakes, so the English wording is the authoritative version
+            of any claim on this site.
           </p>
         </div>
       </section>
@@ -402,10 +440,54 @@ export default function SourcesPage() {
           Boundaries are OSPI&apos;s best interpretation of legal descriptions -
           confirm edge cases with the district itself.
         </p>
+        <p className="mt-3 max-w-2xl text-ink-secondary">
+          Water bodies come from{' '}
+          <Ext href="https://geodataservices.wdfw.wa.gov/arcgis/rest/services/FP_Projects/NHDwithLLID/MapServer/0">
+            WDFW&apos;s NHD hydrography service
+          </Ext>{' '}
+          and the surrounding state outlines from{' '}
+          <Ext href="https://github.com/nvkelso/natural-earth-vector">
+            Natural Earth
+          </Ext>
+          , both for context only - no data is joined to them.
+        </p>
       </section>
 
       <section className="mt-10">
-        <h2 className="text-2xl font-bold">4 · Law, court records & bills</h2>
+        <h2 className="text-2xl font-bold">4 · Legislators (Take Action)</h2>
+        <p className="mt-2 max-w-2xl text-ink-secondary">
+          The delegation shown for a school district is every legislative
+          district that overlaps it, found by overlaying OSPI&apos;s school
+          district boundaries on the{' '}
+          <Ext href="https://services.arcgis.com/bCYnGqM4FMTBSjd1/arcgis/rest/services/Washington_State_Legislative_Districts_2024/FeatureServer/0">
+            2024 Washington State Legislative Districts
+          </Ext>{' '}
+          layer and sampling a grid of points inside each school district. The
+          percentage shown is the share of sampled points - an approximation of{' '}
+          <strong className="text-ink">area, not population</strong> - and
+          overlaps under 2% are dropped as boundary slivers. Member names,
+          parties, chambers, and links come from the Legislature&apos;s{' '}
+          <Ext href="https://leg.wa.gov/legislators/">
+            official roster
+          </Ext>
+          , and portraits from{' '}
+          <Ext href="https://leg.wa.gov/legislators/">
+            leg.wa.gov/memberphoto
+          </Ext>{' '}
+          (Legislative Support Services). Scripts:{' '}
+          <code className="text-ink">scripts/fetch-legislators.mjs</code> and{' '}
+          <code className="text-ink">scripts/fetch-legislator-photos.py</code>.
+          Because school and legislative boundaries do not line up, always
+          confirm your own representation with{' '}
+          <Ext href="https://app.leg.wa.gov/DistrictFinder/">
+            the Legislature&apos;s District Finder
+          </Ext>
+          .
+        </p>
+      </section>
+
+      <section className="mt-10">
+        <h2 className="text-2xl font-bold">5 · Law, court records & bills</h2>
         <div className="mt-4 card overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
@@ -429,7 +511,7 @@ export default function SourcesPage() {
       </section>
 
       <section className="mt-10 mb-4">
-        <h2 className="text-2xl font-bold">5 · Known caveats</h2>
+        <h2 className="text-2xl font-bold">6 · Known caveats</h2>
         <ul className="mt-3 max-w-2xl space-y-2 text-ink-secondary text-sm md:text-base list-disc pl-5">
           <li>
             Two enrollment measures are intentional: “Students” is October

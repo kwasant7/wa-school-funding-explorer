@@ -25,3 +25,16 @@ export function pct(part: number, whole: number, digits = 0): string {
   if (!whole) return '0%';
   return `${((100 * part) / whole).toFixed(digits)}%`;
 }
+
+/**
+ * Percent of a whole, but never a flat "0%" for money that is actually there.
+ * A $703,243 line rounding to "0%" reads as nothing at all, when the honest
+ * answer is that it is small but non-zero.
+ */
+export function pctLabel(part: number, whole: number): string {
+  if (!whole || part === 0) return '0%';
+  const p = (100 * part) / whole;
+  if (p > 0 && p < 0.5) return '<1%';
+  if (p < 0 && p > -0.5) return '>−1%';
+  return `${Math.round(p)}%`;
+}

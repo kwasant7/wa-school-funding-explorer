@@ -16,10 +16,25 @@ export type NeedPoint = {
 
 type Axis = 'lowIncome' | 'ell' | 'sped';
 
-const AXES: { id: Axis; label: string; noun: string }[] = [
-  { id: 'lowIncome', label: 'Low-income', noun: 'low-income students' },
-  { id: 'ell', label: 'Multilingual', noun: 'multilingual learners' },
-  { id: 'sped', label: 'Special education', noun: 'students with disabilities' },
+const AXES: { id: Axis; label: string; noun: string; axis: string }[] = [
+  {
+    id: 'lowIncome',
+    label: 'Low-income',
+    noun: 'low-income students',
+    axis: 'Share of students who are low-income',
+  },
+  {
+    id: 'ell',
+    label: 'ELL',
+    noun: 'English language learners',
+    axis: 'Share of students who are English language learners',
+  },
+  {
+    id: 'sped',
+    label: 'Special education',
+    noun: 'students with disabilities',
+    axis: 'Share of students with disabilities',
+  },
 ];
 
 const W = 720;
@@ -208,7 +223,7 @@ export default function NeedVsFundingChart({
           textAnchor="start"
           fontWeight="600"
         >
-          Share of students who are {active.label.toLowerCase()} →
+          {active.axis} →
         </text>
       </svg>
 

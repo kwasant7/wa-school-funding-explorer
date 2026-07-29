@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { fmtMoney, pct } from '@/lib/format';
+import { fmtMoney, pct, pctLabel } from '@/lib/format';
 
 export type SourceSlices = {
   local: number;
@@ -38,13 +38,12 @@ const SEGMENTS: { key: keyof SourceSlices; label: string; color: string; blurb: 
 ];
 
 /**
- * Below this share, a label centered on the segment would overflow past both
- * of its neighbors, not just one - that's the only case worth moving below
- * the bar instead. Everything else keeps its label inline, at the same size,
- * even if it pokes slightly into the next segment: that reads far better than
- * a label jumping to a different position depending on the number.
+ * Segments narrower than this can't hold a centered "NN%" without crowding
+ * their own edges. There are only four sources here and the bar is full
+ * width, so a 3% slice is still comfortably wide - and the legend underneath
+ * carries the exact dollars and share for every source regardless.
  */
-const BELOW_BAR_MAX = 2;
+const MIN_LABEL_SHARE = 3;
 
 export default function SourceShareBar({
   slices,
@@ -56,96 +55,49 @@ export default function SourceShareBar({
   const [hover, setHover] = useState<string | null>(null);
   const total = SEGMENTS.reduce((s, seg) => s + slices[seg.key], 0);
 
-  // Each visible segment's share and midpoint (as % across the bar), used to
-  // place both the inline and below-bar labels.
-  const parts: { key: string; label: string; share: number; center: number; color: string }[] = [];
-  if (total) {
-    let run = 0;
-    for (const seg of SEGMENTS) {
-      const share = (100 * slices[seg.key]) / total;
-      if (share > 0) {
-        parts.push({ key: seg.key, label: seg.label, share, center: run + share / 2, color: seg.color });
-        run += share;
-      }
-    }
-  }
-  const inlineParts = parts.filter((p) => p.share > BELOW_BAR_MAX);
-  const belowParts = parts.filter((p) => p.share <= BELOW_BAR_MAX);
-
   if (!total) return null;
 
   return (
     <figure>
       {/*
-        The bar is a plain color strip; every label - inline or below - lives
-        in an overlay so text can overflow past a narrow segment's own edges
-        without being clipped by the bar's rounded corners.
+        Labels sit inside their own flex child rather than in an absolutely
+        positioned overlay. The bar has 2px gaps between segments, which an
+        overlay measured in percentages cannot account for - the labels drift
+        further off-centre with every gap they cross. Flex centering is exact
+        by construction.
       */}
-      <div className="relative">
-        <div
-          className="flex h-7 rounded overflow-hidden bg-paper"
-          style={{ gap: 2 }}
-          role="img"
-          aria-label={`Funding sources: ${SEGMENTS.map(
-            (s) => `${s.label} ${pct(slices[s.key], total)}`
-          ).join(', ')}`}
-        >
-          {SEGMENTS.map((seg) => {
-            const share = (100 * slices[seg.key]) / total;
-            if (share <= 0) return null;
-            return (
-              <div
-                key={seg.key}
-                className="transition-opacity"
-                style={{
-                  width: `${share}%`,
-                  background: seg.color,
-                  opacity: hover && hover !== seg.key ? 0.45 : 1,
-                }}
-                onMouseEnter={() => setHover(seg.key)}
-                onMouseLeave={() => setHover(null)}
-              />
-            );
-          })}
-        </div>
-        <div className="pointer-events-none absolute inset-0" aria-hidden>
-          {inlineParts.map((p) => (
-            <span
-              key={p.key}
-              className="absolute top-1/2 -translate-x-1/2 -translate-y-1/2 whitespace-nowrap text-xs font-semibold text-white select-none transition-opacity"
+      <div
+        className="flex h-7 rounded overflow-hidden bg-paper"
+        style={{ gap: 2 }}
+        role="img"
+        aria-label={`Funding sources: ${SEGMENTS.map(
+          (s) => `${s.label} ${pct(slices[s.key], total)}`
+        ).join(', ')}`}
+      >
+        {SEGMENTS.map((seg) => {
+          const share = (100 * slices[seg.key]) / total;
+          if (share <= 0) return null;
+          return (
+            <div
+              key={seg.key}
+              className="flex items-center justify-center transition-opacity"
               style={{
-                left: `${p.center}%`,
-                textShadow: '0 1px 2px rgb(0 0 0 / 0.35)',
-                opacity: hover && hover !== p.key ? 0.45 : 1,
+                width: `${share}%`,
+                background: seg.color,
+                opacity: hover && hover !== seg.key ? 0.45 : 1,
               }}
+              onMouseEnter={() => setHover(seg.key)}
+              onMouseLeave={() => setHover(null)}
             >
-              {Math.round(p.share)}%
-            </span>
-          ))}
-        </div>
+              {share >= MIN_LABEL_SHARE && (
+                <span className="text-xs font-semibold text-white select-none">
+                  {Math.round(share)}%
+                </span>
+              )}
+            </div>
+          );
+        })}
       </div>
-      {/*
-        Only a genuinely sliver-thin segment (2% or less) gets pushed below
-        the bar instead - centering a label on a 1% slice would overflow both
-        neighbors at once, which no longer reads as "belonging" to it.
-      */}
-      {belowParts.length > 0 && (
-        <div className="relative h-4" aria-hidden>
-          {belowParts.map((p) => (
-            <span
-              key={p.key}
-              className="absolute top-0 -translate-x-1/2 whitespace-nowrap text-[11px] font-semibold tabular-nums leading-4 transition-opacity"
-              style={{
-                left: `${Math.min(97, Math.max(3, p.center))}%`,
-                color: p.color,
-                opacity: hover && hover !== p.key ? 0.45 : 1,
-              }}
-            >
-              {p.share < 1 ? '<1' : Math.round(p.share)}%
-            </span>
-          ))}
-        </div>
-      )}
       <div className="mt-3 flex flex-wrap gap-x-5 gap-y-2">
         {SEGMENTS.map((seg) => {
           const v = slices[seg.key];
@@ -162,9 +114,15 @@ export default function SourceShareBar({
                 style={{ background: seg.color }}
                 aria-hidden
               />
-              <span className="text-ink-secondary">{seg.label}</span>
-              <span className="font-medium tabular-nums">
-                {fmtMoney(v)} · {pct(v, total)}
+              <span
+                className={hover === seg.key ? 'font-bold text-ink' : 'text-ink-secondary'}
+              >
+                {seg.label}
+              </span>
+              <span
+                className={`tabular-nums ${hover === seg.key ? 'font-bold text-ink' : 'font-medium'}`}
+              >
+                {fmtMoney(v)} · {pctLabel(v, total)}
               </span>
             </div>
           );
