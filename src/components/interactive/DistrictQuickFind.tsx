@@ -139,8 +139,8 @@ export default function DistrictQuickFind({
                       index === activeIndex ? 'bg-accent-wash' : ''
                     }`}
                   >
-                    <span className="font-medium">{district.name}</span>
-                    <span className="text-ink-muted">
+                    <span className="font-medium" data-no-translate>{district.name}</span>
+                    <span className="text-ink-muted" data-no-translate>
                       {' '}
                       · {district.county} County
                     </span>
@@ -174,7 +174,7 @@ export default function DistrictQuickFind({
               {fmtInt(Math.round(picked.fundingEnrollment))}
             </div>
             <div className="text-xs text-ink-muted mt-0.5">
-              {picked.name} · funding FTE, not October headcount
+              <span data-no-translate>{picked.name}</span> · funding FTE, not October headcount
             </div>
           </div>
           <Link
@@ -190,7 +190,7 @@ export default function DistrictQuickFind({
           </Link>
           <p className="sm:col-span-3 text-sm text-accent-deep font-medium">
             The prototypical-school model below is now personalized to{' '}
-            {picked.name}. ↓
+            <span data-no-translate>{picked.name}</span>. ↓
           </p>
         </div>
       )}

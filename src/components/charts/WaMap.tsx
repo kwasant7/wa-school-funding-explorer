@@ -410,7 +410,7 @@ export default function WaMap({
               })`,
             }}
           >
-            <p className="truncate text-xs font-semibold leading-tight">
+            <p className="truncate text-xs font-semibold leading-tight" data-no-translate>
               {info.get(hovered)?.name ??
                 map.districts.find((district) => district.code === hovered)?.name}
             </p>

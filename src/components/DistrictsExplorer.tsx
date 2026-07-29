@@ -297,7 +297,7 @@ function FundBalanceCard({ district: d, year }: { district: District; year: stri
       </div>
 
       <p className="mt-4 text-sm text-ink-secondary">
-        Since {firstYear}, {d.name} has{' '}
+        Since {firstYear}, <span data-no-translate>{d.name}</span> has{' '}
         <strong className={cumulative < 0 ? 'text-critical' : 'text-good'}>
           {cumulative < 0 ? 'spent down' : 'added'} {fmtMoney(Math.abs(cumulative))}
         </strong>{' '}
@@ -509,9 +509,11 @@ function DistrictDetail({
         <YearSelect year={year} onChange={onYearChange} />
       </div>
       <div className="mt-3 flex items-baseline gap-3 flex-wrap">
-        <h1 className="text-3xl md:text-4xl font-bold tracking-tight">{d.name}</h1>
+        <h1 className="text-3xl md:text-4xl font-bold tracking-tight" data-no-translate>
+          {d.name}
+        </h1>
       </div>
-      <p className="mt-1 text-ink-secondary">
+      <p className="mt-1 text-ink-secondary" data-no-translate>
         {d.county} County · {d.esd}
       </p>
 
@@ -577,7 +579,7 @@ function DistrictDetail({
           Does student need change what a district gets?
         </h2>
         <p className="text-xs text-ink-muted mb-4">
-          Every Washington district in {year} · {d.name} highlighted
+          Every Washington district in {year} · <span data-no-translate>{d.name}</span> highlighted
         </p>
         <NeedVsFundingChart points={needPoints} highlight={d.code} />
       </div>
@@ -585,7 +587,9 @@ function DistrictDetail({
       <div className="mt-4 grid lg:grid-cols-2 gap-4 items-start">
         <div className="card p-5">
           <h2 className="font-semibold mb-3">
-            Where {d.name.replace(/ School District.*$/, '')}&apos;s money comes from ({year})
+            Where{' '}
+            <span data-no-translate>{d.name.replace(/ School District.*$/, '')}</span>
+            &apos;s money comes from ({year})
           </h2>
           <SourceShareBar slices={d.rev} />
           <table className="mt-4 w-full text-sm">

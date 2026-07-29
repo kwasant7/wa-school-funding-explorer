@@ -138,8 +138,8 @@ export default function DistrictCombobox({
                   onClick={() => pick(d.code)}
                   className={`w-full text-left px-4 py-2.5 text-sm ${index === activeIndex ? 'bg-accent-wash' : ''}`}
                 >
-                  <span className="font-medium">{d.name}</span>
-                  <span className="text-ink-muted"> · {d.county} County</span>
+                  <span className="font-medium" data-no-translate>{d.name}</span>
+                  <span className="text-ink-muted" data-no-translate> · {d.county} County</span>
                 </button>
               </li>
             ))

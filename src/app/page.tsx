@@ -65,7 +65,7 @@ export default function HomePage() {
       <section className="pb-8">
         <div className="card p-5 md:p-6">
           <h2 className="text-lg md:text-xl font-bold">
-            How {selectedDistrict.name}&apos;s funding is split
+            How <span data-no-translate>{selectedDistrict.name}</span>&apos;s funding is split
           </h2>
           <p className="mt-1 text-sm text-ink-secondary">
             Actual 2024-25 general-fund revenue by source. Hover the bar for
@@ -80,7 +80,7 @@ export default function HomePage() {
       {/* Model explainer -> builder */}
       <section className="py-6">
         <h2 className="text-2xl md:text-3xl font-bold max-w-2xl">
-          How the formula funds {selectedDistrict.name}
+          How the formula funds <span data-no-translate>{selectedDistrict.name}</span>
         </h2>
         <p className="mt-2 max-w-2xl text-ink-secondary">
           Washington does not start with each school&apos;s actual payroll. Instead,
@@ -124,7 +124,7 @@ export default function HomePage() {
       {/* Steps */}
       <section className="py-8">
         <h2 className="text-2xl md:text-3xl font-bold">
-          How state money reaches {selectedDistrict.name}, in 7 steps
+          How state money reaches <span data-no-translate>{selectedDistrict.name}</span>, in 7 steps
         </h2>
         <p className="mt-2 max-w-2xl text-ink-secondary">
           The prototypical model is a state formula, so this path ends at the

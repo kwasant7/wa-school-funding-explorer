@@ -372,7 +372,7 @@ export default function TakeAction() {
         {selectedDistrict && delegations.length > 0 ? (
           <div className="mt-5">
             <p className="text-sm text-ink-secondary">
-              <strong className="text-ink">{selectedDistrict.name}</strong>{' '}
+              <strong className="text-ink" data-no-translate>{selectedDistrict.name}</strong>{' '}
               {delegations.length > 1 ? (
                 <>
                   spans{' '}
@@ -424,10 +424,10 @@ export default function TakeAction() {
                           <p className="text-xs uppercase tracking-wide text-ink-muted">
                             {legislator.chamber}
                           </p>
-                          <h4 className="mt-0.5 font-bold text-lg leading-tight">
+                          <h4 className="mt-0.5 font-bold text-lg leading-tight" data-no-translate>
                             {legislator.name}
                           </h4>
-                          <p className="text-sm text-ink-secondary">
+                          <p className="text-sm text-ink-secondary" data-no-translate>
                             {legislator.party} · District {entry.district}
                           </p>
                           <a

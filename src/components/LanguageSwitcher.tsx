@@ -14,34 +14,32 @@ const LANGUAGES = [
 ] as const;
 
 type LanguageCode = (typeof LANGUAGES)[number]['code'];
-type TranslationStatus = 'idle' | 'translating' | 'ready' | 'unavailable';
-
-type BrowserTranslator = {
-  translate: (input: string) => Promise<string>;
-  destroy?: () => void;
-};
-
-type BrowserTranslatorApi = {
-  availability: (options: {
-    sourceLanguage: string;
-    targetLanguage: string;
-  }) => Promise<string>;
-  create: (options: {
-    sourceLanguage: string;
-    targetLanguage: string;
-    monitor?: (monitor: EventTarget) => void;
-  }) => Promise<BrowserTranslator>;
-};
-
-type TranslationRecord = {
-  source: string;
-  rendered?: string;
-  renderedLanguage?: LanguageCode;
-};
 
 const STORAGE_KEY = 'wa-funding-language';
+/*
+  Anything under one of these should never be swapped for a translated
+  string: form controls, code/URLs, and - the important one -
+  data-no-translate, which every component that renders a proper noun from a
+  data file (legislator names, district names, county names) sets on its own
+  wrapper. Dictionary lookups already leave untracked strings alone, but a
+  short name can coincidentally match a dictionary entry (a district called
+  "Union" is also the English word "union"), so names get an explicit opt-out
+  rather than relying on that alone.
+*/
 const SKIP_SELECTOR =
-  '[data-no-translate], script, style, noscript, code, pre, textarea';
+  '[data-no-translate], script, style, noscript, code, pre, textarea, select, option';
+
+type Dictionary = Record<string, string>;
+let translationsPromise: Promise<Record<string, Dictionary>> | null = null;
+
+function loadTranslations() {
+  if (!translationsPromise) {
+    translationsPromise = import('@/data/translations.json').then(
+      (mod) => mod.default as Record<string, Dictionary>
+    );
+  }
+  return translationsPromise;
+}
 
 function isLanguageCode(value: string | null): value is LanguageCode {
   return LANGUAGES.some((language) => language.code === value);
@@ -51,18 +49,12 @@ function collectTextNodes(root: Node) {
   const nodes: Text[] = [];
   const documentRef =
     root.nodeType === Node.DOCUMENT_NODE ? (root as Document) : root.ownerDocument;
-
   if (!documentRef) return nodes;
 
   const addIfTranslatable = (node: Text) => {
     const parent = node.parentElement;
     const text = node.nodeValue ?? '';
-    if (
-      parent &&
-      !parent.closest(SKIP_SELECTOR) &&
-      /[A-Za-z]/.test(text) &&
-      text.trim().length > 1
-    ) {
+    if (parent && !parent.closest(SKIP_SELECTOR) && /[A-Za-z]/.test(text) && text.trim().length > 1) {
       nodes.push(node);
     }
   };
@@ -78,140 +70,59 @@ function collectTextNodes(root: Node) {
     addIfTranslatable(current as Text);
     current = walker.nextNode();
   }
-
   return nodes;
+}
+
+/**
+ * Every original English string this component has swapped out, keyed by the
+ * live text node, so switching back to English (or re-translating after the
+ * text underneath changes - a slider being dragged, a different district
+ * selected) always starts from the true source rather than from whatever
+ * translated text happens to be sitting in the DOM.
+ */
+const sourceByNode = new WeakMap<Text, string>();
+
+/**
+ * Swap every translatable text node under `root` for its dictionary entry.
+ * This is a single synchronous pass over already-loaded data - no network
+ * call, no per-node async work, so there is nothing to race and nothing to
+ * wait on. A string with no dictionary entry (every proper noun pulled from
+ * a data file - legislator names, district and county names, bill numbers -
+ * since those never appear as literal text in the source the dictionary was
+ * built from) is left exactly as written in English.
+ */
+function applyDictionary(root: Node, dictionary: Dictionary, targetLanguage: LanguageCode) {
+  for (const node of collectTextNodes(root)) {
+    const source = sourceByNode.get(node) ?? node.nodeValue ?? '';
+    if (!sourceByNode.has(node)) sourceByNode.set(node, source);
+
+    const match = source.match(/^(\s*)([\s\S]*?)(\s*)$/);
+    if (!match) continue;
+    const [, lead, body, trail] = match;
+    const translated = dictionary[body];
+    if (translated) {
+      const next = `${lead}${translated}${trail}`;
+      if (node.nodeValue !== next) node.nodeValue = next;
+    } else if (targetLanguage === 'en' && node.nodeValue !== source) {
+      node.nodeValue = source;
+    }
+  }
 }
 
 export default function LanguageSwitcher() {
   const pathname = usePathname();
   const [language, setLanguage] = useState<LanguageCode>('en');
-  const [status, setStatus] = useState<TranslationStatus>('idle');
   const languageRef = useRef<LanguageCode>('en');
-  const recordsRef = useRef(new WeakMap<Text, TranslationRecord>());
-  const cacheRef = useRef(new Map<string, Promise<string>>());
-  const translatorsRef = useRef(
-    new Map<LanguageCode, Promise<BrowserTranslator>>()
-  );
-  const runRef = useRef(0);
+  const dictionariesRef = useRef<Record<string, Dictionary> | null>(null);
   const observerTimerRef = useRef<ReturnType<typeof setTimeout>>();
 
-  const currentLanguage =
-    LANGUAGES.find((item) => item.code === language) ?? LANGUAGES[0];
+  const currentLanguage = LANGUAGES.find((item) => item.code === language) ?? LANGUAGES[0];
 
-  const restoreEnglish = () => {
-    runRef.current += 1;
-    for (const node of collectTextNodes(document.body)) {
-      const record = recordsRef.current.get(node);
-      if (record && node.nodeValue !== record.source) {
-        node.nodeValue = record.source;
-        record.rendered = undefined;
-        record.renderedLanguage = undefined;
-      }
-    }
-    document.documentElement.lang = 'en';
-    setStatus('idle');
-  };
-
-  const getTranslator = async (targetLanguage: LanguageCode) => {
-    const existing = translatorsRef.current.get(targetLanguage);
-    if (existing) return existing;
-
-    const translatorApi = (
-      window as Window & { Translator?: BrowserTranslatorApi }
-    ).Translator;
-
-    if (!translatorApi) {
-      throw new Error('Browser translation is unavailable');
-    }
-
-    const translatorPromise = (async () => {
-      const availability = await translatorApi.availability({
-        sourceLanguage: 'en',
-        targetLanguage,
-      });
-
-      if (availability === 'unavailable') {
-        throw new Error('This language pair is unavailable');
-      }
-
-      return translatorApi.create({
-        sourceLanguage: 'en',
-        targetLanguage,
-      });
-    })();
-
-    translatorsRef.current.set(targetLanguage, translatorPromise);
-    return translatorPromise;
-  };
-
-  const translateNodes = async (
-    nodes: Text[],
-    targetLanguage: LanguageCode,
-    runId: number
-  ) => {
-    const translator = await getTranslator(targetLanguage);
-    let cursor = 0;
-
-    const translateOne = async (node: Text) => {
-      if (!node.isConnected || languageRef.current !== targetLanguage) return;
-
-      const currentText = node.nodeValue ?? '';
-      let record = recordsRef.current.get(node);
-
-      if (!record) {
-        record = { source: currentText };
-        recordsRef.current.set(node, record);
-      } else if (
-        currentText !== record.source &&
-        currentText !== record.rendered
-      ) {
-        record.source = currentText;
-        record.rendered = undefined;
-        record.renderedLanguage = undefined;
-      }
-
-      if (
-        record.renderedLanguage === targetLanguage &&
-        currentText === record.rendered
-      ) {
-        return;
-      }
-
-      const match = record.source.match(/^(\s*)([\s\S]*?)(\s*)$/);
-      if (!match || !/[A-Za-z]/.test(match[2])) return;
-
-      const source = match[2];
-      const cacheKey = `${targetLanguage}\u0000${source}`;
-      let translatedPromise = cacheRef.current.get(cacheKey);
-      if (!translatedPromise) {
-        translatedPromise = translator.translate(source);
-        cacheRef.current.set(cacheKey, translatedPromise);
-      }
-
-      const translated = await translatedPromise;
-      if (
-        runRef.current !== runId ||
-        languageRef.current !== targetLanguage ||
-        !node.isConnected
-      ) {
-        return;
-      }
-
-      const rendered = `${match[1]}${translated}${match[3]}`;
-      record.rendered = rendered;
-      record.renderedLanguage = targetLanguage;
-      node.nodeValue = rendered;
-    };
-
-    const workers = Array.from({ length: 6 }, async () => {
-      while (cursor < nodes.length) {
-        const node = nodes[cursor];
-        cursor += 1;
-        await translateOne(node);
-      }
-    });
-
-    await Promise.all(workers);
+  const applyToDocument = (targetLanguage: LanguageCode) => {
+    const dictionary =
+      targetLanguage === 'en' ? {} : dictionariesRef.current?.[targetLanguage] ?? {};
+    applyDictionary(document.body, dictionary, targetLanguage);
+    document.documentElement.lang = targetLanguage;
   };
 
   const applyLanguage = async (targetLanguage: LanguageCode) => {
@@ -219,100 +130,59 @@ export default function LanguageSwitcher() {
     setLanguage(targetLanguage);
     window.localStorage.setItem(STORAGE_KEY, targetLanguage);
 
-    if (targetLanguage === 'en') {
-      restoreEnglish();
-      return;
+    if (targetLanguage !== 'en' && !dictionariesRef.current) {
+      dictionariesRef.current = await loadTranslations();
+      // The visitor may have switched languages again while this loaded.
+      if (languageRef.current !== targetLanguage) return;
     }
-
-    const runId = runRef.current + 1;
-    runRef.current = runId;
-    setStatus('translating');
-
-    try {
-      await translateNodes(
-        collectTextNodes(document.body),
-        targetLanguage,
-        runId
-      );
-      if (
-        runRef.current === runId &&
-        languageRef.current === targetLanguage
-      ) {
-        document.documentElement.lang = targetLanguage;
-        setStatus('ready');
-      }
-    } catch {
-      if (runRef.current === runId) {
-        setStatus('unavailable');
-      }
-    }
+    applyToDocument(targetLanguage);
   };
 
   useEffect(() => {
-    const savedLanguage = window.localStorage.getItem(STORAGE_KEY);
-    if (isLanguageCode(savedLanguage) && savedLanguage !== 'en') {
-      void applyLanguage(savedLanguage);
-    }
-    // This runs once to restore a visitor's saved language.
+    const saved = window.localStorage.getItem(STORAGE_KEY);
+    if (isLanguageCode(saved) && saved !== 'en') void applyLanguage(saved);
+    // Runs once to restore a visitor's saved language.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
-    if (languageRef.current === 'en') return;
-    const targetLanguage = languageRef.current;
-    const timer = setTimeout(() => void applyLanguage(targetLanguage), 50);
-    return () => clearTimeout(timer);
-    // Re-translate after Next.js replaces a page during navigation.
+    // Re-apply after Next.js swaps the page on navigation.
+    if (languageRef.current !== 'en') applyToDocument(languageRef.current);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pathname]);
 
   useEffect(() => {
     const observer = new MutationObserver((mutations) => {
       if (languageRef.current === 'en') return;
-
-      const roots = mutations.flatMap((mutation) =>
-        Array.from(mutation.addedNodes)
-      );
+      const roots = mutations.flatMap((m) => Array.from(m.addedNodes));
       if (roots.length === 0) return;
-
+      // A short debounce coalesces a burst of DOM changes (e.g. selecting a
+      // district mounts a dozen new cards at once) into a single pass instead
+      // of one per node.
       clearTimeout(observerTimerRef.current);
       observerTimerRef.current = setTimeout(() => {
-        const targetLanguage = languageRef.current;
-        const runId = runRef.current;
-        const nodes = roots.flatMap((root) => collectTextNodes(root));
-        void translateNodes(nodes, targetLanguage, runId).catch(() =>
-          setStatus('unavailable')
-        );
-      }, 80);
+        const dictionary = dictionariesRef.current?.[languageRef.current] ?? {};
+        for (const root of roots) applyDictionary(root, dictionary, languageRef.current);
+      }, 30);
     });
-
     observer.observe(document.body, { childList: true, subtree: true });
     return () => {
       observer.disconnect();
       clearTimeout(observerTimerRef.current);
     };
-    // The observer reads the active language from refs.
+    // The observer reads the active language from a ref.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return (
-    <div
-      className="flex items-center gap-2"
-      data-no-translate
-      aria-busy={status === 'translating'}
-    >
-      <label
-        htmlFor="site-language"
-        className="text-xs font-medium text-ink-secondary"
-      >
+    <div className="flex items-center gap-2" data-no-translate>
+      <label htmlFor="site-language" className="text-xs font-medium text-ink-secondary">
         {currentLanguage.controlLabel}
       </label>
       <select
         id="site-language"
         value={language}
-        onChange={(event) =>
-          void applyLanguage(event.target.value as LanguageCode)
-        }
+        onChange={(event) => void applyLanguage(event.target.value as LanguageCode)}
         className="rounded border border-line bg-surface px-2 py-1.5 text-sm text-ink"
       >
         {LANGUAGES.map((item) => (
@@ -321,28 +191,6 @@ export default function LanguageSwitcher() {
           </option>
         ))}
       </select>
-      <span className="sr-only" aria-live="polite">
-        {status === 'translating'
-          ? 'Translating page'
-          : status === 'ready'
-            ? `Page translated to ${currentLanguage.label}`
-            : status === 'unavailable'
-              ? 'Automatic translation is unavailable in this browser'
-              : ''}
-      </span>
-      {status === 'translating' && (
-        <span className="text-xs text-ink-muted" aria-hidden>
-          Translating...
-        </span>
-      )}
-      {status === 'unavailable' && (
-        <span
-          className="text-xs text-critical"
-          title="Automatic translation requires a browser with the Translator API, such as Chrome 138 or newer."
-        >
-          Not supported
-        </span>
-      )}
     </div>
   );
 }

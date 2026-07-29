@@ -752,7 +752,7 @@ function LeverBar({
         </figcaption>
         <div className="mt-3 flex items-center gap-3">
           <div className="w-28 shrink-0 text-right">
-            <p className="font-bold leading-tight">{name}</p>
+            <p className="font-bold leading-tight" data-no-translate>{name}</p>
             <p className="text-[11px] text-ink-muted">
               Ceiling: {fmtMoneyFull(Math.round(ceiling))}
             </p>
@@ -796,7 +796,7 @@ function LeverBar({
         </div>
         {room.cappedBelowApproved && (
           <p className="mt-4 text-sm text-ink-secondary">
-            {name}&apos;s voters have already approved a levy of{' '}
+            <span data-no-translate>{name}</span>&apos;s voters have already approved a levy of{' '}
             <strong className="text-ink">{fmtMoney(room.approved)}</strong>, but
             the {fmtMoneyFull(Math.round(cap))} cap
             {cap !== LEA.maxLevyPerPupil
@@ -855,7 +855,7 @@ function LeverBar({
         </figcaption>
         <div className="mt-4 flex items-center gap-3">
           <div className="w-28 shrink-0 text-right">
-            <p className="font-bold leading-tight">{name}</p>
+            <p className="font-bold leading-tight" data-no-translate>{name}</p>
             <p className="text-[11px] text-ink-muted">
               {qualifies ? 'State help available' : 'No state help'}
             </p>
@@ -947,7 +947,7 @@ function LeverBar({
         </figcaption>
         <div className="mt-4 flex items-center gap-3">
           <div className="w-28 shrink-0 text-right">
-            <p className="font-bold leading-tight">{name}</p>
+            <p className="font-bold leading-tight" data-no-translate>{name}</p>
             <p className="text-[11px] text-ink-muted">
               {fmtInt(district.record.demo.sped)} students served
             </p>
@@ -991,7 +991,7 @@ function LeverBar({
         </div>
         {spent != null && (
           <p className="mt-4 text-sm text-ink-secondary">
-            {name} spends{' '}
+            <span data-no-translate>{name}</span> spends{' '}
             <strong className="text-ink">{fmtMoneyFull(spentPerStudent)}</strong>{' '}
             per student with a disability - about{' '}
             <strong className="text-ink">{spent.toFixed(2)}×</strong> basic
@@ -1017,7 +1017,7 @@ function LeverBar({
     if (share < 0.6) {
       return (
         <p className="text-sm text-ink-secondary">
-          <strong className="text-ink">{name}</strong> is{' '}
+          <strong className="text-ink" data-no-translate>{name}</strong> is{' '}
           <strong className="text-ink">{(100 * share).toFixed(0)}%</strong>{' '}
           low-income, under the 60% line this bonus is built around, so it
           receives <strong className="text-ink">nothing</strong> from this
@@ -1082,7 +1082,7 @@ function LeverBar({
       </figcaption>
       <div className={`flex items-center gap-3 ${spent != null ? 'mt-4' : 'mt-3'}`}>
         <div className="w-28 shrink-0 text-right">
-          <p className="font-bold leading-tight">{name}</p>
+          <p className="font-bold leading-tight" data-no-translate>{name}</p>
           <p className="text-[11px] text-ink-muted">{c.who}</p>
         </div>
         {spent == null ? (
@@ -1143,7 +1143,7 @@ function LeverBar({
       </div>
       {spent != null && (
         <p className="mt-4 text-sm text-ink-secondary">
-          {name} spends{' '}
+          <span data-no-translate>{name}</span> spends{' '}
           <strong className="text-ink">{fmtMoneyFull(Math.round(spent))}</strong>{' '}
           per student here, against{' '}
           <strong className="text-ink">{fmtMoneyFull(Math.round(c.base))}</strong>{' '}
@@ -1632,7 +1632,7 @@ export default function Simulator() {
         </div>
         {district && (
           <p className="mt-3 text-sm text-ink-secondary">
-            <strong className="text-ink">{district.record.name}</strong> -{' '}
+            <strong className="text-ink" data-no-translate>{district.record.name}</strong> -{' '}
             {fmtInt(district.record.enrollment)} students,{' '}
             {fmtMoney(district.record.rev.total)} in general fund revenue.
           </p>
@@ -1644,7 +1644,7 @@ export default function Simulator() {
           <h2 className="text-sm text-ink-secondary">
             Your plan for{' '}
             <strong className="text-ink">
-              {district.record.name.replace(/ School District.*$/, '')}
+              <span data-no-translate>{district.record.name.replace(/ School District.*$/, '')}</span>
             </strong>
           </h2>
           <p
