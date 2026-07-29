@@ -51,10 +51,19 @@ function collectTextNodes(root: Node) {
     root.nodeType === Node.DOCUMENT_NODE ? (root as Document) : root.ownerDocument;
   if (!documentRef) return nodes;
 
+  /*
+    Deliberately does NOT filter on the script the text is currently written
+    in. An earlier version required a Latin letter, which meant that once a
+    node had been swapped to Korean, Chinese or Russian it stopped being
+    collected - so switching back to English (or on to another language) could
+    never find it again and it stayed frozen in the previous language. What
+    makes a node translatable is where it sits in the DOM, not what alphabet
+    it happens to be showing right now.
+  */
   const addIfTranslatable = (node: Text) => {
     const parent = node.parentElement;
     const text = node.nodeValue ?? '';
-    if (parent && !parent.closest(SKIP_SELECTOR) && /[A-Za-z]/.test(text) && text.trim().length > 1) {
+    if (parent && !parent.closest(SKIP_SELECTOR) && text.trim().length > 1) {
       nodes.push(node);
     }
   };
@@ -74,13 +83,13 @@ function collectTextNodes(root: Node) {
 }
 
 /**
- * Every original English string this component has swapped out, keyed by the
- * live text node, so switching back to English (or re-translating after the
- * text underneath changes - a slider being dragged, a different district
- * selected) always starts from the true source rather than from whatever
- * translated text happens to be sitting in the DOM.
+ * The original English for every text node this component has touched, plus
+ * whatever it last wrote there. Translation always starts from `source`, never
+ * from what is currently on screen, so languages can be switched in any order
+ * without one translation being fed into the next.
  */
-const sourceByNode = new WeakMap<Text, string>();
+type NodeRecord = { source: string; rendered?: string };
+const records = new WeakMap<Text, NodeRecord>();
 
 /**
  * Swap every translatable text node under `root` for its dictionary entry.
@@ -91,21 +100,31 @@ const sourceByNode = new WeakMap<Text, string>();
  * since those never appear as literal text in the source the dictionary was
  * built from) is left exactly as written in English.
  */
-function applyDictionary(root: Node, dictionary: Dictionary, targetLanguage: LanguageCode) {
+function applyDictionary(root: Node, dictionary: Dictionary) {
   for (const node of collectTextNodes(root)) {
-    const source = sourceByNode.get(node) ?? node.nodeValue ?? '';
-    if (!sourceByNode.has(node)) sourceByNode.set(node, source);
+    const current = node.nodeValue ?? '';
+    let record = records.get(node);
 
-    const match = source.match(/^(\s*)([\s\S]*?)(\s*)$/);
+    if (!record) {
+      record = { source: current };
+      records.set(node, record);
+    } else if (current !== record.source && current !== record.rendered) {
+      /*
+        React wrote new text into a node we had already translated - a
+        different district selected, a slider moved, a counter ticking. That
+        new text is the English source now; the old one is gone.
+      */
+      record.source = current;
+      record.rendered = undefined;
+    }
+
+    const match = record.source.match(/^(\s*)([\s\S]*?)(\s*)$/);
     if (!match) continue;
     const [, lead, body, trail] = match;
-    const translated = dictionary[body];
-    if (translated) {
-      const next = `${lead}${translated}${trail}`;
-      if (node.nodeValue !== next) node.nodeValue = next;
-    } else if (targetLanguage === 'en' && node.nodeValue !== source) {
-      node.nodeValue = source;
-    }
+    const translated = body ? dictionary[body] : undefined;
+    const next = translated ? `${lead}${translated}${trail}` : record.source;
+    record.rendered = translated ? next : undefined;
+    if (node.nodeValue !== next) node.nodeValue = next;
   }
 }
 
@@ -121,7 +140,7 @@ export default function LanguageSwitcher() {
   const applyToDocument = (targetLanguage: LanguageCode) => {
     const dictionary =
       targetLanguage === 'en' ? {} : dictionariesRef.current?.[targetLanguage] ?? {};
-    applyDictionary(document.body, dictionary, targetLanguage);
+    applyDictionary(document.body, dictionary);
     document.documentElement.lang = targetLanguage;
   };
 
@@ -162,7 +181,7 @@ export default function LanguageSwitcher() {
       clearTimeout(observerTimerRef.current);
       observerTimerRef.current = setTimeout(() => {
         const dictionary = dictionariesRef.current?.[languageRef.current] ?? {};
-        for (const root of roots) applyDictionary(root, dictionary, languageRef.current);
+        for (const root of roots) applyDictionary(root, dictionary);
       }, 30);
     });
     observer.observe(document.body, { childList: true, subtree: true });
