@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="K-12">
+  <!--
+    Favicon: a plain K-12 wordmark on the site's accent blue.
+
+    textLength + lengthAdjust pins the wordmark to a fixed 50px of the 64px
+    tile rather than trusting whatever font the browser happens to have for a
+    favicon - without it the mark reflows and can overflow the tile on
+    machines missing the preferred sans.
+  -->
+  <rect width="64" height="64" rx="13" fill="#256abf" />
+  <text
+    x="32"
+    y="43.5"
+    textLength="50"
+    lengthAdjust="spacingAndGlyphs"
+    text-anchor="middle"
+    font-family="system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif"
+    font-size="27"
+    font-weight="700"
+    fill="#ffffff"
+  >K-12</text>
+</svg>
