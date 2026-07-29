@@ -425,65 +425,76 @@ export default function SourcesPage() {
 
       <section className="mt-10">
         <h2 className="text-2xl font-bold">3 · District boundaries (the map)</h2>
-        <p className="mt-2 max-w-2xl text-ink-secondary">
-          The map on the District Explorer uses OSPI&apos;s official{' '}
-          <Ext href="https://geo.wa.gov/datasets/72ad21c67ecf4f21bc794d4d21485d86_0">
-            Washington School Districts boundary layer
-          </Ext>{' '}
-          from the state geoportal (geo.wa.gov), fetched from its public{' '}
-          <Ext href="https://services9.arcgis.com/fWunDXKkvCx1CM4b/arcgis/rest/services/Washington_School_Districts/FeatureServer/0">
-            ArcGIS FeatureServer
-          </Ext>
-          . Shapes are simplified to ~200&nbsp;m tolerance for fast loading and
-          joined to funding data by each district&apos;s 5-digit OSPI code
-          (script: <code className="text-ink">scripts/fetch-boundaries.mjs</code>).
-          Boundaries are OSPI&apos;s best interpretation of legal descriptions -
-          confirm edge cases with the district itself.
-        </p>
-        <p className="mt-3 max-w-2xl text-ink-secondary">
-          Water bodies come from{' '}
-          <Ext href="https://geodataservices.wdfw.wa.gov/arcgis/rest/services/FP_Projects/NHDwithLLID/MapServer/0">
-            WDFW&apos;s NHD hydrography service
-          </Ext>{' '}
-          and the surrounding state outlines from{' '}
-          <Ext href="https://github.com/nvkelso/natural-earth-vector">
-            Natural Earth
-          </Ext>
-          , both for context only - no data is joined to them.
-        </p>
+        {/*
+          Full-bleed card with the prose in columns: the section fills the page
+          like the table sections above it, without stretching a single line of
+          text to 180 characters.
+        */}
+        <div className="mt-4 card p-5 md:p-6 grid gap-x-8 gap-y-3 md:grid-cols-2 text-ink-secondary">
+          <p>
+            The map on the District Explorer uses OSPI&apos;s official{' '}
+            <Ext href="https://geo.wa.gov/datasets/72ad21c67ecf4f21bc794d4d21485d86_0">
+              Washington School Districts boundary layer
+            </Ext>{' '}
+            from the state geoportal (geo.wa.gov), fetched from its public{' '}
+            <Ext href="https://services9.arcgis.com/fWunDXKkvCx1CM4b/arcgis/rest/services/Washington_School_Districts/FeatureServer/0">
+              ArcGIS FeatureServer
+            </Ext>
+            . Shapes are simplified to ~200&nbsp;m tolerance for fast loading and
+            joined to funding data by each district&apos;s 5-digit OSPI code
+            (script:{' '}
+            <code className="text-ink">scripts/fetch-boundaries.mjs</code>).
+            Boundaries are OSPI&apos;s best interpretation of legal descriptions
+            - confirm edge cases with the district itself.
+          </p>
+          <p>
+            Water bodies come from{' '}
+            <Ext href="https://geodataservices.wdfw.wa.gov/arcgis/rest/services/FP_Projects/NHDwithLLID/MapServer/0">
+              WDFW&apos;s NHD hydrography service
+            </Ext>{' '}
+            and the surrounding state outlines from{' '}
+            <Ext href="https://github.com/nvkelso/natural-earth-vector">
+              Natural Earth
+            </Ext>
+            , both for context only - no data is joined to them.
+          </p>
+        </div>
       </section>
 
       <section className="mt-10">
         <h2 className="text-2xl font-bold">4 · Legislators (Take Action)</h2>
-        <p className="mt-2 max-w-2xl text-ink-secondary">
-          The delegation shown for a school district is every legislative
-          district that overlaps it, found by overlaying OSPI&apos;s school
-          district boundaries on the{' '}
-          <Ext href="https://services.arcgis.com/bCYnGqM4FMTBSjd1/arcgis/rest/services/Washington_State_Legislative_Districts_2024/FeatureServer/0">
-            2024 Washington State Legislative Districts
-          </Ext>{' '}
-          layer and sampling a grid of points inside each school district. The
-          percentage shown is the share of sampled points - an approximation of{' '}
-          <strong className="text-ink">area, not population</strong> - and
-          overlaps under 2% are dropped as boundary slivers. Member names,
-          parties, chambers, and links come from the Legislature&apos;s{' '}
-          <Ext href="https://leg.wa.gov/legislators/">
-            official roster
-          </Ext>
-          , and portraits from{' '}
-          <Ext href="https://leg.wa.gov/legislators/">
-            leg.wa.gov/memberphoto
-          </Ext>{' '}
-          (Legislative Support Services). Scripts:{' '}
-          <code className="text-ink">scripts/fetch-legislators.mjs</code> and{' '}
-          <code className="text-ink">scripts/fetch-legislator-photos.py</code>.
-          Because school and legislative boundaries do not line up, always
-          confirm your own representation with{' '}
-          <Ext href="https://app.leg.wa.gov/DistrictFinder/">
-            the Legislature&apos;s District Finder
-          </Ext>
-          .
-        </p>
+        <div className="mt-4 card p-5 md:p-6 grid gap-x-8 gap-y-3 md:grid-cols-2 text-ink-secondary">
+          <p>
+            The delegation shown for a school district is every legislative
+            district that overlaps it, found by overlaying OSPI&apos;s school
+            district boundaries on the{' '}
+            <Ext href="https://services.arcgis.com/bCYnGqM4FMTBSjd1/arcgis/rest/services/Washington_State_Legislative_Districts_2024/FeatureServer/0">
+              2024 Washington State Legislative Districts
+            </Ext>{' '}
+            layer and sampling a grid of points inside each school district. The
+            percentage shown is the share of sampled points - an approximation
+            of <strong className="text-ink">area, not population</strong> - and
+            overlaps under 2% are dropped as boundary slivers.
+          </p>
+          <p>
+            Member names, parties, chambers, and links come from the
+            Legislature&apos;s{' '}
+            <Ext href="https://leg.wa.gov/legislators/">official roster</Ext>,
+            and portraits from{' '}
+            <Ext href="https://leg.wa.gov/legislators/">
+              leg.wa.gov/memberphoto
+            </Ext>{' '}
+            (Legislative Support Services). Scripts:{' '}
+            <code className="text-ink">scripts/fetch-legislators.mjs</code> and{' '}
+            <code className="text-ink">scripts/fetch-legislator-photos.py</code>.
+            Because school and legislative boundaries do not line up, always
+            confirm your own representation with{' '}
+            <Ext href="https://app.leg.wa.gov/DistrictFinder/">
+              the Legislature&apos;s District Finder
+            </Ext>
+            .
+          </p>
+        </div>
       </section>
 
       <section className="mt-10">
@@ -512,31 +523,45 @@ export default function SourcesPage() {
 
       <section className="mt-10 mb-4">
         <h2 className="text-2xl font-bold">6 · Known caveats</h2>
-        <ul className="mt-3 max-w-2xl space-y-2 text-ink-secondary text-sm md:text-base list-disc pl-5">
-          <li>
-            Two enrollment measures are intentional: “Students” is October
-            headcount, while per-student funding uses final annual-average
-            K-12 plus Running Start funding FTE.
-          </li>
-          <li>
-            General fund only - capital projects, debt service, transportation
-            vehicle, and ASB funds are excluded everywhere.
-          </li>
-          <li>Trend charts show nominal dollars, not inflation-adjusted.</li>
-          <li>
-            The Policy Simulator is an educational estimate built on statewide
-            averages (labeled as such on the page), not a fiscal model.
-          </li>
-          <li>
-            Staffing values in the explainer are the base allocations currently
-            in RCW 28A.150.260, including the counselor, nurse, and office
-            support increases from HB 1664 (2022) that finished phasing in for
-            2024-25. The School Builder shows a subset of the roles the statute
-            funds - social workers, psychologists, student-safety staff, and
-            parent involvement coordinators are omitted - and excludes
-            regionalization, benefits, and every categorical program.
-          </li>
-        </ul>
+        <div className="mt-4 card p-5 md:p-6">
+          {/* CSS columns rather than a grid: the caveats vary a lot in length,
+              so letting them flow balances the two columns automatically. */}
+          <ul className="space-y-3 text-ink-secondary text-sm md:text-base list-disc pl-5 md:columns-2 md:gap-10">
+            <li className="break-inside-avoid">
+              Two enrollment measures are in play. Student counts and
+              per-student funding both use final annual-average K-12 plus
+              Running Start funding FTE. The Report Card&apos;s October
+              headcount is used only where a headcount is the right unit: the
+              enrollment trend chart and the demographic shares.
+            </li>
+            <li className="break-inside-avoid">
+              General fund only - capital projects, debt service, transportation
+              vehicle, and ASB funds are excluded everywhere.
+            </li>
+            <li className="break-inside-avoid">
+              Trend charts show nominal dollars, not inflation-adjusted.
+            </li>
+            <li className="break-inside-avoid">
+              The Policy Simulator is an educational estimate built on statewide
+              averages (labeled as such on the page), not a fiscal model.
+            </li>
+            <li className="break-inside-avoid">
+              Staffing values in the explainer are the base allocations
+              currently in RCW 28A.150.260, including the counselor, nurse, and
+              office support increases from HB 1664 (2022) that finished phasing
+              in for 2024-25. The School Builder shows a subset of the roles the
+              statute funds - social workers, psychologists, student-safety
+              staff, and parent involvement coordinators are omitted - and
+              excludes regionalization, benefits, and every categorical program.
+            </li>
+            <li className="break-inside-avoid">
+              Translations of the interface are machine-generated. Data values
+              and proper nouns - district names, county names, legislator names
+              - are never translated, and the English wording is the
+              authoritative version of any claim here.
+            </li>
+          </ul>
+        </div>
       </section>
     </div>
   );
