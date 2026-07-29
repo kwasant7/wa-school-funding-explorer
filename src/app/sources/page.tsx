@@ -323,12 +323,17 @@ export default function SourcesPage() {
               Apportionment Final Extract
             </Ext>{' '}
             for 2024-25 - the data behind the 1191 Apportionment Summary each
-            district receives. State general-fund allotments only: federal codes
-            and Transportation Vehicle Fund depreciation are excluded, so the
-            total runs slightly under the state revenue the same district reports
-            on its F-196. Salaries, benefits and MSOC come from the
-            workbook&apos;s Basic Ed sheet; the rest of the basic-education line
-            is reported as a single residual rather than modeled. Script:{' '}
+            district receives. Salaries, benefits and MSOC come from the
+            workbook&apos;s Basic Ed sheet; special education, transportation,
+            multilingual, learning assistance, highly capable, food and levy
+            equalization come from an explicit allowlist of revenue codes,
+            deliberately not every 3xxx/4xxx code - some, like 4100, can also
+            carry multi-year school-construction capital grants that do not
+            belong in a general-fund figure. &ldquo;Other state
+            programs&rdquo; is defined as whatever remains after subtracting
+            every named category from the district&apos;s actual F-196 state
+            general-fund revenue, so the total always ties out to that figure
+            exactly. Script:{' '}
             <code className="text-ink">scripts/build-state-allocation.py</code>.
           </p>
         </div>

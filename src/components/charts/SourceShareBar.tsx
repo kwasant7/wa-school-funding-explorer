@@ -37,8 +37,14 @@ const SEGMENTS: { key: keyof SourceSlices; label: string; color: string; blurb: 
   },
 ];
 
-/** Below this share a segment is too narrow to hold its own label legibly. */
-const INSIDE_LABEL_MIN = 8;
+/**
+ * Below this share, a label centered on the segment would overflow past both
+ * of its neighbors, not just one - that's the only case worth moving below
+ * the bar instead. Everything else keeps its label inline, at the same size,
+ * even if it pokes slightly into the next segment: that reads far better than
+ * a label jumping to a different position depending on the number.
+ */
+const BELOW_BAR_MAX = 2;
 
 export default function SourceShareBar({
   slices,
@@ -50,75 +56,92 @@ export default function SourceShareBar({
   const [hover, setHover] = useState<string | null>(null);
   const total = SEGMENTS.reduce((s, seg) => s + slices[seg.key], 0);
 
-  // Midpoint of each too-narrow-to-label segment, as a percentage across the
-  // bar, so its callout can sit directly beneath it.
-  const callouts: { key: string; share: number; center: number; color: string }[] = [];
+  // Each visible segment's share and midpoint (as % across the bar), used to
+  // place both the inline and below-bar labels.
+  const parts: { key: string; label: string; share: number; center: number; color: string }[] = [];
   if (total) {
     let run = 0;
     for (const seg of SEGMENTS) {
       const share = (100 * slices[seg.key]) / total;
-      if (share > 0 && share < INSIDE_LABEL_MIN) {
-        callouts.push({ key: seg.key, share, center: run + share / 2, color: seg.color });
+      if (share > 0) {
+        parts.push({ key: seg.key, label: seg.label, share, center: run + share / 2, color: seg.color });
+        run += share;
       }
-      if (share > 0) run += share;
     }
   }
+  const inlineParts = parts.filter((p) => p.share > BELOW_BAR_MAX);
+  const belowParts = parts.filter((p) => p.share <= BELOW_BAR_MAX);
 
   if (!total) return null;
 
   return (
     <figure>
-      <div
-        className="flex h-7 rounded overflow-hidden bg-paper"
-        style={{ gap: 2 }}
-        role="img"
-        aria-label={`Funding sources: ${SEGMENTS.map(
-          (s) => `${s.label} ${pct(slices[s.key], total)}`
-        ).join(', ')}`}
-      >
-        {SEGMENTS.map((seg) => {
-          const share = (100 * slices[seg.key]) / total;
-          if (share <= 0) return null;
-          return (
-            <div
-              key={seg.key}
-              className="relative flex items-center justify-center transition-opacity"
+      {/*
+        The bar is a plain color strip; every label - inline or below - lives
+        in an overlay so text can overflow past a narrow segment's own edges
+        without being clipped by the bar's rounded corners.
+      */}
+      <div className="relative">
+        <div
+          className="flex h-7 rounded overflow-hidden bg-paper"
+          style={{ gap: 2 }}
+          role="img"
+          aria-label={`Funding sources: ${SEGMENTS.map(
+            (s) => `${s.label} ${pct(slices[s.key], total)}`
+          ).join(', ')}`}
+        >
+          {SEGMENTS.map((seg) => {
+            const share = (100 * slices[seg.key]) / total;
+            if (share <= 0) return null;
+            return (
+              <div
+                key={seg.key}
+                className="transition-opacity"
+                style={{
+                  width: `${share}%`,
+                  background: seg.color,
+                  opacity: hover && hover !== seg.key ? 0.45 : 1,
+                }}
+                onMouseEnter={() => setHover(seg.key)}
+                onMouseLeave={() => setHover(null)}
+              />
+            );
+          })}
+        </div>
+        <div className="pointer-events-none absolute inset-0" aria-hidden>
+          {inlineParts.map((p) => (
+            <span
+              key={p.key}
+              className="absolute top-1/2 -translate-x-1/2 -translate-y-1/2 whitespace-nowrap text-xs font-semibold text-white select-none transition-opacity"
               style={{
-                width: `${share}%`,
-                background: seg.color,
-                opacity: hover && hover !== seg.key ? 0.45 : 1,
+                left: `${p.center}%`,
+                textShadow: '0 1px 2px rgb(0 0 0 / 0.35)',
+                opacity: hover && hover !== p.key ? 0.45 : 1,
               }}
-              onMouseEnter={() => setHover(seg.key)}
-              onMouseLeave={() => setHover(null)}
             >
-              {share >= INSIDE_LABEL_MIN && (
-                <span className="text-xs font-semibold text-white select-none">
-                  {Math.round(share)}%
-                </span>
-              )}
-            </div>
-          );
-        })}
+              {Math.round(p.share)}%
+            </span>
+          ))}
+        </div>
       </div>
       {/*
-        Segments too narrow to hold a label get one underneath instead, tied to
-        the segment by colour and pinned to its midpoint. Every source is worth
-        a number even when it is a sliver - a 3% federal share is still tens of
-        millions of dollars.
+        Only a genuinely sliver-thin segment (2% or less) gets pushed below
+        the bar instead - centering a label on a 1% slice would overflow both
+        neighbors at once, which no longer reads as "belonging" to it.
       */}
-      {callouts.length > 0 && (
+      {belowParts.length > 0 && (
         <div className="relative h-4" aria-hidden>
-          {callouts.map((c) => (
+          {belowParts.map((p) => (
             <span
-              key={c.key}
-              className="absolute top-0 -translate-x-1/2 whitespace-nowrap text-[11px] font-semibold tabular-nums leading-4"
+              key={p.key}
+              className="absolute top-0 -translate-x-1/2 whitespace-nowrap text-[11px] font-semibold tabular-nums leading-4 transition-opacity"
               style={{
-                left: `${Math.min(97, Math.max(3, c.center))}%`,
-                color: c.color,
-                opacity: hover && hover !== c.key ? 0.45 : 1,
+                left: `${Math.min(97, Math.max(3, p.center))}%`,
+                color: p.color,
+                opacity: hover && hover !== p.key ? 0.45 : 1,
               }}
             >
-              {c.share < 1 ? '<1' : Math.round(c.share)}%
+              {p.share < 1 ? '<1' : Math.round(p.share)}%
             </span>
           ))}
         </div>
@@ -147,14 +170,14 @@ export default function SourceShareBar({
           );
         })}
       </div>
-      {hover && (
-        <p className="mt-2 text-xs text-ink-muted">
-          {SEGMENTS.find((s) => s.key === hover)?.blurb}
-        </p>
-      )}
-      {caption && !hover && (
-        <p className="mt-2 text-xs text-ink-muted">{caption}</p>
-      )}
+      {/*
+        Reserved height, always present: swapping this line in and out on
+        hover used to reflow everything below the chart on every mouse move.
+        Now hovering only changes the text inside a slot that was already there.
+      */}
+      <p className="mt-2 min-h-[1.25rem] text-xs text-ink-muted">
+        {hover ? SEGMENTS.find((s) => s.key === hover)?.blurb : caption ?? ''}
+      </p>
     </figure>
   );
 }

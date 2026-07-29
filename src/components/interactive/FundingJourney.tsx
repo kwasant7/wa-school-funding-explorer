@@ -94,7 +94,7 @@ const PARTS: {
     key: 'otherState',
     label: 'Other state programs',
     color: '#94a3b8',
-    blurb: 'Smaller categorical grants and one-time allocations',
+    blurb: 'Smaller categorical grants, one-time allocations, and programs not broken out above',
   },
 ];
 
@@ -307,6 +307,22 @@ function AllocationBar({
   const drawTotal = drawable.reduce((s, p) => s + p.value, 0) || 1;
   const active = parts.find((p) => p.key === hover);
 
+  // Share and midpoint (as % across the bar) for every drawn band, so a label
+  // can sit on top of its own band rather than only appearing above a
+  // threshold width. Only a sliver at 2% or less drops to a label below the
+  // bar - everything else stays inline, at the same size, even if it slightly
+  // overlaps a neighbor.
+  const BELOW_BAR_MAX = 2;
+  let cursor = 0;
+  const labeled = drawable.map((p) => {
+    const share = (100 * p.value) / drawTotal;
+    const center = cursor + share / 2;
+    cursor += share;
+    return { key: p.key, color: p.color, share, center };
+  });
+  const inlineLabels = labeled.filter((p) => p.share > BELOW_BAR_MAX);
+  const belowLabels = labeled.filter((p) => p.share <= BELOW_BAR_MAX);
+
   return (
     <div className="mt-5 rounded-xl border border-line bg-surface p-4 md:p-5">
       <div className="flex items-baseline justify-between gap-3 flex-wrap">
@@ -326,34 +342,64 @@ function AllocationBar({
         top.
       </p>
 
-      <div
-        className="mt-4 flex h-8 rounded overflow-hidden bg-paper"
-        style={{ gap: 2 }}
-        role="img"
-        aria-label={`State allocation composition: ${parts
-          .map((p) => `${p.label} ${fmtMoney(p.value)}`)
-          .join(', ')}`}
-      >
-        {drawable.map((p) => (
-          <div
-            key={p.key}
-            className="relative flex items-center justify-center transition-opacity"
-            style={{
-              width: `${(100 * p.value) / drawTotal}%`,
-              background: p.color,
-              opacity: hover && hover !== p.key ? 0.4 : 1,
-            }}
-            onMouseEnter={() => setHover(p.key)}
-            onMouseLeave={() => setHover(null)}
-          >
-            {(100 * p.value) / drawTotal >= 9 && (
-              <span className="text-xs font-semibold text-white select-none">
-                {Math.round((100 * p.value) / drawTotal)}%
-              </span>
-            )}
-          </div>
-        ))}
+      <div className="relative">
+        <div
+          className="mt-4 flex h-8 rounded overflow-hidden bg-paper"
+          style={{ gap: 2 }}
+          role="img"
+          aria-label={`State allocation composition: ${parts
+            .map((p) => `${p.label} ${fmtMoney(p.value)}`)
+            .join(', ')}`}
+        >
+          {drawable.map((p) => (
+            <div
+              key={p.key}
+              className="transition-opacity"
+              style={{
+                width: `${(100 * p.value) / drawTotal}%`,
+                background: p.color,
+                opacity: hover && hover !== p.key ? 0.4 : 1,
+              }}
+              onMouseEnter={() => setHover(p.key)}
+              onMouseLeave={() => setHover(null)}
+            />
+          ))}
+        </div>
+        {/* Labels overlay the bar so text can overflow a narrow band's edges
+            without being clipped by the bar's rounded corners. */}
+        <div className="pointer-events-none absolute inset-x-0 top-4 bottom-0" aria-hidden>
+          {inlineLabels.map((p) => (
+            <span
+              key={p.key}
+              className="absolute top-1/2 -translate-x-1/2 -translate-y-1/2 whitespace-nowrap text-xs font-semibold text-white select-none transition-opacity"
+              style={{
+                left: `${p.center}%`,
+                textShadow: '0 1px 2px rgb(0 0 0 / 0.35)',
+                opacity: hover && hover !== p.key ? 0.4 : 1,
+              }}
+            >
+              {Math.round(p.share)}%
+            </span>
+          ))}
+        </div>
       </div>
+      {belowLabels.length > 0 && (
+        <div className="relative h-4 mt-0.5" aria-hidden>
+          {belowLabels.map((p) => (
+            <span
+              key={p.key}
+              className="absolute top-0 -translate-x-1/2 whitespace-nowrap text-[11px] font-semibold tabular-nums leading-4 transition-opacity"
+              style={{
+                left: `${Math.min(97, Math.max(3, p.center))}%`,
+                color: p.color,
+                opacity: hover && hover !== p.key ? 0.4 : 1,
+              }}
+            >
+              {p.share < 1 ? '<1' : Math.round(p.share)}%
+            </span>
+          ))}
+        </div>
+      )}
 
       <p className="mt-2 min-h-[1.5rem] text-xs text-ink-muted">
         {active ? active.blurb : 'Hover a band to see what it covers.'}
@@ -396,11 +442,14 @@ function AllocationBar({
       </table>
 
       <p className="mt-3 text-xs text-ink-muted">
-        OSPI Apportionment Final Extract, {allocationData.schoolYear} - the data
-        behind the 1191 Apportionment Summary. State general-fund allotments
-        only, so it differs slightly from the{' '}
-        {fmtMoney(district.rev.state)} of state revenue the district reported on
-        its F-196 for the same year.
+        Salaries, benefits, MSOC, special education, transportation, and the
+        other named categories come from OSPI&apos;s Apportionment Final
+        Extract, {allocationData.schoolYear} - the data behind the 1191
+        Apportionment Summary. &ldquo;Other state programs&rdquo; is whatever
+        remains after subtracting those from the district&apos;s actual F-196
+        state general-fund revenue, so the total always matches the{' '}
+        {fmtMoney(district.rev.state)} reported there - including categorical
+        programs and grants this extract does not itemize by name.
       </p>
     </div>
   );
