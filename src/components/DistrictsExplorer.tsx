@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { District, LATEST, YEARS, districtSeries, statewideSeries, yearData } from '@/lib/data';
@@ -13,6 +13,7 @@ import NeedVsFundingChart, { NeedPoint } from '@/components/charts/NeedVsFunding
 import WaMap from '@/components/charts/WaMap';
 import { oversightFor, OVERSIGHT_SOURCE, OVERSIGHT_CHECKED_ON } from '@/data/oversight';
 import { fmtInt, fmtMoney, fmtMoneyFull, fmtSignedMoney, pct } from '@/lib/format';
+import { useAssistantDistrict, useAssistantYear } from '@/lib/assistant/store';
 
 function YearSelect({ year, onChange }: { year: string; onChange: (y: string) => void }) {
   return (
@@ -48,6 +49,23 @@ export default function DistrictsExplorer() {
       window.localStorage.setItem('wa-selected-district', selectedCode);
     }
   }, [selectedCode]);
+
+  /*
+    Hand the assistant this page's state and its own controls. Selection lives
+    in the query string here, so the assistant selects a district by pushing
+    the same URL the map and the dropdown already push - one code path, and
+    the back button keeps working.
+  */
+  const selectDistrict = useCallback(
+    (code: string) => router.push(`/districts?d=${encodeURIComponent(code)}`),
+    [router]
+  );
+  const clearDistrict = useCallback(() => router.push('/districts'), [router]);
+  useAssistantYear(year, setYear);
+  useAssistantDistrict(selectedCode, {
+    select: selectDistrict,
+    clear: clearDistrict,
+  });
 
   if (selectedCode && selected) {
     return <DistrictDetail district={selected} year={year} onYearChange={setYear} />;
@@ -131,7 +149,7 @@ function DistrictOverview({
         </div>
       </div>
 
-      <div className="mt-6 grid lg:grid-cols-[1fr,22rem] gap-4 items-stretch">
+      <div data-assistant-section="district-stats" className="mt-6 grid lg:grid-cols-[1fr,22rem] gap-4 items-stretch">
         <div className="grid grid-cols-2 gap-3">
           <StatTile label={`Districts & charters (${year})`} value={String(s.districts)} />
           <StatTile
@@ -163,7 +181,7 @@ function DistrictOverview({
         </div>
       </div>
 
-      <div className="mt-6 card p-5">
+      <div data-assistant-section="district-picker" className="mt-6 card p-5">
         <h2 className="font-semibold">Find your district on the map</h2>
         <p className="mt-0.5 mb-4 text-sm text-ink-secondary">
           Pick from the dropdown or click your district to open its profile.
@@ -193,7 +211,7 @@ function FundBalanceCard({ district: d, year }: { district: District; year: stri
   const maxAbs = Math.max(1, ...netSeries.map((p) => Math.abs(p.value ?? 0)));
 
   return (
-    <div className="mt-6 card p-5">
+    <div data-assistant-section="fund-balance" className="mt-6 card p-5">
       <h2 className="font-semibold">Money in vs. money out ({year})</h2>
       <p className="mt-0.5 text-sm text-ink-secondary">
         The general fund is where a district&apos;s day-to-day money flows. If it
@@ -404,7 +422,7 @@ function TrendAnalysis({ district: d }: { district: District }) {
   const oversight = oversightFor(d.code);
 
   return (
-    <div className="mt-4 rounded-xl border border-accent-soft bg-accent-wash p-4 md:p-5">
+    <div data-assistant-section="trends" className="mt-4 rounded-xl border border-accent-soft bg-accent-wash p-4 md:p-5">
       <p className="text-xs font-semibold uppercase tracking-wide text-accent-deep">
         What the trends mean
       </p>
@@ -584,7 +602,7 @@ function DistrictDetail({
         <NeedVsFundingChart points={needPoints} highlight={d.code} />
       </div>
 
-      <div className="mt-4 grid lg:grid-cols-2 gap-4 items-start">
+      <div data-assistant-section="funding-sources" className="mt-4 grid lg:grid-cols-2 gap-4 items-start">
         <div className="card p-5">
           <h2 className="font-semibold mb-3">
             Where{' '}

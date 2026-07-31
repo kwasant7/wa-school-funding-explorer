@@ -9,7 +9,12 @@
     "lint": "next lint",
     "fetch-data": "node scripts/fetch-data.mjs",
     "fetch-spending": "node scripts/build-program-spending.mjs",
-    "fetch-legislators": "node scripts/fetch-legislators.mjs"
+    "fetch-legislators": "node scripts/fetch-legislators.mjs",
+    "test": "node --experimental-strip-types --disable-warning=ExperimentalWarning --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --import ./tests/register.mjs --test tests/*.test.ts",
+    "typecheck": "tsc --noEmit",
+    "worker:dev": "npm --prefix assistant-worker run dev",
+    "worker:deploy": "npm --prefix assistant-worker run deploy",
+    "worker:test": "npm --prefix assistant-worker test"
   },
   "license": "MIT",
   "dependencies": {

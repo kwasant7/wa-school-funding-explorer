@@ -21,14 +21,29 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          # 22 has the native type stripping `npm test` relies on.
+          node-version: 22
           cache: npm
       - run: npm ci
+      - name: Typecheck
+        run: npm run typecheck
+      - name: Unit tests
+        run: npm test
       - name: Build static export
         run: npm run build
         env:
           # Served from https://kwasant7.github.io/wa-school-funding-explorer
           BASE_PATH: /wa-school-funding-explorer
+          # The assistant Worker's public URL, e.g.
+          # https://wa-funding-assistant.<subdomain>.workers.dev
+          #
+          # Set as a repository *variable* (Settings > Secrets and variables >
+          # Actions > Variables), not a secret: it is a public endpoint and is
+          # baked into the client bundle. No API key ever appears here.
+          #
+          # If it is unset the site still builds and deploys; the assistant
+          # simply reports itself unconfigured instead of breaking the page.
+          NEXT_PUBLIC_ASSISTANT_API_URL: ${{ vars.ASSISTANT_API_URL }}
       - run: touch out/.nojekyll
       - uses: actions/upload-pages-artifact@v3
         with:

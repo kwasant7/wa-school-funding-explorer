@@ -1,0 +1,22 @@
+{
+  "name": "wa-funding-assistant-worker",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Cloudflare Worker backing the WA School Funding Explorer site guide",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "typecheck": "tsc --noEmit",
+    "build": "wrangler deploy --dry-run --outdir=dist",
+    "tail": "wrangler tail",
+    "test": "node --experimental-strip-types --disable-warning=ExperimentalWarning --test tests/*.test.ts"
+  },
+  "dependencies": {
+    "openai": "^6.9.0"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^5.20260730.1",
+    "typescript": "^5.9.3",
+    "wrangler": "^4.48.0"
+  }
+}

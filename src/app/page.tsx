@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 import Link from 'next/link';
 import { District, LATEST, YEARS, yearData } from '@/lib/data';
 import StatTile from '@/components/StatTile';
@@ -10,15 +10,38 @@ import DistrictQuickFind from '@/components/interactive/DistrictQuickFind';
 import SchoolBuilder from '@/components/interactive/SchoolBuilder';
 import ClassSizeViz from '@/components/interactive/ClassSizeViz';
 import FundingJourney from '@/components/interactive/FundingJourney';
+import { useAssistantDistrict, useAssistantYear } from '@/lib/assistant/store';
+import { yearData as yearDataFor } from '@/lib/data';
 
 export default function HomePage() {
   const [year, setYear] = useState(LATEST);
   const [selectedDistrict, setSelectedDistrict] = useState<District | null>(null);
   const s = yearData(year).statewide;
+
+  /*
+    Publish this page's state to the assistant. Selection here is a District
+    object held in local state rather than a code in the URL, so the setter
+    resolves the code back to the record the page already renders from.
+  */
+  const selectDistrict = useCallback(
+    (code: string) => {
+      const record =
+        yearDataFor(year).districts.find((d) => d.code === code) ?? null;
+      if (record) setSelectedDistrict(record);
+    },
+    [year]
+  );
+  const clearDistrict = useCallback(() => setSelectedDistrict(null), []);
+  useAssistantYear(year, setYear);
+  useAssistantDistrict(selectedDistrict?.code ?? null, {
+    select: selectDistrict,
+    clear: clearDistrict,
+  });
+
   return (
     <div className="max-w-site mx-auto px-4 md:px-6">
       {/* Hero */}
-      <section className="pt-10 md:pt-14 pb-8">
+      <section data-assistant-section="hero" className="pt-10 md:pt-14 pb-8">
         <div className="flex items-start justify-between gap-4 flex-wrap">
           <div>
             <p className="text-sm font-semibold text-accent uppercase tracking-wide">
@@ -74,14 +97,14 @@ export default function HomePage() {
       </section>
 
       {/* Personalize */}
-      <section className="pb-8">
+      <section data-assistant-section="district-picker" className="pb-8">
         <DistrictQuickFind onPick={setSelectedDistrict} year={year} />
       </section>
 
       {selectedDistrict ? (
         <>
       {/* Money sources */}
-      <section className="pb-8">
+      <section data-assistant-section="funding-sources" className="pb-8">
         <div className="card p-5 md:p-6">
           <h2 className="text-lg md:text-xl font-bold">
             How <span data-no-translate>{selectedDistrict.name}</span>&apos;s funding is split
@@ -97,7 +120,7 @@ export default function HomePage() {
       </section>
 
       {/* Model explainer -> builder */}
-      <section className="py-6">
+      <section data-assistant-section="prototypical-model" className="py-6">
         <h2 className="text-2xl md:text-3xl font-bold max-w-2xl">
           How the formula funds <span data-no-translate>{selectedDistrict.name}</span>
         </h2>
@@ -141,7 +164,7 @@ export default function HomePage() {
       </section>
 
       {/* Steps */}
-      <section className="py-8">
+      <section data-assistant-section="funding-journey" className="py-8">
         <h2 className="text-2xl md:text-3xl font-bold">
           How state money reaches <span data-no-translate>{selectedDistrict.name}</span>, in 7 steps
         </h2>

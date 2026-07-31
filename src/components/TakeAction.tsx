@@ -1,12 +1,13 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import CopyBlock from '@/components/CopyBlock';
 import DistrictCombobox from '@/components/DistrictCombobox';
 import DistrictBrief from '@/components/DistrictBrief';
 import data from '@/data/districts.json';
 import representation from '@/data/legislators.json';
 import { briefFor } from '@/lib/diagnosis';
+import { useAssistantDistrict } from '@/lib/assistant/store';
 
 const SELECTED_DISTRICT_KEY = 'wa-selected-district';
 // Portraits live in public/legislators; prefix with the deploy base path so
@@ -346,14 +347,20 @@ export default function TakeAction() {
     return text;
   })();
 
-  const chooseDistrict = (code: string) => {
+  const chooseDistrict = useCallback((code: string) => {
     setSelectedCode(code);
     if (code) {
       window.localStorage.setItem(SELECTED_DISTRICT_KEY, code);
     } else {
       window.localStorage.removeItem(SELECTED_DISTRICT_KEY);
     }
-  };
+  }, []);
+
+  const clearDistrict = useCallback(() => chooseDistrict(''), [chooseDistrict]);
+  useAssistantDistrict(selectedCode, {
+    select: chooseDistrict,
+    clear: clearDistrict,
+  });
 
   return (
     <div className="max-w-site mx-auto px-4 md:px-6 pt-10">
@@ -366,7 +373,7 @@ export default function TakeAction() {
         experience into a specific request.
       </p>
 
-      <section className="mt-8 card p-5 md:p-6 bg-accent-wash border-accent-soft">
+      <section data-assistant-section="delegation" className="mt-8 card p-5 md:p-6 bg-accent-wash border-accent-soft">
         <div className="flex items-end justify-between gap-4 flex-wrap">
           <div>
             <h2 className="text-xl md:text-2xl font-bold">
@@ -540,7 +547,7 @@ export default function TakeAction() {
         ))}
       </ol>
 
-      <section className="mt-10 grid lg:grid-cols-2 gap-4 items-start">
+      <section data-assistant-section="templates" className="mt-10 grid lg:grid-cols-2 gap-4 items-start">
         <CopyBlock title="Email template" text={personalizedEmail} />
         <CopyBlock
           title="Public testimony template (about 1 minute)"
@@ -548,7 +555,7 @@ export default function TakeAction() {
         />
       </section>
 
-      <section className="mt-12">
+      <section data-assistant-section="bills" className="mt-12">
         <p className="text-sm font-semibold text-accent uppercase tracking-wide">
           2026 regular session
         </p>
@@ -593,7 +600,7 @@ export default function TakeAction() {
         </div>
       </section>
 
-      <section className="mt-14">
+      <section data-assistant-section="resources" className="mt-14">
         <p className="text-sm font-semibold text-accent uppercase tracking-wide">
           Resource library
         </p>

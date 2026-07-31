@@ -16,5 +16,8 @@
     "paths": { "@/*": ["./src/*"] }
   },
   "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
-  "exclude": ["node_modules"]
+  // assistant-worker is a separate Cloudflare deployment with its own
+  // tsconfig and @cloudflare/workers-types. Typechecking it from here would
+  // fail on Workers globals that do not exist in the browser/Node lib set.
+  "exclude": ["node_modules", "assistant-worker"]
 }

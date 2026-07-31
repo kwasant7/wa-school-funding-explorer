@@ -3,6 +3,7 @@ import Link from 'next/link';
 import './globals.css';
 import TabNav from '@/components/TabNav';
 import LanguageSwitcher from '@/components/LanguageSwitcher';
+import FundingAssistant from '@/components/assistant/FundingAssistant';
 
 export const metadata: Metadata = {
   title: {
@@ -68,6 +69,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             </p>
           </div>
         </footer>
+        <FundingAssistant />
       </body>
     </html>
   );

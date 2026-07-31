@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import data from '@/data/districts.json';
 import levyData from '@/data/levy.json';
@@ -8,6 +8,27 @@ import spendingData from '@/data/spending.json';
 import allocationData from '@/data/allocation.json';
 import DistrictCombobox from '@/components/DistrictCombobox';
 import { fmtInt, fmtMoney, fmtMoneyFull, fmtSignedMoney } from '@/lib/format';
+import {
+  BASELINE_TRANSPORTATION_PER_STUDENT,
+  simulatorControl,
+  type SimulatorControlId,
+} from '@/lib/simulator-config';
+import { useAssistantDistrict, useAssistantSimulator } from '@/lib/assistant/store';
+
+/**
+ * A lever's numeric envelope, read from the shared control table so the
+ * assistant validates against exactly the bounds the sliders enforce.
+ */
+function bounds(id: SimulatorControlId) {
+  const control = simulatorControl(id);
+  if (!control) throw new Error(`Unknown simulator control: ${id}`);
+  return {
+    baseline: control.baseline,
+    min: control.min,
+    max: control.max,
+    step: control.step,
+  };
+}
 
 const SELECTED_DISTRICT_KEY = 'wa-selected-district';
 
@@ -250,12 +271,14 @@ const BASELINE_SPED_ALLOCATION = 12_000;
   which pushed the slider's starting point to roughly $1,085 per student when
   the real figure is nearer $708. Bus purchases are excluded: those run through
   the Transportation Vehicle Fund, not the general fund.
+
+  The per-student figure now lives in lib/simulator-config so the assistant can
+  validate a requested transportation value against the same floor.
 */
 const BASELINE_TRANSPORTATION = Object.values(allocationData.districts).reduce(
   (sum, d) => sum + d.transportation,
   0
 );
-const BASELINE_TRANSPORTATION_PER_STUDENT = BASELINE_TRANSPORTATION / STUDENTS;
 
 const LEVERS = [
   {
@@ -304,10 +327,7 @@ const LEVERS = [
       </>
     ),
     impactKey: null,
-    baseline: LEA.maxLevyPerPupil,
-    min: LEA.maxLevyPerPupil,
-    max: 6_000,
-    step: 25,
+    ...bounds('levyPerPupil'),
     effect: (value: number) => `$${fmtInt(Math.round(value))} per student`,
     unit: 'local only',
     markers: [{ value: 5_035, label: '$5,035 · 2031 cap' }],
@@ -352,10 +372,7 @@ const LEVERS = [
       </>
     ),
     impactKey: 'lea',
-    baseline: 0,
-    min: 0,
-    max: 1_800,
-    step: 25,
+    ...bounds('leaThreshold'),
     effect: (value: number) =>
       value === 0 ? 'No increase' : `+$${fmtInt(Math.round(value))} per student`,
     unit: 'per student',
@@ -397,12 +414,10 @@ const LEVERS = [
       </>
     ),
     impactKey: 'ell',
-    baseline: 1,
-    min: 1,
-    max: 2,
-    // The control has 1,000 physical positions, so $1.80 increments keep it
-    // genuinely smooth rather than visibly snapping between dollar amounts.
-    step: 0.001,
+    // step is 0.001: the control has 1,000 physical positions, so $1.80
+    // increments keep it genuinely smooth rather than visibly snapping
+    // between dollar amounts.
+    ...bounds('ellWeight'),
     effect: (value: number) =>
       `$${fmtInt(Math.round(BASELINE_ELL_PER_STUDENT * value))} per English learner`,
     unit: 'per student',
@@ -446,13 +461,10 @@ const LEVERS = [
       </>
     ),
     impactKey: 'sped',
-    baseline: 1.16,
-    min: 1.16,
-    // Reaches 3.00x so the slider can always close the gap to what a district
+    // max is 3.00x so the slider can always close the gap to what a district
     // actually spends: statewide that takes about 1.57x, and the highest-cost
     // large districts (Bellevue, Seattle) 2.4-2.7x.
-    max: 3,
-    step: 0.01,
+    ...bounds('spedMultiplier'),
     effect: (value: number) => `${value.toFixed(2)}× basic education`,
     unit: 'multiplier',
     markers: [],
@@ -487,15 +499,12 @@ const LEVERS = [
       </>
     ),
     impactKey: 'msoc',
-    baseline: 1_614,
-    min: 1_614,
-    // Statewide, districts spend about $1,776 per FTE on the operating costs
-    // MSOC is meant to cover; the median district runs $2,179 and small
-    // districts far more, because fixed costs spread over few students.
-    // $4,500 clears all but the smallest 60 of 315 (only 3 of the 113
-    // districts above 2,000 students).
-    max: 4_500,
-    step: 25,
+    // max is $4,500: statewide, districts spend about $1,776 per FTE on the
+    // operating costs MSOC is meant to cover; the median district runs $2,179
+    // and small districts far more, because fixed costs spread over few
+    // students. $4,500 clears all but the smallest 60 of 315 (only 3 of the
+    // 113 districts above 2,000 students).
+    ...bounds('msoc'),
     effect: (value: number) => `$${fmtInt(Math.round(value))} per student`,
     unit: 'per student',
     markers: [],
@@ -541,10 +550,7 @@ const LEVERS = [
       </>
     ),
     impactKey: 'transportation',
-    baseline: BASELINE_TRANSPORTATION_PER_STUDENT,
-    min: BASELINE_TRANSPORTATION_PER_STUDENT,
-    max: 2_500,
-    step: 25,
+    ...bounds('transportation'),
     effect: (value: number) => `$${fmtInt(Math.round(value))} per student`,
     unit: 'per student',
     markers: [],
@@ -581,10 +587,7 @@ const LEVERS = [
       </>
     ),
     impactKey: 'poverty',
-    baseline: 0,
-    min: 0,
-    max: 3_000,
-    step: 100,
+    ...bounds('povertyBonus'),
     effect: (value: number) =>
       value === 0
         ? 'No bonus today'
@@ -1387,13 +1390,13 @@ export default function Simulator() {
     return { record, levy: LEVY_DISTRICTS[code] ?? null };
   }, [code]);
 
-  const chooseDistrict = (next: string) => {
+  const chooseDistrict = useCallback((next: string) => {
     setCode(next);
     // A policy plan belongs to the district it was built for. Starting a new
     // district with the old sliders would make its summary look pre-filled.
     setValues(BASELINE);
     if (next) window.localStorage.setItem(SELECTED_DISTRICT_KEY, next);
-  };
+  }, []);
 
   /**
    * This district's own totals. Kept separate from the statewide figures
@@ -1443,6 +1446,49 @@ export default function Simulator() {
     breakdown.sort((a, b) => b.amount - a.amount);
     return { state, local, unlocked, needsVote, zeroLevers, breakdown };
   }, [district, values]);
+
+  /*
+    Publish the plan to the assistant: every slider with its current and
+    baseline value, plus what the plan sends this district. The assistant
+    reads these rather than the rendered numbers, so a question like "what
+    does my plan do for this district?" is answered from the same figures the
+    cards are drawing.
+  */
+  const assistantValues = useMemo(
+    () =>
+      LEVERS.map((lever) => ({
+        id: lever.id,
+        label: lever.label,
+        baseline: lever.baseline,
+        value: values[lever.id],
+      })),
+    [values]
+  );
+  const assistantImpact = useMemo(
+    () =>
+      district
+        ? {
+            stateDollars: districtTotals.state,
+            localDollars: districtTotals.local,
+            levyAlreadyApproved: districtTotals.unlocked,
+            levyNeedsVote: districtTotals.needsVote,
+            breakdown: districtTotals.breakdown.map((item) => ({
+              label: item.label,
+              amount: item.amount,
+            })),
+          }
+        : null,
+    [district, districtTotals]
+  );
+  const setAssistantControl = useCallback((id: LeverId, value: number) => {
+    setValues((current) => ({ ...current, [id]: value }));
+  }, []);
+  const resetAssistant = useCallback(() => setValues(BASELINE), []);
+  useAssistantSimulator(assistantValues, assistantImpact, {
+    setControl: setAssistantControl,
+    reset: resetAssistant,
+  });
+  useAssistantDistrict(code, { select: chooseDistrict });
 
   return (
     <div className="max-w-site mx-auto px-4 md:px-6 pt-10">
@@ -1741,7 +1787,7 @@ export default function Simulator() {
         </section>
       )}
 
-      <div className="mt-6 space-y-5">
+      <div data-assistant-section="simulator-controls" className="mt-6 space-y-5">
         {!district && (
           <p className="card p-5 text-sm text-ink-muted">
             Pick a district above to see each policy applied to real numbers.

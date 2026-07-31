@@ -137,3 +137,63 @@ body {
     animation: none;
   }
 }
+
+/* Brief ring on a section the assistant was asked to point at. Uses a ring
+   rather than a background wash so it reads on top of the cards, which are
+   already tinted. */
+@keyframes assistant-flash {
+  0% {
+    box-shadow: 0 0 0 0 rgba(37, 106, 191, 0);
+  }
+  15% {
+    box-shadow: 0 0 0 4px rgba(37, 106, 191, 0.35);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(37, 106, 191, 0);
+  }
+}
+.assistant-highlight {
+  animation: assistant-flash 2.2s ease-out both;
+  border-radius: 0.75rem;
+  scroll-margin-top: 5rem;
+}
+
+/* Every addressable region gets the same offset so a scroll never tucks the
+   heading under the sticky header. */
+[data-assistant-section] {
+  scroll-margin-top: 5rem;
+}
+
+@keyframes assistant-bounce {
+  0%,
+  80%,
+  100% {
+    transform: translateY(0);
+    opacity: 0.45;
+  }
+  40% {
+    transform: translateY(-3px);
+    opacity: 1;
+  }
+}
+.assistant-dot {
+  animation: assistant-bounce 1.2s infinite ease-in-out;
+}
+.assistant-dot:nth-child(2) {
+  animation-delay: 0.15s;
+}
+.assistant-dot:nth-child(3) {
+  animation-delay: 0.3s;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .assistant-highlight {
+    animation: none;
+    outline: 3px solid rgba(37, 106, 191, 0.6);
+    outline-offset: 2px;
+  }
+  .assistant-dot {
+    animation: none;
+    opacity: 0.7;
+  }
+}

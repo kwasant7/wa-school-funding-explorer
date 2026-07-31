@@ -40,6 +40,30 @@ Full source list with direct, cross-verifiable links (every dataset ID, CSV
 URL, statute, and court record): [DATA_SOURCES.md](DATA_SOURCES.md), also
 published on the site at `/sources`.
 
+## Site guide (AI assistant)
+
+A page-aware assistant that explains the site and Washington school funding,
+grounded in this repository's own data and sources. It is two pieces:
+
+- **Frontend** (`src/components/assistant/`, `src/lib/assistant/`) - UI, page
+  context, local retrieval, and action execution. Holds no credentials.
+- **Cloudflare Worker** (`assistant-worker/`) - the OpenAI call, using the
+  Responses API with `gpt-5-nano` and strict Structured Outputs. This is the
+  only place the API key exists.
+
+The browser never contacts OpenAI. The site builds and deploys without the
+assistant configured; it simply reports itself unavailable.
+
+```sh
+npm test                 # assistant unit tests
+npm run worker:dev       # run the Worker locally
+npm run worker:test      # Worker unit tests
+```
+
+Set `NEXT_PUBLIC_ASSISTANT_API_URL` (a GitHub Actions repository *variable*
+named `ASSISTANT_API_URL`) to the deployed Worker URL. Full setup:
+[docs/ASSISTANT_DEPLOYMENT.md](docs/ASSISTANT_DEPLOYMENT.md).
+
 ## Deploy to GitHub Pages
 
 The site builds to static files in `out/`. For a project page at
@@ -52,3 +76,6 @@ and publish `out/` (add a `.nojekyll` file) - or wire up the standard
 - Displayed student totals are October headcount; per-student figures divide
   general fund revenues by OSPI's final annual-average funding FTE.
 - The policy simulator is an educational approximation, not a fiscal model.
+- The site guide explains this site's content and data. It is not an official
+  fiscal or legal source, and it has no internet access - it answers only from
+  the data and sources bundled here.
