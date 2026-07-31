@@ -1,0 +1,63 @@
+name: CI
+
+# Vercel builds and deploys the site on every push, so this workflow publishes
+# nothing. It exists to fail loudly on a bad commit: Vercel will happily deploy
+# a build that compiles but whose tests are broken, and the funding figures are
+# the whole point of this site.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  site:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          # 22 has the native type stripping `npm test` relies on.
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Typecheck
+        run: npm run typecheck
+      - name: Unit tests
+        run: npm test
+      - name: Build
+        # No BASE_PATH. Vercel serves the site from the root of its own domain;
+        # that variable exists only to prefix assets for a GitHub Pages project
+        # subpath, and setting it here would render a blank page.
+        #
+        # NEXT_PUBLIC_ASSISTANT_API_URL is deliberately absent too. It is set in
+        # the Vercel dashboard, which is what builds the deployed site - this
+        # job only needs to prove the build succeeds, and it does so without the
+        # assistant configured, which is a case worth exercising.
+        run: npm run build
+
+  worker:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: assistant-worker/package-lock.json
+      - run: npm ci
+        working-directory: assistant-worker
+      - name: Typecheck worker
+        run: npm run typecheck
+        working-directory: assistant-worker
+      - name: Worker tests
+        run: npm test
+        working-directory: assistant-worker

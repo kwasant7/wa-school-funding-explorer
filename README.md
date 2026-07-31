@@ -66,18 +66,23 @@ named `ASSISTANT_API_URL`) to the deployed Worker URL. Full setup:
 
 ## Deploy
 
-The site builds to static files in `out/` and is published to
-**<https://k12funding.org>** by `.github/workflows/deploy.yml` on every push to
-`main`.
+**Vercel** builds and deploys **<https://k12funding.org>** on every push to
+`main`. There is nothing to configure in the repository: Next.js is
+auto-detected, and `output: 'export'` means Vercel serves the prebuilt static
+files.
 
-`public/CNAME` holds the custom domain, so it is republished with every deploy
-rather than living only in the repository settings.
+Set `NEXT_PUBLIC_ASSISTANT_API_URL` in the Vercel project (Settings >
+Environment Variables) to the deployed Worker URL. It is a public endpoint
+baked into the client bundle, never a secret. Leave it unset and the site still
+builds; the assistant reports itself unconfigured.
 
-The build sets no `BASE_PATH`, because the site is served from the root of its
-own domain. A `BASE_PATH` is only needed to serve from a GitHub Pages *project*
-subpath (`https://<user>.github.io/<repo>`), where it must be `/<repo>`;
-setting it while on a custom domain prefixes every asset and renders a blank
-page.
+`.github/workflows/ci.yml` publishes nothing. It runs the typecheck, tests and
+build for the site and the Worker, because Vercel will deploy a build that
+compiles even when the tests are failing.
+
+No `BASE_PATH` is set anywhere. That variable exists to prefix every asset for
+a GitHub Pages *project* subpath (`https://<user>.github.io/<repo>`); at the
+root of a custom domain it would render a blank page.
 
 ## Caveats
 
