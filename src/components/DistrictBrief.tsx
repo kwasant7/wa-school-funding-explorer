@@ -11,6 +11,7 @@
  * cumulative.
  */
 
+import { useCallback, useState } from 'react';
 import Link from 'next/link';
 import StatTile from '@/components/StatTile';
 import {
@@ -19,6 +20,75 @@ import {
   type DistrictBrief as Brief,
   type Issue,
 } from '@/lib/diagnosis';
+
+const BASE_PATH = process.env.NEXT_PUBLIC_BASE_PATH ?? '';
+
+function DownloadIcon() {
+  return (
+    <svg
+      aria-hidden
+      viewBox="0 0 16 16"
+      className="h-4 w-4 shrink-0"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.7"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M8 2.5v7.5M4.75 7.25 8 10.5l3.25-3.25M2.5 12.5h11" />
+    </svg>
+  );
+}
+
+/**
+ * Download the brief as a PDF.
+ *
+ * The generator is imported on click rather than with the page. It is only
+ * needed by the fraction of visitors who actually want the file, and this page
+ * already carries the heaviest bundle on the site - there is no reason to make
+ * everyone pay for it up front.
+ */
+function DownloadBriefButton({ brief }: { brief: Brief }) {
+  const [state, setState] = useState<'idle' | 'working' | 'error'>('idle');
+
+  const download = useCallback(async () => {
+    setState('working');
+    try {
+      const { downloadBriefPdf } = await import('@/lib/brief-pdf');
+      downloadBriefPdf(brief, {
+        year: DIAGNOSIS_YEAR,
+        siteUrl: `${window.location.origin}${BASE_PATH}`,
+      });
+      setState('idle');
+    } catch {
+      setState('error');
+    }
+  }, [brief]);
+
+  return (
+    <div className="shrink-0">
+      <button
+        type="button"
+        onClick={() => void download()}
+        disabled={state === 'working'}
+        className="inline-flex items-center gap-2 rounded-xl border border-accent-soft bg-accent-wash px-3.5 py-2 text-sm font-semibold text-accent-deep transition-colors hover:border-accent disabled:cursor-not-allowed disabled:opacity-70"
+      >
+        <DownloadIcon />
+        {state === 'working' ? 'Preparing…' : 'Download this brief'}
+        <span className="font-normal text-ink-muted">PDF</span>
+      </button>
+      {/* Announced rather than only coloured, so the failure is not silent. */}
+      <p role="status" aria-live="polite" className="sr-only">
+        {state === 'working' ? 'Preparing the PDF' : ''}
+      </p>
+      {state === 'error' && (
+        <p className="mt-1.5 text-xs text-critical">
+          Could not build the PDF. Try again, or print this page instead.
+        </p>
+      )}
+    </div>
+  );
+}
 
 function IssueSection({ issue, index }: { issue: Issue; index: number }) {
   return (
@@ -81,14 +151,19 @@ export default function DistrictBrief({ code }: { code: string }) {
   if (!brief) return null;
 
   return (
-    <section className="mt-8">
-      <p className="text-sm font-semibold text-accent uppercase tracking-wide">
-        Your district&apos;s brief
-      </p>
-      <h2 className="mt-1 text-2xl md:text-3xl font-bold">
-        What needs to change in{' '}
-        <span data-no-translate>{brief.name}</span>
-      </h2>
+    <section data-assistant-section="district-brief" className="mt-8">
+      <div className="flex items-end justify-between gap-4 flex-wrap">
+        <div className="min-w-0">
+          <p className="text-sm font-semibold text-accent uppercase tracking-wide">
+            Your district&apos;s brief
+          </p>
+          <h2 className="mt-1 text-2xl md:text-3xl font-bold">
+            What needs to change in{' '}
+            <span data-no-translate>{brief.name}</span>
+          </h2>
+        </div>
+        <DownloadBriefButton brief={brief} />
+      </div>
 
       <article className="mt-4 card p-5 md:p-7">
         <p className="text-lg md:text-xl font-semibold leading-snug">
