@@ -15,9 +15,14 @@
     "OPENAI_MAX_OUTPUT_TOKENS": "1400",
     "OPENAI_REASONING_EFFORT": "minimal",
 
-    // Exact origins only - an Origin header has no path, so the GitHub Pages
+    // Exact origins only - an Origin header has no path, so a GitHub Pages
     // project path cannot be part of this value.
-    "ALLOWED_ORIGINS": "http://localhost:3000,http://127.0.0.1:3000,https://kwasant7.github.io",
+    //
+    // The site is served from k12funding.org. www is listed because a visitor
+    // who lands there before the redirect fires would otherwise be refused by
+    // CORS. The github.io origin is kept so the Pages URL keeps working as a
+    // fallback while DNS settles.
+    "ALLOWED_ORIGINS": "http://localhost:3000,http://127.0.0.1:3000,https://k12funding.org,https://www.k12funding.org,https://kwasant7.github.io",
 
     // Applied only when a DAILY_KV namespace is bound; otherwise ignored.
     "DAILY_MESSAGE_CAP": "200"

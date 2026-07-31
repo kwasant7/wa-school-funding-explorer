@@ -64,12 +64,20 @@ Set `NEXT_PUBLIC_ASSISTANT_API_URL` (a GitHub Actions repository *variable*
 named `ASSISTANT_API_URL`) to the deployed Worker URL. Full setup:
 [docs/ASSISTANT_DEPLOYMENT.md](docs/ASSISTANT_DEPLOYMENT.md).
 
-## Deploy to GitHub Pages
+## Deploy
 
-The site builds to static files in `out/`. For a project page at
-`https://<user>.github.io/<repo>`, build with `BASE_PATH=/<repo> npm run build`
-and publish `out/` (add a `.nojekyll` file) - or wire up the standard
-`actions/deploy-pages` workflow.
+The site builds to static files in `out/` and is published to
+**<https://k12funding.org>** by `.github/workflows/deploy.yml` on every push to
+`main`.
+
+`public/CNAME` holds the custom domain, so it is republished with every deploy
+rather than living only in the repository settings.
+
+The build sets no `BASE_PATH`, because the site is served from the root of its
+own domain. A `BASE_PATH` is only needed to serve from a GitHub Pages *project*
+subpath (`https://<user>.github.io/<repo>`), where it must be `/<repo>`;
+setting it while on a custom domain prefixes every asset and renders a blank
+page.
 
 ## Caveats
 

@@ -32,8 +32,11 @@ jobs:
       - name: Build static export
         run: npm run build
         env:
-          # Served from https://kwasant7.github.io/wa-school-funding-explorer
-          BASE_PATH: /wa-school-funding-explorer
+          # No BASE_PATH: the site is served at the root of k12funding.org
+          # (public/CNAME), not from a GitHub Pages project subpath. Setting it
+          # here would prefix every asset and link with /wa-school-funding-explorer
+          # and the custom domain would render a blank page.
+          #
           # The assistant Worker's public URL, e.g.
           # https://wa-funding-assistant.<subdomain>.workers.dev
           #
