@@ -3,8 +3,10 @@
 import { useEffect, useMemo, useState } from 'react';
 import CopyBlock from '@/components/CopyBlock';
 import DistrictCombobox from '@/components/DistrictCombobox';
+import DistrictBrief from '@/components/DistrictBrief';
 import data from '@/data/districts.json';
 import representation from '@/data/legislators.json';
+import { briefFor } from '@/lib/diagnosis';
 
 const SELECTED_DISTRICT_KEY = 'wa-selected-district';
 // Portraits live in public/legislators; prefix with the deploy base path so
@@ -319,9 +321,30 @@ export default function TakeAction() {
         ] ?? [],
     }))
     .filter((entry) => entry.members.length > 0);
-  const personalizedEmail = selectedDistrict
-    ? EMAIL_TEMPLATE.replace('[YOUR SCHOOL DISTRICT]', selectedDistrict.name)
-    : EMAIL_TEMPLATE;
+  /*
+    Once a district is chosen, the template stops asking the writer to pick an
+    issue out of a generic list and fills in the one the data actually points
+    at, with the district's own number attached. The placeholders that only the
+    writer can fill - their name, what they have seen firsthand - stay
+    untouched, because that first-hand detail is the part a legislator reads.
+  */
+  const brief = selectedDistrict ? briefFor(selectedDistrict.code) : null;
+  const personalizedEmail = (() => {
+    if (!selectedDistrict) return EMAIL_TEMPLATE;
+    let text = EMAIL_TEMPLATE.replaceAll(
+      '[YOUR SCHOOL DISTRICT]',
+      selectedDistrict.name
+    );
+    if (!brief) return text;
+    // Consume the template's own trailing period: the district fact is a
+    // complete sentence and brings one of its own.
+    text = text.replace(
+      /\[PICK YOUR ISSUE:[^\]]*\]\./,
+      `${brief.emailIssue}.${brief.emailFact ? ` ${brief.emailFact}` : ''}`
+    );
+    text = text.replace(/\[YOUR ASK:[^\]]*\]/, brief.emailAsk);
+    return text;
+  })();
 
   const chooseDistrict = (code: string) => {
     setSelectedCode(code);
@@ -489,6 +512,8 @@ export default function TakeAction() {
           </p>
         )}
       </section>
+
+      {selectedDistrict && <DistrictBrief code={selectedDistrict.code} />}
 
       <ol className="mt-8 grid md:grid-cols-3 gap-4">
         {[

@@ -457,7 +457,26 @@ async function main() {
     path.join(DATA_DIR, 'history.json'),
     JSON.stringify({ years: YEARS.map((y) => y.label), latest, sources, byYear })
   );
-  console.log(`Wrote districts.json (${latest}) and history.json (${YEARS.length} years)`);
+
+  /*
+    The Take Action brief needs one number per district - funded enrollment in
+    the earliest year - to say whether enrollment is falling. Importing
+    history.json for that would put a megabyte of six-year detail into a page
+    that shows none of it, so the baseline is emitted separately at about 6KB.
+  */
+  const baseLabel = YEARS[0].label;
+  const baseline = {};
+  for (const district of byYear[baseLabel].districts) {
+    baseline[district.code] = district.fundingEnrollment;
+  }
+  await writeFile(
+    path.join(DATA_DIR, 'enrollment-baseline.json'),
+    JSON.stringify({ baseYear: baseLabel, latestYear: latest, districts: baseline })
+  );
+
+  console.log(
+    `Wrote districts.json (${latest}), history.json (${YEARS.length} years) and enrollment-baseline.json (${baseLabel})`
+  );
 }
 
 main().catch((err) => {
