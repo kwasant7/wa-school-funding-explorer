@@ -14,6 +14,24 @@ import { isFailure, LIMITS, validateRequest } from '../src/validation.ts';
 import { isAllowedOrigin, parseAllowedOrigins } from '../src/cors.ts';
 import { RESPONSE_SCHEMA, RESPONSE_SCHEMA_NAME } from '../src/schema.ts';
 import { SYSTEM_PROMPT } from '../src/systemPrompt.ts';
+import { statewideSection } from '../src/statewide.ts';
+
+const STATEWIDE = {
+  schoolYear: '2024-25',
+  districtCount: 315,
+  headcount: 1_105_545,
+  fundingEnrollment: 1_065_168,
+  revenue: {
+    state: 16_185_647_753,
+    local: 3_109_721_410,
+    federal: 1_315_493_649,
+    other: 429_276_321,
+    total: 21_040_139_133,
+  },
+  expenditures: 21_075_984_997,
+  surplus: -35_845_864,
+  perPupil: { average: 19_753, median: 20_083, min: 12_567, max: 77_866 },
+};
 
 const valid = {
   message: 'What is the levy cap?',
@@ -116,6 +134,33 @@ describe('request validation', () => {
     assert.equal(result.context.pathname, '/simulator');
   });
 
+  /*
+    The counterpart to the test above: dropping unknown keys is the defence,
+    but it also means a context field the site sends is discarded until it is
+    named in cleanContext. That failure is silent - the model simply answers
+    without the figures - so each forwarded block is asserted by name.
+  */
+  it('forwards the statewide block', () => {
+    const statewide = {
+      schoolYear: '2024-25',
+      districtCount: 315,
+      perPupil: { average: 19753, median: 20083, min: 12567, max: 77866 },
+    };
+    const result = validateRequest({ ...valid, context: { pathname: '/', statewide } });
+    if (isFailure(result)) throw new Error('expected success');
+    assert.deepEqual(result.context.statewide, statewide);
+  });
+
+  it('forwards the comparison district with its figures, not just its name', () => {
+    const comparisonDistrict = { code: '17001', name: 'Seattle School District', perPupil: 21456 };
+    const result = validateRequest({
+      ...valid,
+      context: { pathname: '/', comparisonDistrict },
+    });
+    if (isFailure(result)) throw new Error('expected success');
+    assert.deepEqual(result.context.comparisonDistrict, comparisonDistrict);
+  });
+
   it('caps the page excerpt', () => {
     const result = validateRequest({
       ...valid,
@@ -201,5 +246,49 @@ describe('system prompt', () => {
     ]) {
       assert.ok(SYSTEM_PROMPT.includes(rule), `system prompt is missing: ${rule}`);
     }
+  });
+});
+
+/*
+ * These figures are rendered rather than left in the JSON dump because the
+ * model quoted JSON paths back at visitors ("see the statewide block under
+ * perPupil") and reformatted totals into unreadable strings of digits. Both
+ * behaviours are cheap to reintroduce and invisible without a test.
+ */
+describe('statewide rendering', () => {
+  it('writes money for a reader, exact figure alongside', () => {
+    const text = statewideSection(STATEWIDE) ?? '';
+    assert.match(text, /\$21\.0 billion/);
+    assert.match(text, /\$21,040,139,133/);
+    // Per-pupil is never abbreviated: "$19.8 thousand" would be absurd.
+    assert.match(text, /average \$19,753/);
+    assert.doesNotMatch(text, /\$19\.\d+ thousand/);
+  });
+
+  it('exposes no field names for the model to quote as a place', () => {
+    const text = statewideSection(STATEWIDE) ?? '';
+    for (const key of ['perPupil', 'fundingEnrollment', 'districtCount', 'schoolYear']) {
+      assert.doesNotMatch(text, new RegExp(key), `leaked field name: ${key}`);
+    }
+  });
+
+  it('names the year it describes', () => {
+    assert.match(statewideSection(STATEWIDE) ?? '', /2024-25/);
+  });
+
+  it('says the spread does not identify a district', () => {
+    assert.match(statewideSection(STATEWIDE) ?? '', /do not identify which district/);
+  });
+
+  it('returns null rather than a hollow section when figures are missing', () => {
+    assert.equal(statewideSection(null), null);
+    assert.equal(statewideSection('nope'), null);
+    assert.equal(statewideSection({ schoolYear: '2024-25' }), null);
+  });
+
+  it('renders what it has when a field is absent', () => {
+    const text = statewideSection({ schoolYear: '2024-25', perPupil: { average: 19_753 } }) ?? '';
+    assert.match(text, /average \$19,753/);
+    assert.doesNotMatch(text, /Total revenue/);
   });
 });

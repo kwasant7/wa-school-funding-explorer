@@ -79,13 +79,23 @@ function cleanContext(value: unknown): Record<string, unknown> {
   };
 
   /*
-    District, comparison, simulator and coverage are nested structures of
-    numbers built by the site. They are re-serialised through JSON with a size
-    cap rather than field-by-field: they carry no free text a prompt could hide
-    in, and mirroring each field here would mean editing this file every time
-    a figure is added to the context.
+    District, comparison, statewide, simulator and coverage are nested
+    structures of numbers built by the site. They are re-serialised through
+    JSON with a size cap rather than field-by-field: they carry no free text a
+    prompt could hide in, and mirroring each field here would mean editing this
+    file every time a figure is added to the context.
+
+    A key absent from this list is dropped, not passed through - so a new
+    context field the site starts sending will silently never reach the model
+    until it is named here.
   */
-  for (const key of ['district', 'comparisonDistrict', 'simulator', 'dataCoverage']) {
+  for (const key of [
+    'district',
+    'comparisonDistrict',
+    'statewide',
+    'simulator',
+    'dataCoverage',
+  ]) {
     const nested = value[key];
     if (nested === null || nested === undefined) {
       context[key] = null;

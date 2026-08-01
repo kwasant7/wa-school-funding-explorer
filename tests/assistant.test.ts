@@ -8,6 +8,8 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 
+import { statewideContext } from '@/lib/assistant/context';
+import { LATEST, YEARS } from '@/lib/data';
 import {
   extractBillNumbers,
   findDistrictsInQuery,
@@ -351,5 +353,37 @@ describe('starter question routing', () => {
     assert.equal(starterKeyForPath('/wa-school-funding-explorer/take-action/'), 'takeAction');
     assert.equal(starterKeyForPath('/sources'), 'sources');
     assert.equal(starterKeyForPath('/lea'), 'lea');
+  });
+});
+
+describe('statewide context', () => {
+  it('reports the real figures for the year asked for, not the latest year', () => {
+    const latest = statewideContext(LATEST);
+    assert.equal(latest.schoolYear, LATEST);
+    assert.ok(latest.perPupil.average > 0);
+    assert.ok(latest.revenue.total > 0);
+
+    // The point of taking a year argument: an earlier year must differ.
+    const earlier = statewideContext(YEARS[0]);
+    assert.equal(earlier.schoolYear, YEARS[0]);
+    assert.notEqual(earlier.perPupil.average, latest.perPupil.average);
+  });
+
+  it('keeps the per-pupil spread ordered, so min/median/max cannot be quoted as each other', () => {
+    const { perPupil } = statewideContext(LATEST);
+    assert.ok(perPupil.min < perPupil.median, 'min below median');
+    assert.ok(perPupil.median < perPupil.max, 'median below max');
+    assert.ok(perPupil.average >= perPupil.min && perPupil.average <= perPupil.max);
+  });
+
+  it('falls back to the latest year rather than throwing on an unknown one', () => {
+    assert.equal(statewideContext('1999-00').schoolYear, LATEST);
+  });
+
+  it('adds up: the revenue split equals the total', () => {
+    const { revenue } = statewideContext(LATEST);
+    const parts = revenue.state + revenue.local + revenue.federal + revenue.other;
+    // Rounded independently, so allow a dollar of drift per component.
+    assert.ok(Math.abs(parts - revenue.total) <= 4, `${parts} vs ${revenue.total}`);
   });
 });

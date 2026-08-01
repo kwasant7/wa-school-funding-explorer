@@ -91,6 +91,26 @@ export type AssistantResponse = {
  * Page context
  * ------------------------------------------------------------------ */
 
+/**
+ * Statewide totals for the year in view.
+ *
+ * Sent on every question. It is a fixed ~200 bytes and it is what the most
+ * common questions on the site are actually about - the average per student,
+ * what the state spends in total, how wide the spread between districts is -
+ * none of which can be derived from a single district's row.
+ */
+export type ContextStatewide = {
+  schoolYear: string;
+  districtCount: number;
+  headcount: number;
+  fundingEnrollment: number;
+  revenue: { state: number; local: number; federal: number; other: number; total: number };
+  expenditures: number;
+  surplus: number;
+  /** Across districts, not across students: an unweighted per-district spread. */
+  perPupil: { average: number; median: number; min: number; max: number };
+};
+
 export type ContextDistrict = {
   code: string;
   name: string;
@@ -142,7 +162,13 @@ export type AssistantPageContext = {
   schoolYear: string | null;
   availableYears: string[];
   district: ContextDistrict | null;
-  comparisonDistrict: { code: string; name: string } | null;
+  /*
+    Carries the same figures as `district`, not just a label. A visitor asking
+    "how does Bellevue compare?" while Seattle is selected needs both sets of
+    numbers in front of the model, or the comparison is answered from one side.
+  */
+  comparisonDistrict: ContextDistrict | null;
+  statewide: ContextStatewide;
   simulator: ContextSimulator | null;
   availableSections: AllowedSectionId[];
   dataCoverage: { firstYear: string; latestYear: string; districtCount: number };

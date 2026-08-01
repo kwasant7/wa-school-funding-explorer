@@ -16,6 +16,7 @@ import {
   type AssistantPageContext,
   type ContextDistrict,
   type ContextSimulator,
+  type ContextStatewide,
 } from '@/lib/assistant/types';
 import { assistantSnapshot } from '@/lib/assistant/store';
 import { LATEST, YEARS, yearData } from '@/lib/data';
@@ -27,6 +28,39 @@ const MAX_EXCERPT_CHARS = 1_200;
 
 function pct(part: number, whole: number): number {
   return whole > 0 ? Math.round((1000 * part) / whole) / 10 : 0;
+}
+
+/**
+ * Statewide totals for one school year.
+ *
+ * Read from `yearData` rather than the latest-year JSON so the figures track
+ * whichever year the visitor is looking at: quoting 2024-25 averages at
+ * someone viewing 2021-22 would be wrong in a way that looks authoritative.
+ */
+export function statewideContext(schoolYear: string): ContextStatewide {
+  const year = YEARS.includes(schoolYear) ? schoolYear : LATEST;
+  const record = yearData(year).statewide;
+  return {
+    schoolYear: year,
+    districtCount: record.districts,
+    headcount: record.enrollment,
+    fundingEnrollment: Math.round(record.fundingEnrollment),
+    revenue: {
+      state: Math.round(record.revenues.state),
+      local: Math.round(record.revenues.local),
+      federal: Math.round(record.revenues.federal),
+      other: Math.round(record.revenues.other),
+      total: Math.round(record.revenues.total),
+    },
+    expenditures: Math.round(record.expenditures),
+    surplus: Math.round(record.surplus),
+    perPupil: {
+      average: Math.round(record.avgPerPupil),
+      median: Math.round(record.medianPerPupil),
+      min: Math.round(record.minPerPupil),
+      max: Math.round(record.maxPerPupil),
+    },
+  };
 }
 
 /** A district's figures for one school year, or null if it has no row that year. */
@@ -167,13 +201,11 @@ export function buildContext(options: {
     named district goes in the comparison slot so both sets of figures are
     available and the model does not have to guess which one is meant.
   */
-  let comparison: { code: string; name: string } | null = null;
+  let comparison: ContextDistrict | null = null;
   if (snapshot.comparisonCode) {
-    const record = districtsData.districts.find((d) => d.code === snapshot.comparisonCode);
-    if (record) comparison = { code: record.code, name: record.name };
+    comparison = districtContext(snapshot.comparisonCode, schoolYear);
   } else if (extraDistrictCode && selectedCode && extraDistrictCode !== selectedCode) {
-    const other = districtContext(extraDistrictCode, schoolYear);
-    if (other) comparison = { code: other.code, name: other.name };
+    comparison = districtContext(extraDistrictCode, schoolYear);
   }
 
   return {
@@ -186,6 +218,7 @@ export function buildContext(options: {
     availableYears: [...YEARS],
     district,
     comparisonDistrict: comparison,
+    statewide: statewideContext(schoolYear),
     simulator: simulatorContext(),
     availableSections: availableSections(),
     dataCoverage: {
