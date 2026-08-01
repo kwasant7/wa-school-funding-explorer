@@ -115,7 +115,7 @@ export const RESPONSE_SCHEMA = {
     reply: {
       type: 'string',
       description:
-        'The answer for the visitor, in their language. Usually 100-250 words. Plain text or light Markdown (bold, bullets, numbered lists).',
+        'The answer for the visitor, in their language. Short by default - usually 40-90 words, leading with the direct answer and naming where on the site to see more. Longer only when the site does not cover the question or the visitor asked for depth. Plain text or light Markdown (bold, bullets, numbered lists).',
     },
     actions: {
       type: 'array',
