@@ -17,6 +17,8 @@ import StatTile from '@/components/StatTile';
 import {
   briefFor,
   DIAGNOSIS_YEAR,
+  type BarTone,
+  type BriefVisual,
   type DistrictBrief as Brief,
   type Issue,
 } from '@/lib/diagnosis';
@@ -90,6 +92,100 @@ function DownloadBriefButton({ brief }: { brief: Brief }) {
   );
 }
 
+const BAR_COLOR: Record<BarTone, string> = {
+  accent: '#256abf',
+  warn: '#eda100',
+  bad: '#d03b3b',
+  good: '#006300',
+  muted: '#c3c2b7',
+};
+
+/**
+ * The evidence, drawn.
+ *
+ * Bars are sized against the largest value in their own set, not a shared
+ * scale, because the comparison that matters is always inside one picture -
+ * what a thing costs against what the state pays for it. A floor of 2% keeps a
+ * near-zero value visible as a sliver instead of vanishing, which would read as
+ * missing data rather than as a very small number.
+ */
+function Bars({ visual }: { visual: Extract<BriefVisual, { kind: 'bars' }> }) {
+  const max = Math.max(...visual.bars.map((bar) => Math.abs(bar.value)), 1);
+
+  return (
+    <figure className="mt-3">
+      <figcaption className="text-sm font-medium text-ink-secondary">
+        {visual.caption}
+      </figcaption>
+      <div className="mt-2.5 space-y-2.5">
+        {visual.bars.map((bar) => (
+          <div key={bar.label}>
+            <div className="flex items-baseline justify-between gap-3">
+              <span className="text-sm text-ink-secondary">{bar.label}</span>
+              <span className="text-sm font-bold tabular-nums text-ink">{bar.display}</span>
+            </div>
+            <div className="mt-1 h-3 w-full rounded-full bg-line/70">
+              <div
+                className="h-3 rounded-full"
+                style={{
+                  width: `${Math.max(2, (Math.abs(bar.value) / max) * 100)}%`,
+                  backgroundColor: BAR_COLOR[bar.tone],
+                }}
+              />
+            </div>
+          </div>
+        ))}
+      </div>
+      {visual.gap && (
+        <div
+          className="mt-3 flex flex-wrap items-baseline gap-x-2.5 gap-y-0.5 rounded-lg border-l-4 bg-paper px-3 py-2"
+          style={{ borderColor: BAR_COLOR[visual.gap.tone] }}
+        >
+          <span className="text-sm text-ink-secondary">{visual.gap.label}</span>
+          <span
+            className="text-base font-bold tabular-nums"
+            style={{ color: BAR_COLOR[visual.gap.tone] }}
+          >
+            {visual.gap.value}
+          </span>
+        </div>
+      )}
+    </figure>
+  );
+}
+
+/** State involvement is a position on a ladder, not a quantity. */
+function Steps({ visual }: { visual: Extract<BriefVisual, { kind: 'steps' }> }) {
+  return (
+    <figure className="mt-3">
+      <figcaption className="text-sm font-medium text-ink-secondary">
+        {visual.caption}
+      </figcaption>
+      <ol className="mt-2.5 flex flex-wrap gap-1.5">
+        {visual.steps.map((step, index) => {
+          const here = index === visual.at;
+          return (
+            <li
+              key={step}
+              aria-current={here ? 'step' : undefined}
+              className={`flex-1 min-w-[8rem] rounded-lg px-3 py-2 text-sm font-semibold ${
+                here
+                  ? 'bg-critical text-white'
+                  : index < visual.at
+                    ? 'bg-line text-ink-secondary'
+                    : 'bg-paper text-ink-muted border border-line'
+              }`}
+            >
+              {step}
+              {here && <span className="block text-xs font-normal opacity-90">You are here</span>}
+            </li>
+          );
+        })}
+      </ol>
+    </figure>
+  );
+}
+
 function IssueSection({ issue, index }: { issue: Issue; index: number }) {
   return (
     <section className="pt-6 first:pt-0 border-t first:border-t-0 border-line">
@@ -110,14 +206,14 @@ function IssueSection({ issue, index }: { issue: Issue; index: number }) {
         </div>
       </div>
 
-      <ul className="mt-4 md:ml-10 space-y-2">
-        {issue.bullets.map((bullet) => (
-          <li key={bullet} className="flex gap-2.5 text-sm text-ink-secondary">
-            <span aria-hidden className="mt-2 w-1.5 h-1.5 shrink-0 rounded-full bg-accent" />
-            <span>{bullet}</span>
-          </li>
-        ))}
-      </ul>
+      <div className="md:ml-10">
+        {issue.visual.kind === 'bars' ? (
+          <Bars visual={issue.visual} />
+        ) : (
+          <Steps visual={issue.visual} />
+        )}
+        <p className="mt-3 text-sm text-ink-secondary">{issue.plain}</p>
+      </div>
 
       <div className="mt-4 md:ml-10 card bg-accent-wash border-accent-soft p-4">
         <p className="text-xs font-semibold uppercase tracking-wide text-accent-deep">
@@ -195,14 +291,10 @@ export default function DistrictBrief({ code }: { code: string }) {
         )}
 
         <p className="mt-6 pt-4 border-t border-line text-xs text-ink-muted">
-          Every figure above is computed from the OSPI data behind this site -
-          F-196 revenue and expenditure actuals and the Apportionment final
-          extract for {DIAGNOSIS_YEAR}, the enrichment levy worksheet, and OSPI
-          enrollment and demographic reporting. Districts are ranked against the
-          other 314 in Washington, so &quot;unusually high&quot; always means
-          unusual for this state.{' '}
+          Every number here comes from state (OSPI) records for {DIAGNOSIS_YEAR},
+          and every district is compared against the other 314 in Washington.{' '}
           <Link href="/sources" className="font-semibold text-accent hover:underline">
-            See the full source list
+            See where the numbers come from
           </Link>
           .
         </p>

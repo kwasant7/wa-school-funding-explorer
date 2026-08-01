@@ -22,7 +22,7 @@
  * translation coverage in the README. Characters outside WinAnsi degrade to a
  * sensible ASCII equivalent rather than corrupting the file.
  */
-import type { DistrictBrief } from '@/lib/diagnosis';
+import type { BarTone, BriefVisual, DistrictBrief } from '@/lib/diagnosis';
 
 /* ------------------------------------------------------------------ *
  * Font metrics
@@ -185,8 +185,18 @@ const ACCENT = [0.145, 0.416, 0.749] as const;
 const ACCENT_DEEP = [0.063, 0.259, 0.506] as const;
 const LINE = [0.882, 0.878, 0.851] as const;
 const WASH = [0.933, 0.957, 0.984] as const;
+const PAPER = [0.976, 0.976, 0.969] as const;
 
 type Rgb = readonly [number, number, number];
+
+/** The bar palette, matching the on-screen brief so print and web agree. */
+const TONES: Record<BarTone, Rgb> = {
+  accent: [0.145, 0.416, 0.749],
+  warn: [0.929, 0.631, 0.0],
+  bad: [0.816, 0.231, 0.231],
+  good: [0.0, 0.388, 0.0],
+  muted: [0.765, 0.761, 0.718],
+};
 
 class Pdf {
   private pages: string[] = [];
@@ -361,6 +371,111 @@ function statBoxes(pdf: Pdf, stats: DistrictBrief['stats']) {
   }
 }
 
+/**
+ * Draw the issue's visual.
+ *
+ * Bars are the whole argument in print as much as on screen, so they are drawn
+ * rather than described. Everything is laid out top-down against `pdf.y`,
+ * letting the existing page-break machinery handle a section that runs off the
+ * bottom - with `ensure` called per bar so a break lands between bars and never
+ * through one.
+ */
+function visualBlock(pdf: Pdf, visual: BriefVisual, x: number, width: number) {
+  pdf.text(visual.caption, { x, size: 8.5, font: 'bold', colour: INK_SECONDARY, width, leading: 12 });
+  pdf.gap(2);
+
+  if (visual.kind === 'steps') {
+    const gutter = 6;
+    const boxW = (width - gutter * (visual.steps.length - 1)) / visual.steps.length;
+    const lines = Math.max(
+      ...visual.steps.map((step) => wrap(step, 'bold', 8, boxW - 10).length)
+    );
+    const boxH = 10 + lines * 10.5;
+    pdf.ensure(boxH + 6);
+
+    const top = pdf.y;
+    visual.steps.forEach((step, index) => {
+      const boxX = x + index * (boxW + gutter);
+      const here = index === visual.at;
+      pdf.rect(boxX, top - boxH, boxW, boxH, here ? TONES.bad : index < visual.at ? LINE : PAPER);
+      if (!here && index > visual.at) {
+        // PAPER is all but white on paper, so an unreached step needs an
+        // outline or it reads as an empty space rather than a step not taken.
+        pdf.rect(boxX, top - boxH, boxW, 0.7, LINE);
+        pdf.rect(boxX, top - 0.7, boxW, 0.7, LINE);
+        pdf.rect(boxX, top - boxH, 0.7, boxH, LINE);
+        pdf.rect(boxX + boxW - 0.7, top - boxH, 0.7, boxH, LINE);
+      }
+      pdf.y = top - 5;
+      pdf.text(step, {
+        x: boxX + 5,
+        size: 8,
+        font: 'bold',
+        colour: here ? [1, 1, 1] : INK_SECONDARY,
+        width: boxW - 10,
+        leading: 10.5,
+      });
+    });
+    pdf.y = top - boxH - 8;
+    return;
+  }
+
+  const max = Math.max(...visual.bars.map((bar) => Math.abs(bar.value)), 1);
+  for (const bar of visual.bars) {
+    pdf.ensure(24);
+    const top = pdf.y;
+    pdf.text(bar.label, { x, size: 8.5, colour: INK_SECONDARY, width: width * 0.66, leading: 11 });
+
+    // Value, right-aligned against the end of the track.
+    const value = measure(bar.display, 'bold', 8.5);
+    pdf.y = top;
+    pdf.text(bar.display, {
+      x: x + width - value,
+      size: 8.5,
+      font: 'bold',
+      colour: INK,
+      width: value + 1,
+      leading: 11,
+    });
+
+    pdf.y = top - 12;
+    pdf.rect(x, pdf.y, width, 5, LINE);
+    pdf.rect(x, pdf.y, Math.max(width * 0.02, (Math.abs(bar.value) / max) * width), 5, TONES[bar.tone]);
+    pdf.y -= 11;
+  }
+
+  if (visual.gap) {
+    const innerW = width - 16;
+    const label = `${visual.gap.label}:`;
+    const labelW = measure(label, 'regular', 9);
+    // Value beside the label when both fit on one line, under it when not.
+    const inline = labelW + 6 + measure(visual.gap.value, 'bold', 10) <= innerW;
+    const boxH = inline ? 22 : 34;
+
+    pdf.gap(3);
+    pdf.ensure(boxH + 4);
+    const top = pdf.y;
+    pdf.rect(x, top - boxH, width, boxH, PAPER);
+    pdf.rect(x, top - boxH, 3, boxH, TONES[visual.gap.tone]);
+
+    pdf.y = top - 6;
+    const labelTop = pdf.y;
+    pdf.text(label, { x: x + 10, size: 9, colour: INK_SECONDARY, width: innerW, leading: 11 });
+    if (inline) pdf.y = labelTop;
+    pdf.text(visual.gap.value, {
+      x: inline ? x + 10 + labelW + 6 : x + 10,
+      size: 10,
+      font: 'bold',
+      colour: TONES[visual.gap.tone],
+      width: inline ? innerW - labelW - 6 : innerW,
+      leading: 12,
+    });
+    pdf.y = top - boxH;
+  }
+
+  pdf.gap(6);
+}
+
 function issueSection(pdf: Pdf, issue: DistrictBrief['issues'][number], index: number) {
   // Keep the number, title and at least the headline together; a section that
   // starts one line above a page break reads as an orphan.
@@ -412,20 +527,16 @@ function issueSection(pdf: Pdf, issue: DistrictBrief['issues'][number], index: n
   });
   pdf.gap(6);
 
-  for (const bullet of issue.bullets) {
-    pdf.ensure(16);
-    const bulletTop = pdf.y;
-    pdf.rect(indent + 1, bulletTop - 7, 2.5, 2.5, ACCENT);
-    pdf.y = bulletTop;
-    pdf.text(bullet, {
-      x: indent + 10,
-      size: 9,
-      colour: INK_SECONDARY,
-      width: CONTENT_W - (indent + 10 - MARGIN),
-      leading: 12.4,
-    });
-    pdf.gap(3);
-  }
+  const bodyWidth = CONTENT_W - (indent - MARGIN);
+  visualBlock(pdf, issue.visual, indent, bodyWidth);
+
+  pdf.text(issue.plain, {
+    x: indent,
+    size: 9,
+    colour: INK_SECONDARY,
+    width: bodyWidth,
+    leading: 12.4,
+  });
 
   // "The ask" panel. Measured before drawing so the wash sits behind the text.
   const askWidth = CONTENT_W - (indent - MARGIN) - 20;
@@ -512,7 +623,7 @@ export function buildBriefPdf(brief: DistrictBrief, meta: BriefPdfMeta): Blob {
   pdf.gap(4);
   pdf.rule();
   pdf.text(
-    `Every figure above is computed from the OSPI data behind this site - F-196 revenue and expenditure actuals and the Apportionment final extract for ${meta.year}, the enrichment levy worksheet, and OSPI enrollment and demographic reporting. Districts are ranked against the other 314 in Washington, so "unusually high" always means unusual for this state.`,
+    `Every number here comes from state (OSPI) records for ${meta.year} - F-196 revenue and expenditure actuals, the Apportionment final extract, the enrichment levy worksheet, and OSPI enrollment and demographic reporting. Every district is compared against the other 314 in Washington.`,
     { size: 7.5, colour: INK_MUTED, leading: 10.5 }
   );
   pdf.gap(3);

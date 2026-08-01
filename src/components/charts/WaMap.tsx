@@ -219,9 +219,21 @@ export default function WaMap({
     const svg = svgRef.current;
     if (!svg) return;
     const onWheel = (e: WheelEvent) => {
-      if (!e.ctrlKey && !e.metaKey) return; // regular scroll -> page scrolls
+      if (e.ctrlKey || e.metaKey) {
+        // Pinch gesture (trackpad) or explicit Ctrl+scroll (mouse).
+        e.preventDefault();
+        zoomAt(e.clientX, e.clientY, Math.pow(1.01, -e.deltaY));
+        return;
+      }
+      // Plain scroll, no modifier. Physical mouse wheels report large,
+      // discrete deltas (deltaMode is line-based in Firefox; Chrome reports
+      // ~100px chunks), while trackpad two-finger scrolling reports small,
+      // continuous pixel deltas. Zoom for the former so mouse users get
+      // scroll-to-zoom; let the latter fall through to normal page scroll.
+      const looksLikeMouseWheel = e.deltaMode !== 0 || Math.abs(e.deltaY) >= 40;
+      if (!looksLikeMouseWheel) return;
       e.preventDefault();
-      zoomAt(e.clientX, e.clientY, Math.pow(1.01, -e.deltaY)); // faster wheel zoom
+      zoomAt(e.clientX, e.clientY, Math.pow(1.002, -e.deltaY));
     };
     svg.addEventListener('wheel', onWheel, { passive: false });
     return () => svg.removeEventListener('wheel', onWheel);
@@ -525,7 +537,7 @@ export default function WaMap({
           no data
         </span>
         <span className="text-ink-muted">
-          click a district to open it · pinch or Ctrl+scroll to zoom · drag to pan
+          click a district to open it · scroll or pinch to zoom · drag to pan
         </span>
       </div>
     </div>
