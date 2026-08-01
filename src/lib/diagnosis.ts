@@ -60,50 +60,50 @@ const BILLS = {
   msoc: {
     bill: 'SSB 5918',
     url: 'https://app.leg.wa.gov/billsummary?BillNumber=5918&Year=2025',
-    note: 'Would have added $100 per student, or at least $100,000 per district, for operating costs. Died in Senate Ways & Means.',
+    note: 'Would have added $100 per student for operating costs. Died in committee.',
   },
   transportation: {
     bill: 'SB 5858',
     url: 'https://app.leg.wa.gov/billsummary?BillNumber=5858&Year=2025',
-    note: 'Would have written a transportation safety net into law for students with disabilities, students experiencing homelessness, and students in foster care. Died in Senate Ways & Means.',
+    note: 'Would have protected busing for the students who cost the most to transport. Died in committee.',
   },
   enrollment: {
     bill: 'SB 6125',
     url: 'https://app.leg.wa.gov/billsummary?BillNumber=6125&Year=2025',
-    note: 'Would have cushioned districts against sharp state-revenue losses when enrollment falls below 2025-26 levels. Died in its first committee.',
+    note: 'Would have softened the funding drop when enrollment falls. Died in its first committee.',
   },
   utilities: {
     bill: 'SB 6310',
     url: 'https://app.leg.wa.gov/billsummary?BillNumber=6310&Year=2025',
-    note: 'Would have changed how utilities and insurance are allocated, two costs that swing hard by location and building age. Died in its first committee.',
+    note: 'Would have changed how utilities and insurance money is handed out. Died in its first committee.',
   },
   buses: {
     bill: 'ESSB 6260',
     url: 'https://app.leg.wa.gov/billsummary?BillNumber=6260&Year=2025',
-    note: 'Signed April 1, 2026. Stretched the assumed lifetime of school buses, so the state reimburses their cost more slowly.',
+    note: 'Signed April 2026. Made the state pay back the cost of school buses more slowly.',
   },
   budget: {
     bill: 'ESSB 5998',
     url: 'https://app.leg.wa.gov/billsummary?BillNumber=5998&Year=2025',
-    note: 'The 2026 supplemental operating budget - where an idea actually receives, loses, or changes money.',
+    note: 'The 2026 state budget - where an idea actually gets money, or does not.',
   },
   review: {
     bill: 'E2SHB 2636',
     url: 'https://app.leg.wa.gov/billsummary?BillNumber=2636&Year=2025',
-    note: 'Would have commissioned independent reviews of public-education funding and operations. Passed the House, then stopped before a Senate vote.',
+    note: 'Would have ordered independent reviews of school funding. Passed the House, then stalled.',
   },
 } as const;
 
 const LEVY_STATUTE = {
   bill: 'RCW 84.52.0531',
   url: 'https://app.leg.wa.gov/rcw/default.aspx?cite=84.52.0531',
-  note: 'The statute that sets the per-student enrichment levy cap and the higher limit for districts above 40,000 students.',
+  note: 'The law that caps how much a district may collect from its local school levy.',
 } as const;
 
 const LEA_STATUTE = {
   bill: 'RCW 28A.500.015',
   url: 'https://app.leg.wa.gov/rcw/default.aspx?cite=28A.500.015',
-  note: 'The statute that sets the Local Effort Assistance threshold and the local-effort proration rule.',
+  note: 'The law that sets how much the state chips in for districts with low property value.',
 } as const;
 
 export type BillRef = { bill: string; url: string; note: string };
@@ -121,14 +121,53 @@ export type IssueId =
   | 'enrollmentDecline'
   | 'smallScale';
 
+export type BarTone = 'accent' | 'warn' | 'bad' | 'good' | 'muted';
+
+export type BriefBar = {
+  label: string;
+  /** Bar length, drawn relative to the largest value in the set. */
+  value: number;
+  /** Printed at the end of the bar. */
+  display: string;
+  tone: BarTone;
+};
+
+/**
+ * The picture that carries the argument.
+ *
+ * Nearly every funding problem on this site is one of two shapes: two numbers
+ * that should match and do not, or a district sitting somewhere on a scale.
+ * Both are bars, which is also the only thing the hand-rolled PDF writer can
+ * draw. Oversight is the exception - it is a position on a ladder of state
+ * involvement, so it gets its own shape.
+ */
+export type BriefVisual =
+  | {
+      kind: 'bars';
+      /** One short line saying what the bars show. */
+      caption: string;
+      bars: BriefBar[];
+      /** The number the picture exists to make obvious. */
+      gap: { label: string; value: string; tone: BarTone } | null;
+    }
+  | {
+      kind: 'steps';
+      caption: string;
+      steps: string[];
+      /** Index of the step this district is on. */
+      at: number;
+    };
+
 export type Issue = {
   id: IssueId;
-  /** Section heading in the brief. */
+  /** Section heading in the brief. Short, plain words. */
   title: string;
-  /** One line carrying this district's number. */
+  /** One sentence carrying this district's number. */
   headline: string;
-  /** The evidence, one fact per line. */
-  bullets: string[];
+  /** The evidence, drawn rather than written. */
+  visual: BriefVisual;
+  /** One sentence on why the picture matters. */
+  plain: string;
   /** What to actually ask a legislator for. */
   ask: string;
   /** Real bills or statutes attached to that ask. */
@@ -368,6 +407,46 @@ function pctText(n: number, digits = 0): string {
   return `${n.toFixed(digits)}%`;
 }
 
+/**
+ * "This costs X, the state sends Y, the district pays the rest" - the shape
+ * behind special education, operating costs and transportation alike. Drawing
+ * it the same way all three times is the point: a reader learns the picture
+ * once and then reads the other two at a glance.
+ */
+function shortfallVisual(
+  caption: string,
+  cost: number,
+  paid: number,
+  perPupil: number
+): BriefVisual {
+  return {
+    kind: 'bars',
+    caption,
+    bars: [
+      { label: 'What it costs here', value: cost, display: round(cost), tone: 'accent' },
+      { label: 'What the state pays', value: paid, display: round(paid), tone: 'muted' },
+    ],
+    gap: {
+      label: 'The district pays the rest',
+      value: `${round(cost - paid)} · ${round(perPupil)} per student`,
+      tone: 'bad',
+    },
+  };
+}
+
+/** This district against the statewide number, as two percentage bars. */
+function compareToStateVisual(caption: string, here: number, statewide: number): BriefVisual {
+  return {
+    kind: 'bars',
+    caption,
+    bars: [
+      { label: 'This district', value: here, display: pctText(here, 1), tone: 'accent' },
+      { label: 'Washington average', value: statewide, display: pctText(statewide, 1), tone: 'muted' },
+    ],
+    gap: null,
+  };
+}
+
 /* ------------------------------------------------------------------ *
  * Issue builders
  * ------------------------------------------------------------------ */
@@ -386,20 +465,20 @@ const oversightIssue: Builder = (m) => {
   return {
     id: 'oversight',
     title: enhanced
-      ? 'The state has stepped into this district’s finances'
-      : 'This district is under state financial oversight',
+      ? 'The state has stepped into this district’s money'
+      : 'The state is watching this district’s money',
     headline: enhanced
-      ? `${m.name} has escalated past binding conditions into enhanced state oversight.`
-      : `${m.name} has been on OSPI binding conditions since ${m.oversight.since}.`,
-    bullets: [
-      m.oversight.detail,
-      'Binding conditions are what a district gets when it cannot produce a balanced budget: state-set fund balance targets, more frequent reporting, and regular meetings with OSPI (RCW 28A.505.110).',
-      enhanced
-        ? 'Two consecutive years on binding conditions, or a financial plan OSPI rejects, escalates to a Financial Oversight Committee and can end in a state-appointed special administrator.'
-        : 'A second consecutive year, or a plan OSPI rejects, escalates to a Financial Oversight Committee and then to enhanced oversight.',
-      'This is the sharpest public signal that a district is in trouble, and it is a symptom - the funding gaps below are what produced it.',
-    ],
-    ask: `Ask your legislators what the state is doing about the conditions that put ${m.name} under oversight, not just the oversight itself. Oversight manages a deficit; it does not fund one.`,
+      ? `${m.name} is under the strictest level of state financial oversight.`
+      : `The state has been watching ${m.name}'s budget since ${m.oversight.since}.`,
+    visual: {
+      kind: 'steps',
+      caption: 'How far the state has stepped in:',
+      steps: ['Budget balances', 'State sets rules', 'State takes over'],
+      at: enhanced ? 2 : 1,
+    },
+    plain:
+      'A district lands here when it cannot make its budget balance (RCW 28A.505.110). The state sets rules and watches - but rules do not pay any bills.',
+    ask: `Ask your lawmakers to fix what put ${m.name} in this spot. Watching a shortfall does not fund one.`,
     refs: [BILLS.budget, BILLS.review],
     severity: enhanced ? 100 : 94,
   };
@@ -425,33 +504,65 @@ const reservesIssue: Builder = (m) => {
   if (!materialDeficit && !thinReserves) return null;
 
   const deficit = materialDeficit;
-  const bullets: string[] = [];
-  if (rr < 0) {
-    bullets.push(
-      `${m.name} ended ${LATEST_YEAR} with a negative fund balance of ${round(m.record.fundBalance ?? 0)} - it has spent its savings and is carrying a shortfall forward.`
-    );
-  } else {
-    bullets.push(
-      `Reserves are ${pctText(rr, 1)} of annual spending, against a statewide median of ${pctText(MEDIANS.reserveRatio, 1)}. Most district finance policies treat anything under 5% as the danger zone.`
-    );
-  }
-  if (deficit) {
-    bullets.push(
-      `The district spent ${round(Math.abs(m.surplus))} more than it took in during ${LATEST_YEAR} - ${pctText(deficitShare, 1)} of its budget (${round(m.record.rev.total)} in, ${round(m.record.exp)} out).`
-    );
-  }
-  bullets.push(
-    'Thin reserves mean a single bad enrollment count, a failed levy, or an unbudgeted special education placement forces mid-year cuts rather than a planned response.'
-  );
+
+  /*
+    Two different pictures, because two different things are wrong. A district
+    that overspent should see money in against money out; one that is merely
+    running thin should see its savings against the 5% line. Showing both at
+    once would bury whichever one actually applies.
+  */
+  const visual: BriefVisual = deficit
+    ? {
+        kind: 'bars',
+        caption: `Money in and out, ${LATEST_YEAR}:`,
+        bars: [
+          {
+            label: 'Money coming in',
+            value: m.record.rev.total,
+            display: round(m.record.rev.total),
+            tone: 'muted',
+          },
+          { label: 'Money going out', value: m.record.exp, display: round(m.record.exp), tone: 'accent' },
+        ],
+        gap: {
+          label: 'Spent more than it got',
+          value: `${round(Math.abs(m.surplus))} · ${pctText(deficitShare, 1)} of the budget`,
+          tone: 'bad',
+        },
+      }
+    : {
+        kind: 'bars',
+        caption: 'Savings, as a share of one year of spending:',
+        bars: [
+          {
+            label: 'This district',
+            value: Math.max(rr, 0),
+            display: pctText(rr, 1),
+            tone: rr < 5 ? 'bad' : 'accent',
+          },
+          { label: 'Safe level', value: 5, display: '5.0%', tone: 'good' },
+          {
+            label: 'Typical district',
+            value: Math.max(MEDIANS.reserveRatio, 0),
+            display: pctText(MEDIANS.reserveRatio, 1),
+            tone: 'muted',
+          },
+        ],
+        gap: null,
+      };
 
   return {
     id: 'reserves',
-    title: deficit ? 'The budget does not balance' : 'Reserves are close to the line',
+    title: deficit ? 'The budget does not balance' : 'Savings are nearly gone',
     headline: deficit
-      ? `${m.name} spent ${round(Math.abs(m.surplus))} more than it received in ${LATEST_YEAR}.`
-      : `${m.name} is operating on reserves of ${pctText(rr, 1)} of annual spending.`,
-    bullets,
-    ask: 'Ask for the recurring revenue that closes a structural deficit. One-time budget provisos delay the cuts; they do not stop them.',
+      ? `${m.name} spent ${round(Math.abs(m.surplus))} more than it took in.`
+      : `${m.name} has ${pctText(rr, 1)} of a year's spending saved up.`,
+    visual,
+    plain:
+      rr < 0
+        ? 'Savings are what a district uses when something goes wrong mid-year. This one has none left, and owes money on top of that.'
+        : 'Savings are what a district uses when something goes wrong mid-year. With this little, one surprise means cuts in the middle of the school year.',
+    ask: 'Ask for money the district can count on every year. One-time funding delays the cuts; it does not stop them.',
     refs: [BILLS.budget, BILLS.enrollment],
     severity: rr < 0 ? 90 : deficit && thinReserves ? 78 : deficit ? 68 : 60,
   };
@@ -463,18 +574,29 @@ const levyCapIssue: Builder = (m) => {
     ? LEA.maxLevyPerPupilLarge
     : LEA.maxLevyPerPupil;
   const pctile = percentileOf(DISTRIBUTIONS.capBlockedPerPupil, m.capBlockedPerPupil);
+  const allowed = m.levy.levy - m.capBlocked;
 
   return {
     id: 'levyCap',
-    title: 'The state blocks money local voters already approved',
-    headline: `${m.name} cannot collect ${round(m.capBlocked)} of the levy its own voters passed.`,
-    bullets: [
-      `Voters approved a ${round(m.levy.levy)} enrichment levy for ${levyJson.levyYear}. State law caps what the district may actually collect, and ${round(m.capBlocked)} of that falls above the cap - ${round(m.capBlockedPerPupil)} per student.`,
-      `The cap is ${round(cap)} per student${LARGE_DISTRICTS.has(m.code) ? ' for districts above 40,000 students' : ''}, or $${LEA.maxLevyRate.toFixed(2)} per $1,000 of assessed value, whichever is lower.`,
-      'No new election is needed to unlock this. The community has already voted for it; only the statutory ceiling stands in the way.',
-      `${m.name} is one of 46 districts in this position.`,
-    ],
-    ask: `Ask your legislators to raise the per-student enrichment levy cap in RCW 84.52.0531. For ${m.name} that is ${round(m.capBlocked)} a year with no new tax vote required.`,
+    title: 'A state limit blocks money voters already approved',
+    headline: `${m.name} is not allowed to collect ${round(m.capBlocked)} its own voters said yes to.`,
+    visual: {
+      kind: 'bars',
+      caption: `Local school levy, ${levyJson.levyYear}:`,
+      bars: [
+        { label: 'Voters approved', value: m.levy.levy, display: round(m.levy.levy), tone: 'accent' },
+        { label: 'The state allows', value: allowed, display: round(allowed), tone: 'muted' },
+      ],
+      gap: {
+        label: 'Blocked by the state limit',
+        value: `${round(m.capBlocked)} · ${round(m.capBlockedPerPupil)} per student`,
+        tone: 'bad',
+      },
+    },
+    plain: `State law caps this levy at ${round(cap)} per student${
+      LARGE_DISTRICTS.has(m.code) ? ' for districts this large' : ''
+    }. The community already voted for the money; only the cap is in the way. 45 other districts are stuck the same way.`,
+    ask: `Ask your lawmakers to raise the levy cap in RCW 84.52.0531. For ${m.name} that is ${round(m.capBlocked)} a year, with no new vote needed.`,
     refs: [LEVY_STATUTE],
     // A cap that blocks a lot per student matters more than one blocking a
     // rounding error, but any blocked money is a strong, concrete ask.
@@ -487,30 +609,68 @@ const leaIssue: Builder = (m) => {
   const pctile = percentileOf(DISTRIBUTIONS.leaShare, m.leaShare);
   if (pctile < 70) return null;
 
-  const bullets: string[] = [
-    `Levy equalization is ${round(m.alloc.levyEqualization)}, or ${pctText(m.leaShare, 1)} of all the state money ${m.name} receives. The state pays it because local property cannot raise what a wealthier district's can.`,
-  ];
-  if (m.avPerPupil != null) {
-    const avPctile = percentileOf(DISTRIBUTIONS.avPerPupil, m.avPerPupil);
-    bullets.push(
-      `Assessed property value behind each student is ${round(m.avPerPupil)}, against a statewide median of ${round(MEDIANS.avPerPupil)} - lower than ${pctText(100 - avPctile)} of Washington districts. The same levy rate raises very different money depending on that number, which is the whole reason equalization exists.`
-    );
-  }
-  if (m.leaForgone > 1000 && m.levy) {
-    bullets.push(
-      `The district qualifies for ${round(m.levy.maxLea)} but is paid ${round(m.levy.payableLea)}, because equalization is prorated by local levy effort and this district levies $${m.levy.levyRate.toFixed(2)} per $1,000 against the $${LEA.leaMaxRate.toFixed(2)} needed for the full amount. That is ${round(m.leaForgone)} left on the table.`
-    );
-  }
-  bullets.push(
-    'Equalization is set by a threshold the Legislature picks each biennium. When the threshold does not keep up with property values, property-poor districts fall further behind without anything visibly changing.'
-  );
+  /*
+    Property value per student is the cause; the equalization share is the
+    symptom. Show the cause - it is the number that explains why this district
+    cannot simply tax its way out, and it compares cleanly to the median.
+  */
+  const visual: BriefVisual =
+    m.avPerPupil != null
+      ? {
+          kind: 'bars',
+          caption: 'Property value behind each student:',
+          bars: [
+            {
+              label: 'This district',
+              value: m.avPerPupil,
+              display: round(m.avPerPupil),
+              tone: 'accent',
+            },
+            {
+              label: 'Typical district',
+              value: MEDIANS.avPerPupil,
+              display: round(MEDIANS.avPerPupil),
+              tone: 'muted',
+            },
+          ],
+          gap: {
+            label: 'State help to make up the difference',
+            value: `${round(m.alloc.levyEqualization)} · ${pctText(m.leaShare, 1)} of its state money`,
+            tone: 'warn',
+          },
+        }
+      : {
+          kind: 'bars',
+          caption: 'Where this district’s state money comes from:',
+          bars: [
+            {
+              label: 'Help for low property value',
+              value: m.leaShare,
+              display: pctText(m.leaShare, 1),
+              tone: 'warn',
+            },
+            {
+              label: 'Everything else',
+              value: 100 - m.leaShare,
+              display: pctText(100 - m.leaShare, 1),
+              tone: 'muted',
+            },
+          ],
+          gap: null,
+        };
+
+  const forgone =
+    m.leaForgone > 1000 && m.levy
+      ? ` It also leaves ${round(m.leaForgone)} of that help unclaimed: full payment requires taxing at $${LEA.leaMaxRate.toFixed(2)} per $1,000, and this district taxes at $${m.levy.levyRate.toFixed(2)}.`
+      : '';
 
   return {
     id: 'leaDependence',
-    title: 'This district depends on the state to make up for local property wealth',
-    headline: `${pctText(m.leaShare, 1)} of ${m.name}'s state funding is levy equalization.`,
-    bullets,
-    ask: 'Ask your legislators to raise the Local Effort Assistance threshold and to protect equalization in the operating budget. It is one of the first lines squeezed when the budget tightens, and it lands hardest on districts with the least local property to tax.',
+    title: 'There is not much local property to tax here',
+    headline: `${pctText(m.leaShare, 1)} of ${m.name}'s state money is help for having low property value.`,
+    visual,
+    plain: `Schools run on local property taxes, so the same tax rate raises far less here than in a wealthy district. The state pays the difference, and resets that amount every two years.${forgone}`,
+    ask: 'Ask your lawmakers to raise this help and protect it in the budget. It is one of the first things cut when money is tight, and it hits these districts hardest.',
     refs: [LEA_STATUTE, BILLS.budget],
     severity: 55 + pctile * 0.25,
   };
@@ -531,21 +691,22 @@ const spedIssue: Builder = (m) => {
     rebuttal in exactly the districts where it is most damning.
   */
   const belowAverageRate = m.spedRate < STATEWIDE.spedRate;
-  const rateBullet = belowAverageRate
-    ? `${pctText(m.spedRate, 1)} of students here receive special education services - below the ${pctText(STATEWIDE.spedRate, 1)} statewide rate. The gap is not caused by identifying more students than average; it is what the state pays per student.`
-    : `${pctText(m.spedRate, 1)} of students here receive special education services, against ${pctText(STATEWIDE.spedRate, 1)} statewide.`;
+  const rateNote = belowAverageRate
+    ? ` And not because this district finds more students than most - it finds fewer (${pctText(m.spedRate, 1)} against ${pctText(STATEWIDE.spedRate, 1)}). The state just pays too little each.`
+    : '';
 
   return {
     id: 'sped',
-    title: 'Special education costs more than the state pays for it',
-    headline: `${m.name} covers ${round(m.spedGap)} of special education costs out of its general fund.`,
-    bullets: [
-      `The district spent ${round(m.spend.sped)} on special education and received ${round(m.alloc.specialEd)} in state special education funding. The difference is ${round(m.spedGap)}, or ${round(m.spedGapPerPupil)} for every student in the district.`,
-      rateBullet,
-      'That difference is not paid by a special fund. It comes out of general education money, which means it is paid by every student in the district.',
-      `The median Washington district covers ${round(MEDIANS.spedGapPerPupil)} per student this way. ${m.name} covers ${round(m.spedGapPerPupil)}.`,
-    ],
-    ask: 'Ask your legislators to raise the special education funding multipliers and to fund the safety net for high-cost placements at the level districts actually claim. Serving students with disabilities is a federal and state obligation, not a local option.',
+    title: 'Special education costs more than the state pays',
+    headline: `${m.name} pays ${round(m.spedGap)} of its special education bill by itself.`,
+    visual: shortfallVisual(
+      'Special education, one year:',
+      m.spend.sped,
+      m.alloc.specialEd,
+      m.spedGapPerPupil
+    ),
+    plain: `There is no special pot for that. It comes out of the budget for every other student - ${round(m.spedGapPerPupil)} each, against ${round(MEDIANS.spedGapPerPupil)} in a typical district.${rateNote}`,
+    ask: 'Ask your lawmakers to pay a higher rate for special education, and to fully cover the students whose needs cost the most. This is something schools are required by law to provide.',
     refs: [BILLS.budget],
     severity: 50 + pctile * 0.4,
   };
@@ -561,14 +722,16 @@ const msocIssue: Builder = (m) => {
 
   return {
     id: 'msoc',
-    title: 'Operating costs outrun the formula that pays for them',
-    headline: `${m.name} spends ${round(m.msocGap)} more on day-to-day operating costs than the state allocates.`,
-    bullets: [
-      `MSOC - materials, supplies, technology, utilities, insurance, textbooks - cost ${round(m.spend.msoc)} here. The state allocated ${round(m.alloc.msoc)}. The gap is ${round(m.msocGap)}, or ${round(m.msocGapPerPupil)} per student.`,
-      'The state pays MSOC as a flat per-student rate. Heating an old building, insuring it, and keeping its network running do not scale with headcount, so the rate fits some districts and misses others badly.',
-      `${BILLS.msoc.bill} would have added $100 per student with a $100,000 floor - about ${round(wouldHaveBeen)} for ${m.name}. It died in committee, so the gap above is what the district absorbed instead.`,
-    ],
-    ask: `Ask your legislators to raise the MSOC allocation and to revive the ${BILLS.msoc.bill} increase. Operating costs are the least visible part of a school budget and the first place a shortfall shows up as something a student notices.`,
+    title: 'Keeping the lights on costs more than the state pays',
+    headline: `${m.name} pays ${round(m.msocGap)} of its running costs by itself.`,
+    visual: shortfallVisual(
+      'Heat, power, supplies, computers, textbooks:',
+      m.spend.msoc,
+      m.alloc.msoc,
+      m.msocGapPerPupil
+    ),
+    plain: `The state pays the same amount per student everywhere. But heating an old building does not get cheaper because fewer students walk through the door. ${BILLS.msoc.bill} would have added about ${round(wouldHaveBeen)} here, and died in committee.`,
+    ask: `Ask your lawmakers to raise this funding and bring back the increase in ${BILLS.msoc.bill}. These are the costs nobody notices until something a student uses stops working.`,
     refs: [BILLS.msoc, BILLS.utilities],
     severity: 48 + pctile * 0.4,
   };
@@ -581,15 +744,16 @@ const transportationIssue: Builder = (m) => {
 
   return {
     id: 'transportation',
-    title: 'Getting students to school costs more than the state reimburses',
-    headline: `${m.name} covers ${round(m.transGap)} of student transportation itself.`,
-    bullets: [
-      `Transportation cost ${round(m.spend.transportation)} out of the general fund; the state allocated ${round(m.alloc.transportation)}. The shortfall is ${round(m.transGap)}, or ${round(m.transGapPerPupil)} per student.`,
-      `Statewide, districts spend about ${round(STATEWIDE.transportationPerStudent)} per student on transportation. Route length, geography, and how many students need individualized routes drive that number far more than enrollment does.`,
-      `${BILLS.transportation.bill} would have put a transportation safety net into law for students with disabilities, students experiencing homelessness, and students in foster care - the routes that cost the most. It died in Senate Ways & Means.`,
-      `${BILLS.buses.bill} passed and stretched the assumed lifetime of school buses, so the state now reimburses their cost more slowly.`,
-    ],
-    ask: `Ask your legislators to enact the transportation safety net from ${BILLS.transportation.bill} and to revisit the bus depreciation schedule changed by ${BILLS.buses.bill}.`,
+    title: 'Getting students to school costs more than the state pays',
+    headline: `${m.name} pays ${round(m.transGap)} of its busing bill by itself.`,
+    visual: shortfallVisual(
+      'Buses and getting students to school:',
+      m.spend.transportation,
+      m.alloc.transportation,
+      m.transGapPerPupil
+    ),
+    plain: `Busing costs depend on how far apart students live, not on how many there are. The priciest routes carry students with disabilities or without stable housing. ${BILLS.transportation.bill} would have protected those routes, and died in committee.`,
+    ask: `Ask your lawmakers to pass the busing protections in ${BILLS.transportation.bill}, and to undo the slower bus payback schedule in ${BILLS.buses.bill}.`,
     refs: [BILLS.transportation, BILLS.buses],
     severity: 45 + pctile * 0.35,
   };
@@ -600,25 +764,22 @@ const ellIssue: Builder = (m) => {
   const pctile = percentileOf(DISTRIBUTIONS.ellRate, m.ellRate);
   if (pctile < 70) return null;
 
-  const bullets: string[] = [
-    `${fmtInt(m.record.demo.ell)} students here are multilingual learners - ${pctText(m.ellRate, 1)} of enrollment, against ${pctText(STATEWIDE.ellRate, 1)} statewide.`,
-  ];
-  if (m.bilingualPerEll != null) {
-    bullets.push(
-      `The state's Transitional Bilingual Instruction Program allocation works out to ${round(m.bilingualPerEll)} per multilingual student here - a supplement on top of basic education, not the cost of teaching a student a new language while teaching them everything else.`
-    );
-  }
-  bullets.push(
-    'Bilingual funding is time-limited: it follows a student only until they test out. Districts with continuous newcomer arrivals carry a permanent program on funding designed to be temporary.',
-    'Staffing that program means certificated bilingual and ESL teachers, translated materials, and interpreters for families - costs the prototypical school model does not carry a line for.'
-  );
+  const stateAdds =
+    m.bilingualPerEll != null
+      ? ` The state adds ${round(m.bilingualPerEll)} a year for each of them.`
+      : '';
 
   return {
     id: 'ell',
-    title: 'A large multilingual student population on time-limited funding',
-    headline: `${pctText(m.ellRate, 1)} of ${m.name}'s students are multilingual learners.`,
-    bullets,
-    ask: 'Ask your legislators to extend the years a student generates bilingual funding and to raise the per-student rate. Ask specifically about funding for districts with continuous newcomer enrollment, where the program never shrinks.',
+    title: 'Many students are still learning English',
+    headline: `${fmtInt(m.record.demo.ell)} students here - ${pctText(m.ellRate, 1)} - are learning English.`,
+    visual: compareToStateVisual(
+      'Share of students learning English:',
+      m.ellRate,
+      STATEWIDE.ellRate
+    ),
+    plain: `They are learning English while also learning math, science and everything else. That takes trained teachers and interpreters for families.${stateAdds} The money stops the day a student passes an English test - so a district where new students keep arriving runs a permanent program on temporary money.`,
+    ask: 'Ask your lawmakers to pay this for more years and at a higher rate, especially in districts where new students keep arriving.',
     refs: [BILLS.budget],
     severity: 45 + pctile * 0.35,
   };
@@ -629,29 +790,26 @@ const lowIncomeIssue: Builder = (m) => {
   const pctile = percentileOf(DISTRIBUTIONS.lowIncomeRate, m.lowIncomeRate);
   if (pctile < 72) return null;
 
-  const bullets: string[] = [
-    `${pctText(m.lowIncomeRate, 1)} of students here qualify as low income, against ${pctText(STATEWIDE.lowIncomeRate, 1)} statewide - ${fmtInt(m.record.demo.lowIncome)} students.`,
-  ];
-  if (m.lapPerLowIncome != null) {
-    bullets.push(
-      `Learning Assistance Program funding is ${round(m.lapPerLowIncome)} per low-income student here. LAP is the main state response to concentrated poverty and it is allocated as a modest supplement.`
-    );
-  }
-  if (m.homelessRate >= 3) {
-    bullets.push(
-      `${fmtInt(m.record.demo.homeless)} students - ${pctText(m.homelessRate, 1)} of enrollment - experienced homelessness, which drives transportation, counseling, and enrollment-stability costs at once.`
-    );
-  }
-  bullets.push(
-    'Concentrated poverty raises the cost of the same academic result: more counselors, more family outreach, more food service, more summer and after-school programming. The prototypical model funds a school, not a caseload.'
-  );
+  const extraHelp =
+    m.lapPerLowIncome != null
+      ? ` The state's extra help works out to ${round(m.lapPerLowIncome)} per student.`
+      : '';
+  const homeless =
+    m.homelessRate >= 3
+      ? ` ${fmtInt(m.record.demo.homeless)} students here - ${pctText(m.homelessRate, 1)} - do not have stable housing.`
+      : '';
 
   return {
     id: 'lowIncome',
-    title: 'Concentrated poverty on a formula that barely adjusts for it',
-    headline: `${pctText(m.lowIncomeRate, 1)} of ${m.name}'s students are low income.`,
-    bullets,
-    ask: 'Ask your legislators to increase Learning Assistance Program funding and to weight the basic education formula by student poverty, not just by headcount.',
+    title: 'Many students here come from low-income homes',
+    headline: `${pctText(m.lowIncomeRate, 1)} of ${m.name}'s students come from low-income homes.`,
+    visual: compareToStateVisual(
+      'Share of students from low-income homes:',
+      m.lowIncomeRate,
+      STATEWIDE.lowIncomeRate
+    ),
+    plain: `The same result costs more here: more counselors, more meals, more summer and after-school programs.${extraHelp}${homeless} The state's formula pays for a school, not for what the students in it need.`,
+    ask: 'Ask your lawmakers to raise this extra help, and to build student poverty into the main funding formula instead of treating it as an add-on.',
     refs: [BILLS.budget, BILLS.review],
     severity: 42 + pctile * 0.32,
   };
@@ -666,15 +824,28 @@ const enrollmentIssue: Builder = (m) => {
 
   return {
     id: 'enrollmentDecline',
-    title: 'Enrollment is falling and funding follows it down',
-    headline: `${m.name} has lost ${pctText(Math.abs(change), 1)} of its funded enrollment since ${BASE_YEAR}.`,
-    bullets: [
-      `Funded enrollment went from ${fmtInt(Math.round(before))} in ${BASE_YEAR} to ${fmtInt(Math.round(m.record.fundingEnrollment))} in ${LATEST_YEAR} - about ${fmtInt(Math.round(lost))} students.`,
-      `Nearly all state money is per-student, so that decline removed roughly ${round(lost * m.perPupil)} a year at this district's current per-student rate.`,
-      'Costs do not fall at the same speed. A district losing 8% of its students does not have 8% fewer buildings to heat, buses to run, or grade levels to staff.',
-      `${BILLS.enrollment.bill} would have cushioned districts against exactly this and died in its first committee.`,
-    ],
-    ask: `Ask your legislators to revive enrollment stabilization funding from ${BILLS.enrollment.bill}, so a district gets time to adjust staffing and programs instead of cutting mid-year.`,
+    title: 'Students are leaving, and the money leaves with them',
+    headline: `${m.name} has ${pctText(Math.abs(change), 1)} fewer students than in ${BASE_YEAR}.`,
+    visual: {
+      kind: 'bars',
+      caption: 'Students the district is funded for:',
+      bars: [
+        { label: BASE_YEAR, value: before, display: fmtInt(Math.round(before)), tone: 'muted' },
+        {
+          label: LATEST_YEAR,
+          value: m.record.fundingEnrollment,
+          display: fmtInt(Math.round(m.record.fundingEnrollment)),
+          tone: 'accent',
+        },
+      ],
+      gap: {
+        label: 'Students lost',
+        value: `${fmtInt(Math.round(lost))} · about ${round(lost * m.perPupil)} a year`,
+        tone: 'bad',
+      },
+    },
+    plain: `Almost all state money follows students, so the money left immediately. Costs did not: the district does not have fewer buildings to heat or bus routes to run. ${BILLS.enrollment.bill} would have softened the drop, and died in its first committee.`,
+    ask: `Ask your lawmakers to bring back the funding in ${BILLS.enrollment.bill}, so a district gets time to adjust instead of cutting mid-year.`,
     refs: [BILLS.enrollment, BILLS.budget],
     severity: 50 + Math.min(Math.abs(change), 30),
   };
@@ -686,14 +857,29 @@ const smallScaleIssue: Builder = (m) => {
 
   return {
     id: 'smallScale',
-    title: 'Too small for a formula built around a 400-student school',
-    headline: `${m.name} funds ${fmtInt(Math.round(m.fte))} students against a model whose smallest prototype is a 400-student elementary school.`,
-    bullets: [
-      `The prototypical school model allocates staff by dividing enrollment into a theoretical school of 400 elementary, 432 middle, or 600 high school students. With ${fmtInt(Math.round(m.fte))} funded students, ${m.name} gets fractional staff allocations for roles a school needs whole.`,
-      `Per-student revenue here is ${round(m.perPupil)}, against a statewide median of ${round(MEDIANS.perPupil)}. Small districts often look well funded per student precisely because fixed costs are divided across very few of them.`,
-      'A principal, a nurse, a counselor, and a bus route cost about the same whether 90 students or 900 use them. Small-district funding enhancements exist, but they are set as fixed amounts that inflation erodes.',
-    ],
-    ask: 'Ask your legislators to review the small-district and remote-and-necessary funding enhancements, which have not kept pace with the real cost of staffing a small school.',
+    title: 'The district is smaller than the formula assumes',
+    headline: `${m.name} funds ${fmtInt(Math.round(m.fte))} students. The state's formula is built around 400.`,
+    visual: {
+      kind: 'bars',
+      caption: 'Students, real and assumed:',
+      bars: [
+        {
+          label: 'Students here',
+          value: m.fte,
+          display: fmtInt(Math.round(m.fte)),
+          tone: 'accent',
+        },
+        {
+          label: 'The smallest school the state plans for',
+          value: 400,
+          display: '400',
+          tone: 'muted',
+        },
+      ],
+      gap: null,
+    },
+    plain: `The state hands out staff by splitting students into imaginary 400-student schools, so a district this size gets a fraction of a nurse - a job a school needs whole. A principal costs the same for 90 students as for 900, which is why money per student looks high here (${round(m.perPupil)} against ${round(MEDIANS.perPupil)}).`,
+    ask: 'Ask your lawmakers to review the extra funding for small and remote districts. It is a fixed amount, and inflation has been eating it for years.',
     refs: [BILLS.review, BILLS.budget],
     severity: 40 + Math.min(pctile * 0.2, 20),
   };
@@ -761,62 +947,62 @@ const EMAIL_ASKS: Record<IssueId, string> = {
 
 function headlineFor(m: Metrics, issues: Issue[]): string {
   if (issues.length === 0) {
-    return `${m.name} does not show an outlier funding problem in the 2024-25 data.`;
+    return `${m.name} sits near the middle of Washington's districts.`;
   }
   return issues[0].headline;
 }
 
 function summaryFor(m: Metrics, issues: Issue[]): string {
   if (issues.length === 0) {
-    return `On the measures this site tracks - special education, operating costs, transportation, levy capacity, and demographics - ${m.name} sits near the middle of Washington's 315 districts. That is not the same as being well funded. The statewide gaps still apply here; they are simply not sharper here than elsewhere, so the 2026 bills further down this page are the place to start.`;
+    return `That is not the same as being well funded - the statewide gaps still apply here. They are just not worse here than anywhere else.`;
   }
   const names = issues.slice(0, 3).map((i) => ISSUE_SHORT[i.id]);
   const list =
     names.length === 1
       ? names[0]
       : `${names.slice(0, -1).join(', ')} and ${names[names.length - 1]}`;
-  return `Ranked against the other 314 districts in Washington, ${m.name}'s funding problems concentrate in ${list}. Each section below gives the district's own numbers, where they came from, and what to ask a legislator to change.`;
+  return `Compared with the other 314 districts in Washington, the biggest problems here are ${list}. Each one below is one picture, one number, and one thing to ask for.`;
 }
 
 const ISSUE_SHORT: Record<IssueId, string> = {
-  oversight: 'state financial oversight',
-  reserves: 'an unbalanced budget',
-  levyCap: 'the local levy cap',
-  leaDependence: 'dependence on levy equalization',
+  oversight: 'state oversight',
+  reserves: 'a budget that does not balance',
+  levyCap: 'a blocked local levy',
+  leaDependence: 'low local property value',
   sped: 'special education',
-  msoc: 'operating costs',
-  transportation: 'transportation',
-  ell: 'multilingual learners',
+  msoc: 'running costs',
+  transportation: 'busing',
+  ell: 'students learning English',
   lowIncome: 'student poverty',
   enrollmentDecline: 'falling enrollment',
-  smallScale: 'small-district scale',
+  smallScale: 'being a small district',
 };
 
 function statsFor(m: Metrics): BriefStat[] {
   const stats: BriefStat[] = [
     {
-      label: 'Funded students',
+      label: 'Students',
       value: fmtInt(Math.round(m.fte)),
-      note: `${fmtInt(m.headcount)} enrolled in October`,
+      note: `${fmtInt(m.headcount)} counted in October`,
     },
     {
       // Rounded to thousands these collapse into the same "$20K" and the
       // comparison the tile exists to make disappears.
-      label: 'Revenue per student',
+      label: 'Money per student',
       value: fmtMoneyFull(Math.round(m.perPupil)),
-      note: `Statewide median ${fmtMoneyFull(Math.round(MEDIANS.perPupil))}`,
+      note: `Typical district: ${fmtMoneyFull(Math.round(MEDIANS.perPupil))}`,
     },
     {
-      label: 'Covered locally',
+      label: 'Paid for by the district',
       value: fmtMoney(Math.max(0, m.spedGap) + Math.max(0, m.msocGap) + Math.max(0, m.transGap)),
-      note: 'Special ed, operating and transport costs above what the state allocated',
+      note: 'Special education, running costs and busing the state did not cover',
     },
   ];
   if (m.reserveRatio != null) {
     stats.push({
-      label: 'Reserves',
+      label: 'Savings',
       value: `${m.reserveRatio.toFixed(1)}%`,
-      note: m.reserveRatio < 5 ? 'Below the 5% danger line' : 'Share of annual spending',
+      note: m.reserveRatio < 5 ? 'Below the 5% safe level' : 'Of one year of spending',
     });
   }
   return stats;
@@ -857,7 +1043,7 @@ export function briefFor(code: string): DistrictBrief | null {
     emailFact: top ? top.headline : null,
     steadyNote:
       issues.length === 0
-        ? 'No issue here scored high enough against the statewide distribution to single out. The email and testimony templates below still work - use the statewide picture and your own experience.'
+        ? 'Nothing here stands out sharply enough to single out. The email and testimony templates below still work - use the statewide picture and your own experience.'
         : null,
   };
 }
