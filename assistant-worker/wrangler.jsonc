@@ -11,7 +11,7 @@
     // gpt-5-nano is the intended model: this assistant explains supplied text,
     // summarises retrieved passages, and picks from an allow-list of actions.
     // Change here to upgrade; no code change is needed.
-    "OPENAI_MODEL": "gpt-5-nano",
+    "OPENAI_MODEL": "gpt-5-mini",
     "OPENAI_MAX_OUTPUT_TOKENS": "1400",
     "OPENAI_REASONING_EFFORT": "low",
 
