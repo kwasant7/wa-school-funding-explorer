@@ -17,6 +17,7 @@ import { SYSTEM_PROMPT } from '../src/systemPrompt.ts';
 import { statewideSection } from '../src/statewide.ts';
 import { districtHistorySection, districtSection } from '../src/district.ts';
 import { atLeast } from '../src/openai.ts';
+import { phraseNotes } from '../src/phrases.ts';
 
 const STATEWIDE = {
   schoolYear: '2024-25',
@@ -459,5 +460,40 @@ describe('reasoning effort floor', () => {
 
   it('falls back to the floor for an unrecognised configured value', () => {
     assert.equal(atLeast('turbo' as never, 'low'), 'low');
+  });
+});
+
+/*
+ * The site's maps print funding per student as "$23,533/FTE", so a visitor
+ * asking for "the funding/FTE" is asking for dollars. The model answered with
+ * the student count instead, and got it right only most of the time once the
+ * rule was in the prompt - so the disambiguation is attached to the request
+ * rather than inferred.
+ */
+describe('question disambiguation', () => {
+  it('reads a slash as "per" and asks for the dollar figure', () => {
+    for (const question of [
+      'for the seattle public schools what was the funding/FTE',
+      'what is the $/FTE for Bellevue',
+      'how much funding per FTE does Yakima get',
+      'what was the revenue/FTE in 22-23',
+    ]) {
+      const note = phraseNotes(question) ?? '';
+      assert.match(note, /dollar amount per student/, `missed: ${question}`);
+      assert.match(note, /not answer with the funding FTE student count/);
+    }
+  });
+
+  it('leaves an honest count question asking for a count', () => {
+    const note = phraseNotes('how many students does Seattle have') ?? '';
+    assert.match(note, /answer with a count/);
+    assert.doesNotMatch(note, /dollar amount per student/);
+  });
+
+  it('says nothing about a question that is not ambiguous', () => {
+    assert.equal(phraseNotes('what is the levy cap'), null);
+    assert.equal(phraseNotes('explain the prototypical school model'), null);
+    // A bare mention of FTE is not a request for dollars.
+    assert.equal(phraseNotes('what does funding FTE mean'), null);
   });
 });

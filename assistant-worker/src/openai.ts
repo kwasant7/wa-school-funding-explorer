@@ -18,6 +18,7 @@ import { SYSTEM_PROMPT } from './systemPrompt.ts';
 import type { CleanRequest } from './validation.ts';
 import { statewideSection } from './statewide.ts';
 import { districtHistorySection, districtSection } from './district.ts';
+import { phraseNotes } from './phrases.ts';
 
 export const DEFAULT_MODEL = 'gpt-5-nano';
 const DEFAULT_MAX_OUTPUT_TOKENS = 1_400;
@@ -167,6 +168,13 @@ function buildInput(request: CleanRequest): string {
         .join('\n')
     );
   }
+
+  /*
+    Sits immediately before the question, not up with the standing rules: it
+    is about this one message, and the model weighs what is nearest the ask.
+  */
+  const notes = phraseNotes(request.message);
+  if (notes) parts.push('', notes);
 
   parts.push('', '## The visitor asks', request.message);
 
