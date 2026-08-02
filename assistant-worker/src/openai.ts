@@ -17,7 +17,7 @@ import { RESPONSE_SCHEMA, RESPONSE_SCHEMA_NAME, type WorkerResponse } from './sc
 import { SYSTEM_PROMPT } from './systemPrompt.ts';
 import type { CleanRequest } from './validation.ts';
 import { statewideSection } from './statewide.ts';
-import { districtSection } from './district.ts';
+import { districtHistorySection, districtSection } from './district.ts';
 
 export const DEFAULT_MODEL = 'gpt-5-nano';
 const DEFAULT_MAX_OUTPUT_TOKENS = 1_400;
@@ -107,7 +107,8 @@ function buildInput(request: CleanRequest): string {
     dump is genuinely structural - the route, the headings, which sections
     exist - and none of it is a figure the model might quote by key name.
   */
-  const { statewide, district, comparisonDistrict, ...pageContext } = request.context;
+  const { statewide, district, districtHistory, comparisonDistrict, ...pageContext } =
+    request.context;
 
   parts.push(
     `Answer in ${languageName} (language code: ${request.language}).`,
@@ -121,6 +122,15 @@ function buildInput(request: CleanRequest): string {
 
   const districtText = districtSection(district, 'primary');
   if (districtText) parts.push('', districtText);
+
+  const districtName =
+    district && typeof district === 'object' && 'name' in district
+      ? String((district as { name?: unknown }).name ?? '')
+      : '';
+  const historyText = districtName
+    ? districtHistorySection(districtHistory, districtName)
+    : null;
+  if (historyText) parts.push('', historyText);
 
   const comparisonText = districtSection(comparisonDistrict, 'comparison');
   if (comparisonText) parts.push('', comparisonText);

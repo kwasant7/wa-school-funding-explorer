@@ -25,6 +25,52 @@ function pct(value: unknown): string | null {
 }
 
 /**
+ * The same district across every year the site holds, one line each.
+ *
+ * "What about in 22-23?" is the most natural follow-up a visitor has, and the
+ * guide used to answer it by sending them to the year control - which is not
+ * an answer, it is a chore. The rows are deliberately short: the four figures
+ * a year-over-year question actually asks about, not a second full fact sheet
+ * per year.
+ */
+export function districtHistorySection(value: unknown, name: string): string | null {
+  if (!Array.isArray(value) || value.length === 0) return null;
+
+  const lines: string[] = [];
+  for (const entry of value) {
+    const row = record(entry);
+    if (!row) continue;
+    const year = typeof row.schoolYear === 'string' ? row.schoolYear : null;
+    if (!year) continue;
+
+    const parts = [
+      num(row.perPupil) === null ? null : `${dollars(num(row.perPupil)!)} per student`,
+      num(row.fundingEnrollment) === null
+        ? null
+        : `${commas(num(row.fundingEnrollment)!)} funding FTE`,
+      num(row.revenueTotal) === null
+        ? null
+        : `${bigDollars(num(row.revenueTotal)!)} total revenue`,
+      num(row.reserveRatio) === null
+        ? null
+        : `${num(row.reserveRatio)!.toFixed(1)}% reserve ratio`,
+    ].filter(Boolean);
+    if (parts.length > 0) lines.push(`${year}: ${parts.join(', ')}.`);
+  }
+
+  if (lines.length === 0) return null;
+
+  return (
+    `${name} across every school year this website holds. Answer a question about any ` +
+    'of these years from the matching line, and say which year your figure is from. A year ' +
+    'that is not listed is one the site has no record of for this district; say so rather ' +
+    'than reaching for the nearest one. Do not send the visitor to change the year control ' +
+    'to get an answer that is already here.\n' +
+    lines.join('\n')
+  );
+}
+
+/**
  * One district as a labelled fact sheet.
  *
  * `role` distinguishes the district the page is showing from one the visitor

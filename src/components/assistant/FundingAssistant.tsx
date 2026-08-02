@@ -21,7 +21,11 @@ import AssistantMessage from '@/components/assistant/AssistantMessage';
 import AssistantSuggestions from '@/components/assistant/AssistantSuggestions';
 import { assistantStrings, starterKeyForPath, starterQuestions } from '@/lib/assistant/i18n';
 import { useAssistantLanguage } from '@/lib/assistant/use-language';
-import { buildContext, extraDistrictContext } from '@/lib/assistant/context';
+import {
+  buildContext,
+  districtHistoryContext,
+  extraDistrictContext,
+} from '@/lib/assistant/context';
 import { retrieve } from '@/lib/assistant/retrieval';
 import { sourceCatalogue } from '@/lib/assistant/knowledge';
 import { isAssistantConfigured, sendChat } from '@/lib/assistant/client';
@@ -109,6 +113,14 @@ export default function FundingAssistant() {
   const [draft, setDraft] = useState('');
   const [busy, setBusy] = useState(false);
   const [liveMessage, setLiveMessage] = useState('');
+  /*
+    The one answer currently typing itself in. Held as an id rather than a
+    flag on the turn so that reopening the panel, or restoring the
+    conversation from this session's storage, shows every earlier answer
+    already written out - replaying them would be a lie about when they
+    arrived.
+  */
+  const [revealTurnId, setRevealTurnId] = useState<string | null>(null);
 
   const abortRef = useRef<AbortController | null>(null);
   const panelRef = useRef<HTMLDivElement>(null);
@@ -127,12 +139,18 @@ export default function FundingAssistant() {
     if (turns.length > 0) saveTurns(turns);
   }, [turns]);
 
-  // Keep the newest message in view as answers arrive.
-  useEffect(() => {
-    if (!open) return;
+  const pinToBottom = useCallback(() => {
     const node = scrollRef.current;
     if (node) node.scrollTop = node.scrollHeight;
-  }, [turns, busy, open]);
+  }, []);
+
+  // Keep the newest message in view as answers arrive. An answer that is
+  // still revealing itself also calls this on every frame it grows, since
+  // `turns` does not change while that happens.
+  useEffect(() => {
+    if (!open) return;
+    pinToBottom();
+  }, [turns, busy, open, pinToBottom]);
 
   /*
     Focus handling for the dialog: move focus in on open, restore it to the
@@ -287,7 +305,12 @@ export default function FundingAssistant() {
       });
       if (namedDistrict && context.district?.code !== namedDistrict.code) {
         const extra = extraDistrictContext(namedDistrict.code, context.schoolYear);
-        if (extra && !context.district) context.district = extra;
+        if (extra && !context.district) {
+          context.district = extra;
+          // Its year-by-year figures have to follow it, or a follow-up about
+          // another year lands back on "this page only has one year".
+          context.districtHistory = districtHistoryContext(extra.code);
+        }
       }
 
       let history: AssistantChatMessage[] = priorTurns
@@ -353,10 +376,12 @@ export default function FundingAssistant() {
         }
       }
 
+      const replyId = newTurnId();
+      setRevealTurnId(replyId);
       setTurns((current) => [
         ...current,
         {
-          id: newTurnId(),
+          id: replyId,
           role: 'assistant',
           text: response.reply,
           sources: response.sources,
@@ -495,6 +520,8 @@ export default function FundingAssistant() {
                       strings={strings}
                       onRunAction={performAction}
                       onRetry={() => void ask(lastQuestionRef.current)}
+                      animate={turn.id === revealTurnId}
+                      onReveal={pinToBottom}
                     />
                   ))}
 

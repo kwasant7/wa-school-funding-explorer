@@ -4,10 +4,11 @@
  * One turn in the conversation: a visitor question, or an assistant answer
  * with its citations, action confirmations, and offered actions.
  */
+import { useState } from 'react';
 import type { AssistantStrings } from '@/lib/assistant/i18n';
 import type { AssistantAction, AssistantTurn } from '@/lib/assistant/types';
-import { renderMarkdown } from '@/lib/assistant/markdown';
 import AssistantSources from '@/components/assistant/AssistantSources';
+import RevealedText from '@/components/assistant/RevealedText';
 
 function CheckIcon() {
   return (
@@ -49,12 +50,25 @@ export default function AssistantMessage({
   strings,
   onRunAction,
   onRetry,
+  animate = false,
+  onReveal,
 }: {
   turn: AssistantTurn;
   strings: AssistantStrings;
   onRunAction: (action: AssistantAction) => void;
   onRetry: () => void;
+  /** True only for an answer that has just arrived, so it types itself in. */
+  animate?: boolean;
+  onReveal?: () => void;
 }) {
+  /*
+    Everything that hangs off the answer - the confidence caveat, the action
+    confirmations, the citations - waits for the text to finish. Showing them
+    against a half-written answer puts the footnotes before the sentence they
+    belong to, and each one appearing is another jump in the panel's height,
+    which is the thing being fixed.
+  */
+  const [revealed, setRevealed] = useState(!animate);
   if (turn.role === 'user') {
     return (
       <div className="flex justify-end">
@@ -90,19 +104,24 @@ export default function AssistantMessage({
   return (
     <div className="max-w-[95%]">
       <div className="rounded-2xl rounded-bl-sm border border-line bg-surface px-3.5 py-3 text-sm text-ink-secondary">
-        <div className="space-y-2.5">{renderMarkdown(turn.text)}</div>
+        <RevealedText
+          text={turn.text}
+          animate={animate}
+          onReveal={onReveal}
+          onDone={setRevealed}
+        />
 
         {/*
           A low-confidence answer says so in words rather than only dimming
           something, so the caveat survives for a screen reader.
         */}
-        {turn.confidence === 'low' && (
+        {revealed && turn.confidence === 'low' && (
           <p className="mt-2.5 border-t border-line pt-2 text-xs text-ink-muted">
             {strings.confidenceLow}
           </p>
         )}
 
-        {turn.performed && turn.performed.length > 0 && (
+        {revealed && turn.performed && turn.performed.length > 0 && (
           <ul className="mt-3 space-y-1 border-t border-line pt-2.5">
             {turn.performed.map((label) => (
               <li key={label} className="flex gap-1.5 text-xs font-medium text-good">
@@ -116,7 +135,7 @@ export default function AssistantMessage({
           </ul>
         )}
 
-        {turn.offered && turn.offered.length > 0 && (
+        {revealed && turn.offered && turn.offered.length > 0 && (
           <div className="mt-3 flex flex-wrap gap-1.5 border-t border-line pt-2.5">
             {turn.offered.map((offer) => (
               <button
@@ -131,7 +150,7 @@ export default function AssistantMessage({
           </div>
         )}
 
-        {turn.sources && (
+        {revealed && turn.sources && (
           <AssistantSources
             sources={turn.sources}
             heading={strings.sources}

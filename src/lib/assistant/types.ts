@@ -135,6 +135,27 @@ export type ContextDistrict = {
   oversight: string | null;
 };
 
+/**
+ * One district, one school year, in the few figures a follow-up question
+ * actually asks for.
+ *
+ * Deliberately much thinner than ContextDistrict. A visitor who has just been
+ * told this year's number asks "what about in 22-23?", and answering that
+ * needs the headline figures for every year, not the demographic breakdown for
+ * every year - which would be six times the payload to answer a question
+ * nobody asks.
+ */
+export type ContextDistrictYear = {
+  schoolYear: string;
+  fundingEnrollment: number;
+  headcount: number;
+  perPupil: number;
+  revenueTotal: number;
+  expenditures: number;
+  surplus: number;
+  reserveRatio: number | null;
+};
+
 export type ContextSimulator = {
   /** Only controls the visitor has actually moved off current law. */
   changed: {
@@ -168,6 +189,11 @@ export type AssistantPageContext = {
     numbers in front of the model, or the comparison is answered from one side.
   */
   comparisonDistrict: ContextDistrict | null;
+  /**
+   * Every year on record for the district in `district`, so a question about
+   * another year is answered rather than deflected to the year control.
+   */
+  districtHistory: ContextDistrictYear[] | null;
   statewide: ContextStatewide;
   simulator: ContextSimulator | null;
   availableSections: AllowedSectionId[];

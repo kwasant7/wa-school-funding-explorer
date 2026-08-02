@@ -91,6 +91,7 @@ function cleanContext(value: unknown): Record<string, unknown> {
   */
   for (const key of [
     'district',
+    'districtHistory',
     'comparisonDistrict',
     'statewide',
     'simulator',

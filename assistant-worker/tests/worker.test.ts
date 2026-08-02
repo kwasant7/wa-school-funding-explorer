@@ -15,7 +15,7 @@ import { isAllowedOrigin, parseAllowedOrigins } from '../src/cors.ts';
 import { RESPONSE_SCHEMA, RESPONSE_SCHEMA_NAME } from '../src/schema.ts';
 import { SYSTEM_PROMPT } from '../src/systemPrompt.ts';
 import { statewideSection } from '../src/statewide.ts';
-import { districtSection } from '../src/district.ts';
+import { districtHistorySection, districtSection } from '../src/district.ts';
 import { atLeast } from '../src/openai.ts';
 
 const STATEWIDE = {
@@ -393,6 +393,43 @@ describe('district rendering', () => {
       districtSection({ name: 'Benge School District', schoolYear: '2024-25', perPupil: 41_000 }, 'primary') ?? '';
     assert.match(text, /\$41,000/);
     assert.doesNotMatch(text, /Total general-fund revenue/);
+  });
+});
+
+/*
+ * "What about in 22-23?" used to be answered by sending the visitor to the
+ * year control. The site holds every year; these assertions pin that they
+ * reach the model, one readable line each, with the year named.
+ */
+describe('district history rendering', () => {
+  const HISTORY = [
+    { schoolYear: '2022-23', fundingEnrollment: 49_000, perPupil: 20_100, revenueTotal: 1_000_000_000, reserveRatio: 6.2 },
+    { schoolYear: '2024-25', fundingEnrollment: 49_809, perPupil: 23_584, revenueTotal: 1_174_000_000, reserveRatio: 5.0 },
+  ];
+
+  it('gives one line per year, each naming its year', () => {
+    const text = districtHistorySection(HISTORY, 'Seattle School District No. 1') ?? '';
+    assert.match(text, /2022-23: \$20,100 per student/);
+    assert.match(text, /2024-25: \$23,584 per student/);
+  });
+
+  it('forbids answering a year question by pointing at the year control', () => {
+    const text = districtHistorySection(HISTORY, 'Seattle School District No. 1') ?? '';
+    assert.match(text, /Do not send the visitor to change the year control/);
+    assert.match(text, /say which year your figure is from/);
+  });
+
+  it('says a missing year is missing rather than inviting the nearest one', () => {
+    assert.match(
+      districtHistorySection(HISTORY, 'Seattle School District No. 1') ?? '',
+      /rather than reaching for the nearest one/
+    );
+  });
+
+  it('skips rows it cannot date, and renders nothing when none survive', () => {
+    assert.equal(districtHistorySection([{ perPupil: 20_100 }], 'X'), null);
+    assert.equal(districtHistorySection([], 'X'), null);
+    assert.equal(districtHistorySection(null, 'X'), null);
   });
 });
 

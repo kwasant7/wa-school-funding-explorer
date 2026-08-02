@@ -15,6 +15,7 @@ import {
   type AssistantLanguage,
   type AssistantPageContext,
   type ContextDistrict,
+  type ContextDistrictYear,
   type ContextSimulator,
   type ContextStatewide,
 } from '@/lib/assistant/types';
@@ -101,6 +102,36 @@ export function districtContext(
     },
     oversight: oversight ? `${oversight.level}: ${oversight.detail}` : null,
   };
+}
+
+/**
+ * Every year this district reported, in headline figures only.
+ *
+ * The context used to carry the selected year and nothing else, so "what about
+ * in 22-23?" - the most natural follow-up there is - got answered with "this
+ * page only has 2024-25, switch the year over in the District Explorer". The
+ * site holds all six years already; withholding them from the model made the
+ * assistant worse at the one thing the data is good for.
+ */
+export function districtHistoryContext(code: string): ContextDistrictYear[] {
+  const history: ContextDistrictYear[] = [];
+  for (const year of YEARS) {
+    const record = yearData(year).districts.find((district) => district.code === code);
+    // Charters and compact schools open and close mid-series, so a missing
+    // year is normal and is simply left out rather than sent as zeroes.
+    if (!record) continue;
+    history.push({
+      schoolYear: year,
+      fundingEnrollment: Math.round(record.fundingEnrollment),
+      headcount: record.enrollment,
+      perPupil: Math.round(record.perPupil),
+      revenueTotal: Math.round(record.rev.total),
+      expenditures: Math.round(record.exp),
+      surplus: Math.round(record.surplus),
+      reserveRatio: record.reserveRatio,
+    });
+  }
+  return history;
 }
 
 /**
@@ -218,6 +249,7 @@ export function buildContext(options: {
     availableYears: [...YEARS],
     district,
     comparisonDistrict: comparison,
+    districtHistory: district ? districtHistoryContext(district.code) : null,
     statewide: statewideContext(schoolYear),
     simulator: simulatorContext(),
     availableSections: availableSections(),
