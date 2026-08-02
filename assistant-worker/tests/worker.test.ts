@@ -15,6 +15,8 @@ import { isAllowedOrigin, parseAllowedOrigins } from '../src/cors.ts';
 import { RESPONSE_SCHEMA, RESPONSE_SCHEMA_NAME } from '../src/schema.ts';
 import { SYSTEM_PROMPT } from '../src/systemPrompt.ts';
 import { statewideSection } from '../src/statewide.ts';
+import { districtSection } from '../src/district.ts';
+import { atLeast } from '../src/openai.ts';
 
 const STATEWIDE = {
   schoolYear: '2024-25',
@@ -31,6 +33,36 @@ const STATEWIDE = {
   expenditures: 21_075_984_997,
   surplus: -35_845_864,
   perPupil: { average: 19_753, median: 20_083, min: 12_567, max: 77_866 },
+};
+
+const DISTRICT = {
+  code: '17001',
+  name: 'Seattle School District No. 1',
+  county: 'King',
+  esd: 'Puget Sound ESD 121',
+  schoolYear: '2024-25',
+  fundingEnrollment: 49_809,
+  headcount: 51_000,
+  perPupil: 23_584,
+  revenue: {
+    state: 700_000_000,
+    local: 300_000_000,
+    federal: 120_000_000,
+    other: 54_000_000,
+    total: 1_174_000_000,
+  },
+  expenditures: 1_200_000_000,
+  surplus: -26_000_000,
+  fundBalance: 60_000_000,
+  reserveRatio: 5.0,
+  demographics: {
+    lowIncomePct: 34.2,
+    ellPct: 12.1,
+    spedPct: 15.4,
+    homelessPct: 2.9,
+    highlyCapablePct: 9.8,
+  },
+  oversight: null,
 };
 
 const valid = {
@@ -290,5 +322,96 @@ describe('statewide rendering', () => {
     const text = statewideSection({ schoolYear: '2024-25', perPupil: { average: 19_753 } }) ?? '';
     assert.match(text, /average \$19,753/);
     assert.doesNotMatch(text, /Total revenue/);
+  });
+});
+
+/*
+ * District figures get the same prose treatment as the statewide ones, for the
+ * same reason and after the same failure: asked for Seattle's funding FTE with
+ * the number sitting in the JSON under `fundingEnrollment`, the model replied
+ * that the site had no such figure, printed the key name, and sent the visitor
+ * to "the district context". These assertions pin the three properties that
+ * fixed it - human names for the figures, no key names, and no page-opening
+ * precondition.
+ */
+describe('district rendering', () => {
+  it('names funding FTE and headcount in words, not as field names', () => {
+    const text = districtSection(DISTRICT, 'primary') ?? '';
+    assert.match(text, /Funding FTE[^:]*: 49,809/);
+    assert.match(text, /October headcount[^:]*: 51,000/);
+    // The two are given as separate statements, because the model kept
+    // answering a funding-FTE question with the headcount.
+    assert.match(text, /do not give it as the FTE/);
+    for (const key of ['fundingEnrollment', 'perPupil', 'reserveRatio', 'comparisonDistrict']) {
+      assert.doesNotMatch(text, new RegExp(key), `leaked field name: ${key}`);
+    }
+  });
+
+  it('writes money for a reader and never abbreviates per-student', () => {
+    const text = districtSection(DISTRICT, 'primary') ?? '';
+    assert.match(text, /\$1\.2 billion/);
+    assert.match(text, /Funding per student: \$23,584/);
+    assert.match(text, /\$60\.0 million/);
+  });
+
+  it('says the figures do not depend on which page is open', () => {
+    const text = districtSection(DISTRICT, 'primary') ?? '';
+    assert.match(text, /whatever page the visitor is on/);
+    assert.match(text, /do not become unavailable/);
+    // Not a markdown heading: the model echoes headings back as destinations.
+    assert.doesNotMatch(text, /^#/m);
+  });
+
+  it('marks a district the visitor named apart from the one on the page', () => {
+    assert.match(districtSection(DISTRICT, 'comparison') ?? '', /the district the visitor asked about/);
+    assert.doesNotMatch(districtSection(DISTRICT, 'primary') ?? '', /the district the visitor asked about/);
+  });
+
+  it('names the district and the year it describes', () => {
+    const text = districtSection(DISTRICT, 'primary') ?? '';
+    assert.match(text, /Seattle School District No\. 1/);
+    assert.match(text, /2024-25/);
+  });
+
+  it('reads a deficit as spending down savings, not as a negative number', () => {
+    assert.match(districtSection(DISTRICT, 'primary') ?? '', /more than it took in/);
+    assert.match(
+      districtSection({ ...DISTRICT, surplus: 4_000_000 }, 'primary') ?? '',
+      /more than it spent/
+    );
+  });
+
+  it('returns null rather than a hollow section', () => {
+    assert.equal(districtSection(null, 'primary'), null);
+    assert.equal(districtSection('nope', 'primary'), null);
+    // A name with no year cannot be quoted safely, so it is not rendered.
+    assert.equal(districtSection({ name: 'Seattle School District No. 1' }, 'primary'), null);
+  });
+
+  it('renders what it has when fields are absent', () => {
+    const text =
+      districtSection({ name: 'Benge School District', schoolYear: '2024-25', perPupil: 41_000 }, 'primary') ?? '';
+    assert.match(text, /\$41,000/);
+    assert.doesNotMatch(text, /Total general-fund revenue/);
+  });
+});
+
+/*
+ * Non-English answers run at a raised reasoning floor. The floor must never
+ * pull a deliberately higher configured effort back down.
+ */
+describe('reasoning effort floor', () => {
+  it('raises an effort below the floor', () => {
+    assert.equal(atLeast('minimal', 'low'), 'low');
+    assert.equal(atLeast('none', 'low'), 'low');
+  });
+
+  it('leaves an effort at or above the floor alone', () => {
+    assert.equal(atLeast('low', 'low'), 'low');
+    assert.equal(atLeast('high', 'low'), 'high');
+  });
+
+  it('falls back to the floor for an unrecognised configured value', () => {
+    assert.equal(atLeast('turbo' as never, 'low'), 'low');
   });
 });

@@ -15,6 +15,11 @@
     "OPENAI_MAX_OUTPUT_TOKENS": "1400",
     "OPENAI_REASONING_EFFORT": "low",
 
+    // Floor applied only to the six non-English languages, which answered
+    // noticeably worse than English at the same effort. Set to "low" to spend
+    // the same on every language again.
+    "OPENAI_NON_ENGLISH_MIN_EFFORT": "medium",
+
     // Exact origins only - an Origin header has no path, so a GitHub Pages
     // project path cannot be part of this value.
     //

@@ -4,6 +4,9 @@
     "lib": ["es2022"],
     "module": "es2022",
     "moduleResolution": "bundler",
+    // Sources import each other with explicit .ts specifiers so the same
+    // path works under esbuild, Node's type stripping, and tsc.
+    "allowImportingTsExtensions": true,
     "types": ["@cloudflare/workers-types"],
     "strict": true,
     "noEmit": true,

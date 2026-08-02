@@ -4,41 +4,7 @@
  * Kept out of openai.ts because it is pure formatting with no dependencies,
  * which makes it directly testable - the assembly in buildInput is not.
  */
-function num(value: unknown): number | null {
-  return typeof value === 'number' && Number.isFinite(value) ? value : null;
-}
-
-/** Thousands separators without depending on Intl being present in the runtime. */
-function commas(value: number): string {
-  const rounded = Math.round(Math.abs(value)).toString();
-  const grouped = rounded.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
-  return value < 0 ? `-${grouped}` : grouped;
-}
-
-function dollars(value: number): string {
-  return `$${commas(value)}`;
-}
-
-/** Big totals read better abbreviated; the exact figure follows in parentheses. */
-function bigDollars(value: number): string {
-  const abs = Math.abs(value);
-  if (abs >= 1_000_000_000) return `$${(value / 1_000_000_000).toFixed(1)} billion (${dollars(value)})`;
-  if (abs >= 1_000_000) return `$${(value / 1_000_000).toFixed(1)} million (${dollars(value)})`;
-  return dollars(value);
-}
-
-/** "state $16.2 billion" for each entry that carries a usable number. */
-function labelled(
-  pairs: [string, unknown][],
-  format: (value: number) => string
-): string[] {
-  const out: string[] = [];
-  for (const [label, raw] of pairs) {
-    const value = num(raw);
-    if (value !== null) out.push(`${label} ${format(value)}`);
-  }
-  return out;
-}
+import { bigDollars, commas, dollars, labelled, num } from './format.ts';
 
 /**
  * Render the statewide figures as prose rather than leaving them in the JSON
@@ -117,13 +83,16 @@ export function statewideSection(value: unknown): string | null {
   }
 
   /*
-    The heading is worded as a fact sheet, not a place. Earlier wordings like
-    "Washington statewide totals" got quoted straight back to visitors as a
-    page to go and look at, which does not exist.
+    Worded as a fact sheet, not a place, and deliberately not a markdown
+    heading. Earlier wordings like "Washington statewide totals" got quoted
+    straight back to visitors as a page to go and look at, which does not
+    exist - and a "## ..." title got echoed the same way, including verbatim in
+    English inside a Spanish reply.
   */
   return (
-    `## Verified figures you may state directly. Washington, all districts, ${year}. ` +
-    'This is data, not a page on the site, so never refer the visitor to it.\n' +
+    `The figures below are this website's published statewide figures for Washington, all ` +
+    `districts, ${year}. State them directly. This is data, not a page on the site: never ` +
+    'quote these words back to the visitor and never refer them to it.\n' +
     lines.join(' ')
   );
 }

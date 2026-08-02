@@ -12,10 +12,10 @@
  * OpenAI request ID is what you need to look it up in the provider dashboard,
  * and it is returned to the caller as an opaque support code only on 5xx.
  */
-import { corsHeaders, isAllowedOrigin, jsonResponse, parseAllowedOrigins } from './cors';
-import { checkRateLimit, type RateLimitEnv } from './rateLimit';
-import { callModel, DEFAULT_MODEL, type OpenAiEnv } from './openai';
-import { isFailure, LIMITS, validateRequest } from './validation';
+import { corsHeaders, isAllowedOrigin, jsonResponse, parseAllowedOrigins } from './cors.ts';
+import { checkRateLimit, type RateLimitEnv } from './rateLimit.ts';
+import { callModel, DEFAULT_MODEL, type OpenAiEnv } from './openai.ts';
+import { isFailure, LIMITS, validateRequest } from './validation.ts';
 
 export type Env = OpenAiEnv &
   RateLimitEnv & {
