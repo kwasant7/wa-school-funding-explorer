@@ -98,14 +98,24 @@ export default function SourceShareBar({
           );
         })}
       </div>
+      {/*
+        Hover must not change any element's size. Weight is fixed and only
+        colour responds, because bolding a legend entry widens it, and at these
+        widths a few extra pixels re-wraps the row - which changes the card's
+        height, moves the bar out from under the cursor, and drops the hover.
+        The result was a legend that flickered as fast as the mouse moved.
+        `whitespace-nowrap` stops an entry from breaking mid-figure for the
+        same reason.
+      */}
       <div className="mt-3 flex flex-wrap gap-x-5 gap-y-2">
         {SEGMENTS.map((seg) => {
           const v = slices[seg.key];
           if (v <= 0) return null;
+          const active = hover === seg.key;
           return (
             <div
               key={seg.key}
-              className="flex items-center gap-1.5 text-sm"
+              className="flex items-center gap-1.5 whitespace-nowrap text-sm"
               onMouseEnter={() => setHover(seg.key)}
               onMouseLeave={() => setHover(null)}
             >
@@ -114,13 +124,11 @@ export default function SourceShareBar({
                 style={{ background: seg.color }}
                 aria-hidden
               />
-              <span
-                className={hover === seg.key ? 'font-bold text-ink' : 'text-ink-secondary'}
-              >
+              <span className={active ? 'text-ink' : 'text-ink-secondary'}>
                 {seg.label}
               </span>
               <span
-                className={`tabular-nums ${hover === seg.key ? 'font-bold text-ink' : 'font-medium'}`}
+                className={`font-semibold tabular-nums ${active ? 'text-ink' : 'text-ink-secondary'}`}
               >
                 {fmtMoney(v)} · {pctLabel(v, total)}
               </span>
@@ -129,13 +137,29 @@ export default function SourceShareBar({
         })}
       </div>
       {/*
-        Reserved height, always present: swapping this line in and out on
-        hover used to reflow everything below the chart on every mouse move.
-        Now hovering only changes the text inside a slot that was already there.
+        Every blurb is laid out in the same grid cell, so the row is always as
+        tall as the longest one and showing a different line cannot change the
+        card's height. A reserved single line was not enough: these blurbs wrap
+        to two or three lines in a narrow card, and the growth was what pushed
+        the bar around under the cursor.
       */}
-      <p className="mt-2 min-h-[1.25rem] text-xs text-ink-muted">
-        {hover ? SEGMENTS.find((s) => s.key === hover)?.blurb : caption ?? ''}
-      </p>
+      <div className="mt-2 grid text-xs text-ink-muted">
+        {[
+          ...SEGMENTS.map((seg) => ({ key: seg.key, text: seg.blurb })),
+          { key: '__caption', text: caption ?? '' },
+        ].map((item) => (
+          <p
+            key={item.key}
+            aria-hidden={item.key !== (hover ?? '__caption')}
+            className="col-start-1 row-start-1"
+            style={{
+              visibility: item.key === (hover ?? '__caption') ? 'visible' : 'hidden',
+            }}
+          >
+            {item.text}
+          </p>
+        ))}
+      </div>
     </figure>
   );
 }

@@ -2,7 +2,7 @@
 
 import { useCallback, useState } from 'react';
 import Link from 'next/link';
-import { District, LATEST, YEARS, yearData } from '@/lib/data';
+import { District, LATEST, yearData } from '@/lib/data';
 import StatTile from '@/components/StatTile';
 import SourceShareBar from '@/components/charts/SourceShareBar';
 import CountUp from '@/components/interactive/CountUp';
@@ -13,9 +13,24 @@ import FundingJourney from '@/components/interactive/FundingJourney';
 import { useAssistantDistrict, useAssistantYear } from '@/lib/assistant/store';
 import { yearData as yearDataFor } from '@/lib/data';
 
+/**
+ * The district this page opens on.
+ *
+ * Everything below the picker is written about a specific district, so an
+ * unselected page showed a placeholder card where the explanation should be -
+ * a visitor's first impression of the site was an empty state. Bellevue is a
+ * large, well-known district with every figure populated, which makes it a
+ * reasonable thing to be looking at before you find your own.
+ */
+const DEFAULT_DISTRICT_CODE = '17405'; // Bellevue School District
+
 export default function HomePage() {
   const [year, setYear] = useState(LATEST);
-  const [selectedDistrict, setSelectedDistrict] = useState<District | null>(null);
+  const [selectedDistrict, setSelectedDistrict] = useState<District | null>(
+    () =>
+      yearData(LATEST).districts.find((d) => d.code === DEFAULT_DISTRICT_CODE) ??
+      null
+  );
   const s = yearData(year).statewide;
 
   /*
@@ -42,32 +57,14 @@ export default function HomePage() {
     <div className="max-w-site mx-auto px-4 md:px-6">
       {/* Hero */}
       <section data-assistant-section="hero" className="pt-10 md:pt-14 pb-8">
-        <div className="flex items-start justify-between gap-4 flex-wrap">
-          <div>
-            <p className="text-sm font-semibold text-accent uppercase tracking-wide">
-              How it works · play with everything on this page
-            </p>
-            <h1 className="mt-2 text-3xl md:text-5xl font-bold tracking-tight max-w-3xl">
-              How K-12 schools are funded
-            </h1>
-          </div>
-          {/* Same placement as the District Explorer: ahead of the figures it
-              governs, so the year is read before the numbers. */}
-          <label className="shrink-0 inline-flex items-center gap-2 text-sm text-ink-secondary md:pt-2">
-            School year
-            <select
-              value={year}
-              onChange={(event) => setYear(event.target.value)}
-              className="card px-3 py-2 text-base font-medium text-ink cursor-pointer"
-            >
-              {YEARS.map((option) => (
-                <option key={option} value={option}>
-                  {option}
-                </option>
-              ))}
-            </select>
-          </label>
-        </div>
+        {/* The school-year control lives in the site header, beside the
+            language control - see SchoolYearSwitcher. */}
+        <p className="text-sm font-semibold text-accent uppercase tracking-wide">
+          How it works · play with everything on this page
+        </p>
+        <h1 className="mt-2 text-3xl md:text-5xl font-bold tracking-tight max-w-3xl">
+          How K-12 schools are funded
+        </h1>
         <p className="mt-4 max-w-2xl text-lg text-ink-secondary">
           The state doesn&apos;t fund the schools that exist - it funds a
           make-believe &ldquo;prototypical school&rdquo; and uses it as a recipe
@@ -98,7 +95,11 @@ export default function HomePage() {
 
       {/* Personalize */}
       <section data-assistant-section="district-picker" className="pb-8">
-        <DistrictQuickFind onPick={setSelectedDistrict} year={year} />
+        <DistrictQuickFind
+          onPick={setSelectedDistrict}
+          year={year}
+          initialCode={DEFAULT_DISTRICT_CODE}
+        />
       </section>
 
       {selectedDistrict ? (

@@ -13,11 +13,18 @@ type MapFile = {
   water?: { name?: string; d: string }[];
 };
 
-// Blue -> purple ramp: blue is the least funded per student, purple the most.
-// Deliberately not the green/red of the reserve-ratio scale, because low
-// per-student funding is not automatically "bad" the way an empty reserve is -
-// small rural districts sit at the top of this scale for cost reasons.
-const RAMP = ['#bcd7f7', '#7aa8e6', '#6f7fd6', '#8a5fc4', '#6b21a8'];
+// Purple -> blue ramp: purple is the least funded per student, blue the most.
+// Lightness climbs with the value as well as hue, so the ordering survives
+// greyscale printing and the two ends stay distinguishable for colour-blind
+// readers. Deliberately not the green/red of the reserve-ratio scale, because
+// low per-student funding is not automatically "bad" the way an empty reserve
+// is - small rural districts sit at the top of this scale for cost reasons.
+const RAMP = ['#e3d3f5', '#b98ee0', '#8a7fd6', '#4a7fd0', '#10429b'];
+
+// Legend end-labels. Taken out of the ramp itself because the pale end of a
+// map ramp is far too light to read as text on paper-white.
+const RAMP_LOW_LABEL = '#7c3aed';
+const RAMP_HIGH_LABEL = '#10429b';
 const NO_DATA = '#e1e0d9';
 
 // How far past the state extent you can zoom out (breathing room around WA)
@@ -79,9 +86,15 @@ function reserveColor(rr: number) {
 
 type Metric = 'perPupil' | 'reserveRatio';
 
+/*
+  Reserve ratio leads and is the default view. It is the measure with a fixed,
+  meaningful threshold - below 5% a district is one bad year from cuts - so it
+  answers "is my district in trouble?" directly, whereas funding per student
+  only means something once you know how big and how rural the district is.
+*/
 const METRICS: { id: Metric; label: string }[] = [
-  { id: 'perPupil', label: 'Funding per student' },
   { id: 'reserveRatio', label: 'Reserve ratio' },
+  { id: 'perPupil', label: 'Funding per student' },
 ];
 
 let mapCache: MapFile | null = null;
@@ -95,7 +108,7 @@ export default function WaMap({
 }) {
   const [map, setMap] = useState<MapFile | null>(mapCache);
   const [view, setView] = useState<{ x: number; y: number; w: number; h: number } | null>(null);
-  const [metric, setMetric] = useState<Metric>('perPupil');
+  const [metric, setMetric] = useState<Metric>('reserveRatio');
   const [hovered, setHovered] = useState<string | null>(null);
   const [hoverPoint, setHoverPoint] = useState<{ x: number; y: number; below: boolean; left: boolean } | null>(null);
   const dragged = useRef(false);
@@ -477,7 +490,7 @@ export default function WaMap({
           <>
             <span className="font-medium text-ink">Funding per student ({year}):</span>
             <span className="flex items-center gap-2">
-              <span className="font-medium" style={{ color: RAMP[1] }}>
+              <span className="font-medium" style={{ color: RAMP_LOW_LABEL }}>
                 lower
               </span>
               <span
@@ -485,7 +498,7 @@ export default function WaMap({
                 style={{ background: `linear-gradient(to right, ${RAMP.join(', ')})` }}
                 aria-hidden
               />
-              <span className="font-medium" style={{ color: RAMP[4] }}>
+              <span className="font-medium" style={{ color: RAMP_HIGH_LABEL }}>
                 higher
               </span>
             </span>

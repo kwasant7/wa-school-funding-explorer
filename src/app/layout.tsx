@@ -3,6 +3,7 @@ import Link from 'next/link';
 import './globals.css';
 import TabNav from '@/components/TabNav';
 import LanguageSwitcher from '@/components/LanguageSwitcher';
+import SchoolYearSwitcher from '@/components/SchoolYearSwitcher';
 import FundingAssistant from '@/components/assistant/FundingAssistant';
 
 export const metadata: Metadata = {
@@ -30,6 +31,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                 <span className="text-xs text-ink-muted">
                   OSPI data · 2019-20 to 2024-25
                 </span>
+                <SchoolYearSwitcher />
                 <LanguageSwitcher />
               </div>
             </div>

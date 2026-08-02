@@ -8,12 +8,22 @@ import { fmtInt, fmtMoneyFull } from '@/lib/format';
 export default function DistrictQuickFind({
   onPick,
   year = LATEST,
+  initialCode,
 }: {
   onPick?: (district: District | null) => void;
   year?: string;
+  /**
+   * District to start on, so the page can open already personalized. The
+   * search box has to be seeded along with it - a page showing one district's
+   * figures above an empty search box reads as a bug.
+   */
+  initialCode?: string;
 }) {
-  const [query, setQuery] = useState('');
-  const [picked, setPicked] = useState<District | null>(null);
+  const initial = initialCode
+    ? (yearData(year).districts.find((d) => d.code === initialCode) ?? null)
+    : null;
+  const [query, setQuery] = useState(initial?.name ?? '');
+  const [picked, setPicked] = useState<District | null>(initial);
   const [open, setOpen] = useState(false);
   const [activeIndex, setActiveIndex] = useState(0);
   const selectorRef = useRef<HTMLDivElement>(null);

@@ -15,25 +15,6 @@ import { oversightFor, OVERSIGHT_SOURCE, OVERSIGHT_CHECKED_ON } from '@/data/ove
 import { fmtInt, fmtMoney, fmtMoneyFull, fmtSignedMoney, pct } from '@/lib/format';
 import { useAssistantDistrict, useAssistantYear } from '@/lib/assistant/store';
 
-function YearSelect({ year, onChange }: { year: string; onChange: (y: string) => void }) {
-  return (
-    <label className="inline-flex items-center gap-2 text-sm text-ink-secondary">
-      School year
-      <select
-        value={year}
-        onChange={(e) => onChange(e.target.value)}
-        className="card px-3 py-2 text-base font-medium text-ink cursor-pointer"
-      >
-        {YEARS.map((y) => (
-          <option key={y} value={y}>
-            {y}
-          </option>
-        ))}
-      </select>
-    </label>
-  );
-}
-
 export default function DistrictsExplorer() {
   const router = useRouter();
   const params = useSearchParams();
@@ -68,7 +49,7 @@ export default function DistrictsExplorer() {
   });
 
   if (selectedCode && selected) {
-    return <DistrictDetail district={selected} year={year} onYearChange={setYear} />;
+    return <DistrictDetail district={selected} year={year} />;
   }
   if (selectedCode) {
     // District exists in another year but not this one. Offer the most
@@ -107,7 +88,6 @@ export default function DistrictsExplorer() {
   return (
     <DistrictOverview
       year={year}
-      onYearChange={setYear}
       onSelect={(code) => router.push(`/districts?d=${code}`)}
     />
   );
@@ -115,11 +95,9 @@ export default function DistrictsExplorer() {
 
 function DistrictOverview({
   year,
-  onYearChange,
   onSelect,
 }: {
   year: string;
-  onYearChange: (y: string) => void;
   onSelect: (code: string) => void;
 }) {
   const data = yearData(year);
@@ -127,27 +105,16 @@ function DistrictOverview({
 
   return (
     <div className="max-w-site mx-auto px-4 md:px-6 pt-10">
-      {/*
-        The year control belongs up here, not buried in the map card: every
-        figure on this page - the four stat tiles included - is for the
-        selected year, so the reader needs to see what year they are looking
-        at before the numbers, not after.
-      */}
-      <div className="flex items-start justify-between gap-4 flex-wrap">
-        <div>
-          <h1 className="text-3xl md:text-4xl font-bold tracking-tight">
-            District Explorer
-          </h1>
-          <p className="mt-3 max-w-2xl text-ink-secondary">
-            Funding for every school district and charter school in Washington,
-            from the F-196 financial reports, any year since 2019-20. Pick your
-            district on the map - its full profile opens on this page.
-          </p>
-        </div>
-        <div className="shrink-0 md:pt-2">
-          <YearSelect year={year} onChange={onYearChange} />
-        </div>
-      </div>
+      {/* The school-year control lives in the site header, beside the
+          language control - see SchoolYearSwitcher. */}
+      <h1 className="text-3xl md:text-4xl font-bold tracking-tight">
+        District Explorer
+      </h1>
+      <p className="mt-3 max-w-2xl text-ink-secondary">
+        Funding for every school district and charter school in Washington,
+        from the F-196 financial reports, any year since 2019-20. Pick your
+        district on the map - its full profile opens on this page.
+      </p>
 
       <div data-assistant-section="district-stats" className="mt-6 grid lg:grid-cols-[1fr,22rem] gap-4 items-stretch">
         <div className="grid grid-cols-2 gap-3">
@@ -471,11 +438,9 @@ function TrendAnalysis({ district: d }: { district: District }) {
 function DistrictDetail({
   district: d,
   year,
-  onYearChange,
 }: {
   district: District;
   year: string;
-  onYearChange: (y: string) => void;
 }) {
   const data = yearData(year);
   const s = data.statewide;
@@ -520,12 +485,9 @@ function DistrictDetail({
 
   return (
     <div className="max-w-site mx-auto px-4 md:px-6 pt-8">
-      <div className="flex items-center justify-between gap-4 flex-wrap">
-        <Link href="/districts" className="text-sm text-accent hover:underline">
-          ← District Explorer
-        </Link>
-        <YearSelect year={year} onChange={onYearChange} />
-      </div>
+      <Link href="/districts" className="text-sm text-accent hover:underline">
+        ← District Explorer
+      </Link>
       <div className="mt-3 flex items-baseline gap-3 flex-wrap">
         <h1 className="text-3xl md:text-4xl font-bold tracking-tight" data-no-translate>
           {d.name}

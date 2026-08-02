@@ -39,7 +39,9 @@ const AXES: { id: Axis; label: string; noun: string; axis: string }[] = [
 
 const W = 720;
 const H = 340;
-const PAD = { top: 16, right: 16, bottom: 42, left: 62 };
+// Left padding carries the "$40K" tick labels plus the rotated axis title
+// standing outside them.
+const PAD = { top: 16, right: 16, bottom: 42, left: 80 };
 
 /**
  * Y range covering all but a handful of very small districts. Those sit far
@@ -215,6 +217,22 @@ export default function NeedVsFundingChart({
           y2={H - PAD.bottom}
           stroke="#c3c2b7"
         />
+        {/*
+          The vertical axis carried tick labels but no title, so "$25K" was a
+          number with no unit attached - and this chart's whole argument is
+          about what that number is (state money only, per student, not total
+          revenue). Rotated rather than stacked so it cannot be mistaken for a
+          heading.
+        */}
+        <text
+          transform={`translate(15, ${(PAD.top + (H - PAD.bottom)) / 2}) rotate(-90)`}
+          fontSize="11"
+          fill="#52514e"
+          textAnchor="middle"
+          fontWeight="600"
+        >
+          State funding per student →
+        </text>
         <text
           x={PAD.left}
           y={H - 6}
@@ -227,7 +245,12 @@ export default function NeedVsFundingChart({
         </text>
       </svg>
 
-      <p className="mt-1 min-h-[1.25rem] text-xs text-ink-muted">
+      {/*
+        Two lines reserved, not one. A district's hover line wraps on a narrow
+        card, and the extra line grew the figure, shifted the dots, and dropped
+        the hover the moment it appeared.
+      */}
+      <p className="mt-1 min-h-[2.25rem] text-xs text-ink-muted">
         {hover ? (
           <>
             <strong className="text-ink">{hover.name}</strong> —{' '}
