@@ -134,10 +134,19 @@ export function districtSection(
     );
   }
 
+  /*
+    Named three ways on purpose. The map's tooltips write this figure as
+    "$21,380/FTE", so a visitor who learned the notation from the site types
+    "what was the funding/FTE" - and got the FTE count back, because the only
+    label the model had for the dollar figure was "funding per student". The
+    notation the site prints is a name people will use, so it has to be here.
+  */
   const perPupil = num(d.perPupil);
   if (perPupil !== null) {
     lines.push(
-      `Funding per student: ${dollars(perPupil)} (total revenue divided by funding FTE).`
+      `Funding per student, which this site also writes as ${dollars(perPupil)}/FTE ` +
+        `or funding/FTE: ${dollars(perPupil)} (total revenue divided by funding FTE). ` +
+        'This is a dollar amount, not a count of students.'
     );
   }
 

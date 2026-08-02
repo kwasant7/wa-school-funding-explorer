@@ -347,10 +347,19 @@ describe('district rendering', () => {
     }
   });
 
+  it('names the dollar figure the way the site\'s own map labels it', () => {
+    // The map prints "$23,584/FTE", so that notation is a name a visitor
+    // will type - and it used to fetch them the FTE count instead.
+    const text = districtSection(DISTRICT, 'primary') ?? '';
+    assert.match(text, /\$23,584\/FTE/);
+    assert.match(text, /funding\/FTE/);
+    assert.match(text, /not a count of students/);
+  });
+
   it('writes money for a reader and never abbreviates per-student', () => {
     const text = districtSection(DISTRICT, 'primary') ?? '';
     assert.match(text, /\$1\.2 billion/);
-    assert.match(text, /Funding per student: \$23,584/);
+    assert.match(text, /funding\/FTE: \$23,584 /);
     assert.match(text, /\$60\.0 million/);
   });
 
