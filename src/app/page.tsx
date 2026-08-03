@@ -66,9 +66,8 @@ export default function HomePage() {
           How K-12 schools are funded
         </h1>
         <p className="mt-4 max-w-2xl text-lg text-ink-secondary">
-          The state doesn&apos;t fund the schools that exist - it funds a
-          make-believe &ldquo;prototypical school&rdquo; and uses it as a recipe
-          for real money. A lot of it:
+          The state funds a make-believe &ldquo;prototypical school&rdquo; and
+          uses a formula to give money to each school
         </p>
         <div className="mt-6 grid grid-cols-2 lg:grid-cols-4 gap-3">
           <StatTile
