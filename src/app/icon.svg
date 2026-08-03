@@ -1,21 +1,44 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="K-12">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="WA K-12">
   <!--
-    Favicon: a plain K-12 wordmark on the site's accent blue.
+    Favicon: a WA / K-12 wordmark on the site's accent blue.
 
-    textLength + lengthAdjust pins the wordmark to a fixed 50px of the 64px
-    tile rather than trusting whatever font the browser happens to have for a
-    favicon - without it the mark reflows and can overflow the tile on
-    machines missing the preferred sans.
+    Stacked rather than set on one line. Four glyphs across a 64px tile would
+    leave each one about 2px wide in a 16px tab, which is a smudge; two rows of
+    two or four reads as a mark even when the letters themselves stop
+    resolving.
+
+    WA leads and is the larger of the two because it is the half that says
+    which state, and at the sizes where only one row survives that is the more
+    useful half to keep. K-12 sits under a rule that does the work a smaller
+    font alone would not - it separates the rows at 16px, where the whitespace
+    between them disappears.
+
+    textLength + lengthAdjust pins each row to a fixed width rather than
+    trusting whatever font the browser happens to have for a favicon. Without
+    it the mark reflows and can overflow the tile on machines missing the
+    preferred sans.
   -->
   <rect width="64" height="64" rx="13" fill="#256abf" />
   <text
     x="32"
-    y="43.5"
-    textLength="50"
+    y="30"
+    textLength="38"
     lengthAdjust="spacingAndGlyphs"
     text-anchor="middle"
     font-family="system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif"
     font-size="27"
+    font-weight="700"
+    fill="#ffffff"
+  >WA</text>
+  <rect x="14" y="35.5" width="36" height="2.5" rx="1.25" fill="#ffffff" fill-opacity="0.55" />
+  <text
+    x="32"
+    y="53"
+    textLength="36"
+    lengthAdjust="spacingAndGlyphs"
+    text-anchor="middle"
+    font-family="system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif"
+    font-size="17"
     font-weight="700"
     fill="#ffffff"
   >K-12</text>
