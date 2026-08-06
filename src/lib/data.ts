@@ -72,11 +72,16 @@ export type YearData = {
 
 const byYear = historyJson.byYear as unknown as Record<string, YearData>;
 
-export const YEARS: string[] = historyJson.years;
-export const LATEST: string = historyJson.latest;
+/*
+  Re-exported from lib/years so callers that need both the year list and the
+  data can keep importing from one place, while callers that need only the list
+  can import lib/years directly and avoid pulling history.json into their chunk.
+*/
+export { YEARS, LATEST } from '@/lib/years';
+import { LATEST as LATEST_YEAR, YEARS as YEAR_LABELS } from '@/lib/years';
 
 export function yearData(year: string): YearData {
-  return byYear[year] ?? byYear[LATEST];
+  return byYear[year] ?? byYear[LATEST_YEAR];
 }
 
 /** A district's value in each year (null where it has no data that year). */
@@ -84,7 +89,7 @@ export function districtSeries<T>(
   code: string,
   pick: (d: District) => T
 ): { label: string; value: T | null }[] {
-  return YEARS.map((label) => {
+  return YEAR_LABELS.map((label) => {
     const d = byYear[label]?.districts.find((x) => x.code === code);
     return { label, value: d ? pick(d) : null };
   });
@@ -93,5 +98,13 @@ export function districtSeries<T>(
 export function statewideSeries<T>(
   pick: (s: Statewide) => T
 ): { label: string; value: T }[] {
-  return YEARS.map((label) => ({ label, value: pick(byYear[label].statewide) }));
+  /*
+    Optional-chained like districtSeries above. YEARS and byYear are produced by
+    separate steps of fetch-data.mjs, so a year label with no matching entry is
+    possible; unguarded this threw and, with no error boundary, blanked the page.
+  */
+  return YEAR_LABELS.filter((label) => byYear[label]).map((label) => ({
+    label,
+    value: pick(byYear[label].statewide),
+  }));
 }

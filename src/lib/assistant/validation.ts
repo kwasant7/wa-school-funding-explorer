@@ -24,7 +24,7 @@ import {
 } from '@/lib/assistant/types';
 import { assistantSource } from '@/lib/assistant/knowledge';
 import { clampControlValue, isSimulatorControlId } from '@/lib/simulator-config';
-import { YEARS } from '@/lib/data';
+import { YEARS } from '@/lib/years';
 import districtsData from '@/data/districts.json';
 
 const ROUTE_SET = new Set<string>(ALLOWED_ROUTES);

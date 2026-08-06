@@ -365,7 +365,10 @@ function AllocationBar({
               onMouseLeave={() => setHover(null)}
             >
               {share >= MIN_LABEL_SHARE && (
-                <span className="text-xs font-semibold text-white select-none">
+                // See SourceShareBar.tsx: a white chip under dark text passes
+                // WCAG contrast against any of this band's eleven fill colors,
+                // several of which (e.g. #b9d0f2) white text failed badly.
+                <span className="rounded bg-white px-1 py-0.5 text-[11px] font-semibold text-ink select-none">
                   {Math.round(share)}%
                 </span>
               )}

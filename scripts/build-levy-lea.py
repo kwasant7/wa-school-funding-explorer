@@ -41,17 +41,20 @@ REVENUES = os.path.join(RAW, 'gf-revenues-2425.csv')
 CALENDAR_YEAR = 2026
 LEA_THRESHOLD = 2223.80  # LevyCalc assumption C, CY2026 ($/pupil)
 LEA_MAX_RATE = 1.50  # LevyCalc assumption D ($ per $1,000 AV)
-MAX_LEVY_PER_PUPIL = 3838.26  # assumption A
+MAX_LEVY_PER_PUPIL = 3851.24  # assumption A - OSPI-published CY2026 limit
 MAX_LEVY_RATE = 2.50  # assumption B
 
 # RCW 84.52.0531 sets a higher per-pupil levy limit for districts with 40,000+
 # FTE students, and Seattle (17001) is the only one. OSPI's LevyCalc cell C17
 # hardcodes exactly that split:
 #   IF(A1="17001", ROUND(3896.8*(1+CPI)+500, 2), ROUND(3247.33*(1+CPI)+500, 2))
-# with the CY2026 levy CPI of 2.8%, giving 4505.91 and 3838.26 respectively.
+# with the CY2026 levy CPI of 3.2%, giving 4521.50 and 3851.24 respectively -
+# both published by OSPI (app.leg.wa.gov's RCW 84.52.0531 page confirms the
+# same two figures). An earlier version of this file used a 2.8% CPI
+# assumption (4505.91 / 3838.26), which was wrong for CY2026.
 # The two converge at a flat $5,035 in 2031, when the statute drops the split.
 LARGE_DISTRICT_CODES = ['17001']
-MAX_LEVY_PER_PUPIL_LARGE = 4505.91
+MAX_LEVY_PER_PUPIL_LARGE = 4521.50
 
 
 def ensure_workbook():

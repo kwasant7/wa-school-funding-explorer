@@ -108,7 +108,7 @@ function ModelCard({
       </div>
       {staff.map(({ role, fte }) => <div key={role}>
         <div className="flex items-baseline gap-2 flex-wrap"><span className="w-36 shrink-0 text-sm font-semibold">{role}</span><span className="text-sm tabular-nums font-bold text-accent-deep w-12">{fmtFte(fte)}</span>
-          {role === 'Counselors' && <span className="text-xs text-ink-muted">1 for every {Math.round(fundingFte / fte).toLocaleString()} students · experts recommend 1 per 250</span>}
+          {role === 'Counselors' && <span className="text-xs text-ink-muted">1 for every {Math.round(fundingFte / fte).toLocaleString()} students · the American School Counselor Association recommends 1 per 250</span>}
           {/*
             Stated per prototypical school, not per district: the district-wide
             total ("1,574 hours a week" for Seattle) is a true number that tells

@@ -107,6 +107,8 @@ export default function WaMap({
   onSelect: (code: string) => void;
 }) {
   const [map, setMap] = useState<MapFile | null>(mapCache);
+  const [loadFailed, setLoadFailed] = useState(false);
+  const [retryCount, setRetryCount] = useState(0);
   const [view, setView] = useState<{ x: number; y: number; w: number; h: number } | null>(null);
   const [metric, setMetric] = useState<Metric>('reserveRatio');
   const [hovered, setHovered] = useState<string | null>(null);
@@ -119,15 +121,25 @@ export default function WaMap({
 
   useEffect(() => {
     if (mapCache) return;
+    setLoadFailed(false);
     const base = process.env.NEXT_PUBLIC_BASE_PATH ?? '';
     fetch(`${base}/wa-districts-map.json`)
-      .then((r) => r.json())
+      .then((r) => {
+        if (!r.ok) throw new Error(`${r.status}`);
+        return r.json();
+      })
       .then((m: MapFile) => {
         mapCache = m;
         setMap(m);
       })
-      .catch(() => {});
-  }, []);
+      /*
+        A wrong BASE_PATH, a truncated file, or an offline visitor used to be
+        indistinguishable from a request still in flight - the catch was
+        empty, so `map` stayed null forever under a "Loading map..." message
+        with no console output, no error state, and no way to retry.
+      */
+      .catch(() => setLoadFailed(true));
+  }, [retryCount]);
 
   const homeView = useMemo(() => {
     if (!map) return null;
@@ -267,6 +279,21 @@ export default function WaMap({
       below: y < rect.height - TOOLTIP_H - 16,
       left: x > rect.width - TOOLTIP_W - 16,
     });
+  }
+
+  if (loadFailed) {
+    return (
+      <div className="h-64 flex flex-col items-center justify-center gap-2 text-sm text-ink-secondary">
+        <p>The map couldn&apos;t load.</p>
+        <button
+          type="button"
+          onClick={() => setRetryCount((n) => n + 1)}
+          className="font-semibold text-accent hover:underline"
+        >
+          Try again
+        </button>
+      </div>
+    );
   }
 
   if (!map || !view) {
@@ -474,11 +501,19 @@ export default function WaMap({
           ].map(([label, fn, title]) => (
             <button
               key={label as string}
+              type="button"
               onClick={fn as () => void}
               title={title as string}
+              /*
+                The visible glyph ("+", "−", "⟲") wins over `title` when a
+                screen reader computes this button's accessible name, so
+                VoiceOver announced nothing useful. aria-label overrides that
+                with the same text already in `title`.
+              */
+              aria-label={title as string}
               className="w-8 h-8 card flex items-center justify-center text-lg font-semibold text-ink-secondary hover:border-accent hover:text-accent"
             >
-              {label as string}
+              <span aria-hidden="true">{label as string}</span>
             </button>
           ))}
         </div>
@@ -529,7 +564,7 @@ export default function WaMap({
               <span className="text-good font-medium">strong savings</span>
             </span>
             <span className="text-ink-muted">
-              | tick = 5%, the minimum experts recommend
+              | tick = 5%, the level this site flags as thin
             </span>
           </>
         )}

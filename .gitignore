@@ -5,6 +5,7 @@ out/
 next-env.d.ts
 .DS_Store
 scripts/raw/
+scripts/__pycache__/
 
 # Local environment overrides (e.g. NEXT_PUBLIC_ASSISTANT_API_URL for a
 # locally-running assistant Worker). Never commit these.

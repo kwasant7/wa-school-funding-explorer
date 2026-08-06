@@ -21,6 +21,7 @@ import { fileURLToPath } from 'node:url';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const RAW_DIR = path.join(__dirname, 'raw');
 const DATA_DIR = path.join(__dirname, '..', 'src', 'data');
+const PUBLIC_DIR = path.join(__dirname, '..', 'public', 'data');
 
 // One Report Card Enrollment dataset per year on data.wa.gov; F-196 CSVs from
 // ospi.k12.wa.us/safs-data-files (2019-20 through 2021-22 share one file).
@@ -222,20 +223,79 @@ async function fundingEnrollmentBySheet() {
   return fundingEnrollmentCache;
 }
 
-function parseCsv(text) {
+/**
+ * Splits one CSV line honoring double-quoted fields, so a quoted comma (a
+ * town name like "Somewhere, WA") or a quoted "" escape doesn't shift every
+ * later column in the row - a plain `.split(',')` did, and num() below used
+ * to turn the resulting garbage into a silent 0 instead of failing loudly.
+ */
+function splitCsvLine(line) {
+  const cells = [];
+  let cur = '';
+  let inQuotes = false;
+  for (let i = 0; i < line.length; i++) {
+    const c = line[i];
+    if (inQuotes) {
+      if (c === '"') {
+        if (line[i + 1] === '"') {
+          cur += '"';
+          i++;
+        } else {
+          inQuotes = false;
+        }
+      } else {
+        cur += c;
+      }
+    } else if (c === '"') {
+      inQuotes = true;
+    } else if (c === ',') {
+      cells.push(cur);
+      cur = '';
+    } else {
+      cur += c;
+    }
+  }
+  cells.push(cur);
+  return cells;
+}
+
+/**
+ * `requiredColumns` catches an OSPI rename (e.g. "Revenue Code" ->
+ * "RevenueCode") at parse time. Without this, a renamed column made every
+ * row's `ROLLUP_CODES[row['Revenue Code']]` lookup undefined, silently
+ * skipping every row - the script still exited 0, and the site rendered $0
+ * per student statewide with no error anywhere in the pipeline.
+ */
+function parseCsv(text, requiredColumns = []) {
   const lines = text.replace(/^﻿/, '').trim().split(/\r?\n/);
-  const headers = lines[0].split(',');
+  const headers = splitCsvLine(lines[0]);
+  const missing = requiredColumns.filter((c) => !headers.includes(c));
+  if (missing.length) {
+    throw new Error(
+      `CSV is missing expected column(s): ${missing.join(', ')} (found: ${headers.join(', ')})`
+    );
+  }
   return lines.slice(1).map((line) => {
-    const cells = line.split(',');
+    const cells = splitCsvLine(line);
     const row = {};
     headers.forEach((h, i) => (row[h] = cells[i]));
     return row;
   });
 }
 
+/**
+ * Empty cells are legitimately 0 (OSPI leaves a revenue code blank rather
+ * than writing 0). Anything else that fails to parse - a stray "N/A", a
+ * misaligned column from a parsing bug - throws instead of silently becoming
+ * 0, which is what let a bad row disappear into the totals unnoticed before.
+ */
 function num(v) {
+  if (v === undefined || v === null || v === '') return 0;
   const n = Number(v);
-  return Number.isFinite(n) ? n : 0;
+  if (!Number.isFinite(n)) {
+    throw new Error(`Expected a number, got ${JSON.stringify(v)}`);
+  }
+  return n;
 }
 
 /** revenueFile name -> Map(yearCode -> Map(districtCode -> rollups)) */
@@ -243,7 +303,10 @@ const revenueCache = new Map();
 
 async function revenuesForYear(revenueFile, revenueYear) {
   if (!revenueCache.has(revenueFile)) {
-    const rows = parseCsv(await ensureFile(revenueFile, REVENUE_FILES[revenueFile]));
+    const rows = parseCsv(
+      await ensureFile(revenueFile, REVENUE_FILES[revenueFile]),
+      ['Revenue Code', 'School Year Code', 'County District Code', 'Amount']
+    );
     const byYear = new Map();
     for (const row of rows) {
       const key = ROLLUP_CODES[row['Revenue Code']];
@@ -282,7 +345,10 @@ const expenditureCache = new Map();
 
 async function expendituresForYear(expenditureFile, revenueYear) {
   if (!expenditureCache.has(expenditureFile)) {
-    const rows = parseCsv(await ensureFile(expenditureFile, EXPENDITURE_FILES[expenditureFile]));
+    const rows = parseCsv(
+      await ensureFile(expenditureFile, EXPENDITURE_FILES[expenditureFile]),
+      ['Fund Code', 'School Year Code', 'County District Code', 'Amount']
+    );
     const byYear = new Map();
     for (const row of rows) {
       if (row['Fund Code'] !== '1') continue; // general fund only
@@ -427,6 +493,32 @@ async function buildYear({ label, enrollmentId, revenueFile, expenditureFile, re
   console.log(
     `${label}: ${districts.length} districts, ${statewide.enrollment.toLocaleString()} headcount, ${Math.round(statewide.fundingEnrollment).toLocaleString()} funding FTE, $${(totals.total / 1e9).toFixed(1)}B, $${statewide.avgPerPupil.toLocaleString()}/funding FTE (${missingFinance} without F-196; ${missingFundingEnrollment} without P-223 FTE)`
   );
+
+  /*
+    A silently botched parse (a renamed column the header check above
+    doesn't cover, a shifted year code) used to produce a normal-looking
+    build that quietly rendered $0-per-student statewide. These numbers have
+    stayed in a narrow band for six years (309-319 districts, $16.9B-$21.0B)
+    - a year that falls outside it is a parsing bug, not real news, and
+    should stop the build rather than publish silently.
+  */
+  const totalRows = districts.length + missingFinance + missingFundingEnrollment;
+  if (districts.length < 250 || districts.length > 350) {
+    throw new Error(
+      `${label}: ${districts.length} districts is implausible (expected roughly 300-320) - check the enrollment and finance source files`
+    );
+  }
+  if (statewide.revenues.total < 5e9) {
+    throw new Error(
+      `${label}: statewide revenue of $${statewide.revenues.total.toLocaleString()} is implausible - check that the revenue CSV parsed correctly`
+    );
+  }
+  if (totalRows > 0 && missingFinance / totalRows > 0.15) {
+    throw new Error(
+      `${label}: ${missingFinance} of ${totalRows} districts have no F-196 match - likely a column rename or ID mismatch in the revenue file`
+    );
+  }
+
   return { schoolYear: label, statewide, districts };
 }
 
@@ -449,13 +541,32 @@ async function main() {
   };
 
   await mkdir(DATA_DIR, { recursive: true });
-  await writeFile(
-    path.join(DATA_DIR, 'districts.json'),
-    JSON.stringify({ ...byYear[latest], sources })
-  );
+  const latestDistrictsJson = JSON.stringify({ ...byYear[latest], sources });
+  await writeFile(path.join(DATA_DIR, 'districts.json'), latestDistrictsJson);
+
+  /*
+    Same content, also written under public/ so it's fetchable straight off
+    the deployed site (/data/districts.json) - the Sources page links to it as
+    the derived table behind every figure on the site, not just the OSPI
+    inputs it's built from.
+  */
+  await mkdir(PUBLIC_DIR, { recursive: true });
+  await writeFile(path.join(PUBLIC_DIR, 'districts.json'), latestDistrictsJson);
   await writeFile(
     path.join(DATA_DIR, 'history.json'),
     JSON.stringify({ years: YEARS.map((y) => y.label), latest, sources, byYear })
+  );
+
+  /*
+    Just the year labels, for the several places that need to know which years
+    exist without needing a single figure from them - the header's year picker
+    and the assistant's request validator. Both used to read YEARS off
+    history.json, which put the full megabyte into the shared bundle of every
+    route, including /404 and /sources.
+  */
+  await writeFile(
+    path.join(DATA_DIR, 'years.json'),
+    JSON.stringify({ years: YEARS.map((y) => y.label), latest })
   );
 
   /*
@@ -475,7 +586,7 @@ async function main() {
   );
 
   console.log(
-    `Wrote districts.json (${latest}), history.json (${YEARS.length} years) and enrollment-baseline.json (${baseLabel})`
+    `Wrote districts.json (${latest}), history.json (${YEARS.length} years), years.json and enrollment-baseline.json (${baseLabel})`
   );
 }
 

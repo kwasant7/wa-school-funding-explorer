@@ -174,10 +174,6 @@ export function findDistrictsInQuery(query: string, limit = 2): DistrictIndexEnt
   return unique;
 }
 
-export function districtByCode(code: string) {
-  return districtsData.districts.find((district) => district.code === code) ?? null;
-}
-
 /* ------------------------------------------------------------------ *
  * Chunk scoring
  * ------------------------------------------------------------------ */

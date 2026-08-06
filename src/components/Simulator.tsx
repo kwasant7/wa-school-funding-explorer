@@ -14,6 +14,7 @@ import {
   type SimulatorControlId,
 } from '@/lib/simulator-config';
 import { useAssistantDistrict, useAssistantSimulator } from '@/lib/assistant/store';
+import { readSelectedDistrict, writeSelectedDistrict } from '@/lib/selected-district';
 
 /**
  * A lever's numeric envelope, read from the shared control table so the
@@ -30,7 +31,6 @@ function bounds(id: SimulatorControlId) {
   };
 }
 
-const SELECTED_DISTRICT_KEY = 'wa-selected-district';
 
 /** Positions on every slider, independent of the lever's own units. */
 const SLIDER_STEPS = 1000;
@@ -237,17 +237,31 @@ function leverImpactFor(
     case 'ellWeight':
       return {
         newMoney:
-          r.demo.ell * BASELINE_ELL_PER_STUDENT * (values.ellWeight - 1),
+          r.demo.ell *
+          BASELINE_ELL_PER_STUDENT *
+          (values.ellWeight - simulatorControl('ellWeight')!.baseline),
       };
+    /*
+      spedMultiplier and msoc used to subtract a literal (1.16, 1_614) instead
+      of reading simulator-config.ts's own `baseline` - the file whose header
+      says moving a bound there is enough, there is no second table to
+      forget. There was a second table, four lines from the import: if OSPI's
+      MSOC rate or the sped multiplier moves and only the config is updated,
+      every district would report phantom new money on page load with every
+      slider left untouched.
+    */
     case 'spedMultiplier':
       return {
         newMoney:
           r.demo.sped *
           BASELINE_SPED_ALLOCATION *
-          (values.spedMultiplier - 1.16),
+          (values.spedMultiplier - simulatorControl('spedMultiplier')!.baseline),
       };
     case 'msoc':
-      return { newMoney: r.fundingEnrollment * (values.msoc - 1_614) };
+      return {
+        newMoney:
+          r.fundingEnrollment * (values.msoc - simulatorControl('msoc')!.baseline),
+      };
     case 'transportation':
       // No public per-district split here, so scale the statewide program by
       // this district's own enrollment.
@@ -261,24 +275,14 @@ function leverImpactFor(
   }
 }
 
-const STUDENTS = data.statewide.enrollment;
+/*
+  Flat statewide rates used only to convert between formula units and dollars
+  for the two multiplier sliders. Both are disclosed in the assumptions list
+  below, because a district's real rates differ with staff mix, experience and
+  regionalization.
+*/
 const BASELINE_ELL_PER_STUDENT = 1_800;
 const BASELINE_SPED_ALLOCATION = 12_000;
-/*
-  Pupil transportation operations, summed from every district's actual 2024-25
-  state allotment (revenue code 4199) rather than a rounded guess at the size
-  of the program. The previous hard-coded $1.2B was about half again too high,
-  which pushed the slider's starting point to roughly $1,085 per student when
-  the real figure is nearer $708. Bus purchases are excluded: those run through
-  the Transportation Vehicle Fund, not the general fund.
-
-  The per-student figure now lives in lib/simulator-config so the assistant can
-  validate a requested transportation value against the same floor.
-*/
-const BASELINE_TRANSPORTATION = Object.values(allocationData.districts).reduce(
-  (sum, d) => sum + d.transportation,
-  0
-);
 
 const LEVERS = [
   {
@@ -315,13 +319,18 @@ const LEVERS = [
           RCW 84.52.0531
         </StatuteLink>
         : it reaches{' '}
-        <strong className="text-ink">$3,838 in 2026</strong> (today&apos;s
-        slider default), then a flat{' '}
+        <strong className="text-ink">
+          {fmtMoneyFull(LEA.maxLevyPerPupil)} in {levyData.calendarYear}
+        </strong>{' '}
+        (today&apos;s slider default), then a flat{' '}
         <strong className="text-ink">$5,035 in 2031</strong>, when the statute
         drops the district-size split and the same limit applies everywhere.
         Until then districts of 40,000 or more students - Seattle is the only
-        one - get a higher cap, <strong className="text-ink">$4,506</strong> in
-        2026, and the cards below use it. Raising the cap releases money
+        one - get a higher cap,{' '}
+        <strong className="text-ink">
+          {fmtMoneyFull(LEA.maxLevyPerPupilLarge)}
+        </strong>{' '}
+        in {levyData.calendarYear}, and the cards below use it. Raising the cap releases money
         a district&apos;s voters have already approved but the cap holds back;
         past that point, collecting more would take a new levy vote.
       </>
@@ -365,9 +374,23 @@ const LEVERS = [
         <strong className="text-ink">
           {fmtMoneyFull(Math.round(LEA.leaThresholdPerPupil))} per student
         </strong>
-        , and this slider raises it.{' '}
-        <Link href="/lea" className="font-semibold text-accent hover:underline">
-          See the full formula, step by step →
+        , and this slider raises it.
+        {/*
+          A destination, not a sentence. This used to be the last clause of the
+          paragraph above, which meant the only route to /lea on the whole site
+          was reading a five-line note to its end. /lea is deliberately not in
+          the tab bar, so this card is the door.
+        */}
+        <Link
+          href="/lea"
+          className="mt-3 flex items-center justify-between gap-3 rounded-lg border border-accent-soft bg-accent-wash px-3.5 py-2.5 text-accent no-underline hover:border-accent"
+        >
+          <span className="text-sm font-semibold">
+            See the full LEA formula, step by step
+          </span>
+          <span aria-hidden className="text-lg leading-none">
+            →
+          </span>
         </Link>
       </>
     ),
@@ -1270,6 +1293,16 @@ function LeverCard({
             value={Math.round(
               ((value - lever.min) / (lever.max - lever.min)) * SLIDER_STEPS
             )}
+            /*
+              The slider's real min/max/value are all internal 0-1000
+              positions (see the comment above on why), so a screen reader
+              announcing them by default reads "617 of 1000" rather than the
+              dollar figure a sighted user sees. aria-valuetext overrides the
+              announcement with the same string already shown at line 1256.
+            */
+            aria-valuetext={
+              disqualified ? 'Does not qualify' : lever.effect(shownValue)
+            }
             onInput={(event) => {
               const position = Number(event.currentTarget.value);
               setValues((previous) => ({
@@ -1373,7 +1406,7 @@ export default function Simulator() {
 
   // Restore whatever district the visitor picked elsewhere on the site.
   useEffect(() => {
-    const saved = window.localStorage.getItem(SELECTED_DISTRICT_KEY);
+    const saved = readSelectedDistrict();
     if (saved && data.districts.some((d) => d.code === saved)) setCode(saved);
   }, []);
 
@@ -1395,7 +1428,7 @@ export default function Simulator() {
     // A policy plan belongs to the district it was built for. Starting a new
     // district with the old sliders would make its summary look pre-filled.
     setValues(BASELINE);
-    if (next) window.localStorage.setItem(SELECTED_DISTRICT_KEY, next);
+    if (next) writeSelectedDistrict(next);
   }, []);
 
   /**
@@ -1611,7 +1644,25 @@ export default function Simulator() {
             <li>
               A district&apos;s levy limit is the lesser of the tax-rate cap and
               the per-student cap, so raising the rate does not always raise the
-              limit. Transportation uses a rounded statewide program estimate.
+              limit.
+            </li>
+            <li>
+              Two sliders convert between formula units and dollars using flat
+              statewide constants: special education multipliers are priced at{' '}
+              <strong className="text-ink">$12,000</strong> of basic education
+              per student, and the multilingual weight at{' '}
+              <strong className="text-ink">$1,800</strong> per student. Real
+              rates differ by district with staff mix, experience and
+              regionalization, so &ldquo;what they actually spend&rdquo;
+              expressed as a multiplier is an approximation, not the
+              district&apos;s own excess-cost ratio.
+            </li>
+            <li>
+              Transportation is the sum of every district&apos;s actual 2024-25
+              state transportation allotment (revenue code 4199), not an
+              estimate. It is divided by October headcount, while MSOC is
+              divided by funding FTE, so those two per-student figures do not
+              share a denominator.
             </li>
             <li>
               The local levy limit is shown separately because it is local
@@ -1626,7 +1677,10 @@ export default function Simulator() {
               &ldquo;What they actually spend&rdquo; on special education,
               MSOC and transportation is this district&apos;s own{' '}
               <strong className="text-ink">2024-25 F-196</strong> General Fund
-              actuals: special education is programs 21/22/24/26, MSOC is
+              actuals: special education is the state programs 21, 22 and 26
+              (program 24, federally funded IDEA supplemental, is excluded so
+              the figure lines up with the state allocation it is compared
+              against), MSOC is
               supplies, purchased services and travel (objects 5, 7 and 8){' '}
               <strong className="text-ink">within basic education</strong>{' '}
               (programs 01, 02 and 03) plus purchased services and travel
@@ -1691,7 +1745,10 @@ export default function Simulator() {
             Your plan for{' '}
             <strong className="text-ink">
               <span data-no-translate>{district.record.name.replace(/ School District.*$/, '')}</span>
-            </strong>
+            </strong>{' '}
+            <span className="inline-block rounded-full bg-accent-wash px-2 py-0.5 text-xs font-semibold uppercase tracking-wide text-accent-deep align-middle">
+              Estimate
+            </span>
           </h2>
           <p
             className={`mt-1 text-4xl font-bold tracking-tight ${

@@ -9,7 +9,10 @@ module.exports = {
         ink: {
           DEFAULT: '#0b0b0b',
           secondary: '#52514e',
-          muted: '#898781',
+          // #898781 on paper (#f9f9f7) was 3.41:1 - below WCAG AA's 4.5:1 for
+          // normal text. #6b6963 clears it (5.21:1) while staying visibly
+          // lighter than ink.secondary.
+          muted: '#6b6963',
         },
         line: '#e1e0d9',
         baseline: '#c3c2b7',

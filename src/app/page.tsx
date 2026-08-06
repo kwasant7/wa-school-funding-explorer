@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { District, LATEST, yearData } from '@/lib/data';
 import StatTile from '@/components/StatTile';
@@ -12,25 +12,26 @@ import ClassSizeViz from '@/components/interactive/ClassSizeViz';
 import FundingJourney from '@/components/interactive/FundingJourney';
 import { useAssistantDistrict, useAssistantYear } from '@/lib/assistant/store';
 import { yearData as yearDataFor } from '@/lib/data';
-
-/**
- * The district this page opens on.
- *
- * Everything below the picker is written about a specific district, so an
- * unselected page showed a placeholder card where the explanation should be -
- * a visitor's first impression of the site was an empty state. Bellevue is a
- * large, well-known district with every figure populated, which makes it a
- * reasonable thing to be looking at before you find your own.
- */
-const DEFAULT_DISTRICT_CODE = '17405'; // Bellevue School District
+import { readSelectedDistrict, writeSelectedDistrict } from '@/lib/selected-district';
 
 export default function HomePage() {
   const [year, setYear] = useState(LATEST);
-  const [selectedDistrict, setSelectedDistrict] = useState<District | null>(
-    () =>
-      yearData(LATEST).districts.find((d) => d.code === DEFAULT_DISTRICT_CODE) ??
-      null
-  );
+  const [selectedDistrict, setSelectedDistrict] = useState<District | null>(null);
+  /*
+    Whatever the visitor picked on this page or any other - the Simulator and
+    Take Action already restore it the same way. `restored` flips exactly once
+    after that check, and keys DistrictQuickFind so it remounts with the right
+    initial district instead of the empty state it opened with.
+  */
+  const [restored, setRestored] = useState(false);
+  useEffect(() => {
+    const saved = readSelectedDistrict();
+    if (saved) {
+      const record = yearData(LATEST).districts.find((d) => d.code === saved) ?? null;
+      if (record) setSelectedDistrict(record);
+    }
+    setRestored(true);
+  }, []);
   const s = yearData(year).statewide;
 
   /*
@@ -42,11 +43,17 @@ export default function HomePage() {
     (code: string) => {
       const record =
         yearDataFor(year).districts.find((d) => d.code === code) ?? null;
-      if (record) setSelectedDistrict(record);
+      if (record) {
+        setSelectedDistrict(record);
+        writeSelectedDistrict(record.code);
+      }
     },
     [year]
   );
-  const clearDistrict = useCallback(() => setSelectedDistrict(null), []);
+  const clearDistrict = useCallback(() => {
+    setSelectedDistrict(null);
+    writeSelectedDistrict(null);
+  }, []);
   useAssistantYear(year, setYear);
   useAssistantDistrict(selectedDistrict?.code ?? null, {
     select: selectDistrict,
@@ -70,10 +77,16 @@ export default function HomePage() {
           uses a formula to give money to each school
         </p>
         <div className="mt-6 grid grid-cols-2 lg:grid-cols-4 gap-3">
+          {/*
+            Not "the state general fund": this is every district's general-fund
+            revenue added up, and roughly a quarter of it is local levy and
+            federal money. Labelling it as the state's own total invited anyone
+            quoting the figure to overstate the state's share by about $4.9B.
+          */}
           <StatTile
-            label="Funding this year"
+            label={`All school funding, ${year}`}
             value={<CountUp value={s.revenues.total} kind="money" />}
-            note={`entire Washington state general-fund total, ${year}`}
+            note="every district's general fund combined — state, local levy and federal"
           />
           <StatTile
             label="Students"
@@ -95,9 +108,10 @@ export default function HomePage() {
       {/* Personalize */}
       <section data-assistant-section="district-picker" className="pb-8">
         <DistrictQuickFind
+          key={restored ? 'ready' : 'loading'}
           onPick={setSelectedDistrict}
           year={year}
-          initialCode={DEFAULT_DISTRICT_CODE}
+          initialCode={selectedDistrict?.code}
         />
       </section>
 

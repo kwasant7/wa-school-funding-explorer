@@ -22,7 +22,8 @@
  * translation coverage in the README. Characters outside WinAnsi degrade to a
  * sensible ASCII equivalent rather than corrupting the file.
  */
-import type { DistrictBrief } from '@/lib/diagnosis';
+import type { DistrictBrief, IssueVisual } from '@/lib/diagnosis';
+import { fmtMoney, fmtMoneyOnGrid } from '@/lib/format';
 
 /* ------------------------------------------------------------------ *
  * Font metrics
@@ -122,6 +123,16 @@ function measure(text: string, font: FontName, size: number): number {
  */
 export const measureForTest = measure;
 
+/**
+ * Exposed so the WinAnsi escaping can be tested directly.
+ *
+ * The brief's own copy happens to be pure ASCII today, which means no district
+ * exercises the high-byte path. Testing through generated content would have
+ * silently stopped covering it the moment the wording changed - which is
+ * exactly what happened - so the encoder is tested on its own inputs instead.
+ */
+export const pdfStringForTest = pdfString;
+
 /** Escape for a PDF literal string, emitting WinAnsi bytes as octal. */
 function pdfString(text: string): string {
   let out = '';
@@ -185,6 +196,10 @@ const ACCENT = [0.145, 0.416, 0.749] as const;
 const ACCENT_DEEP = [0.063, 0.259, 0.506] as const;
 const LINE = [0.882, 0.878, 0.851] as const;
 const WASH = [0.933, 0.957, 0.984] as const;
+const ACCENT_SOFT = [0.804, 0.886, 0.984] as const;
+const PAPER = [0.976, 0.976, 0.969] as const;
+const CRITICAL = [0.816, 0.231, 0.231] as const;
+const BASELINE = [0.765, 0.761, 0.718] as const;
 
 type Rgb = readonly [number, number, number];
 
@@ -361,6 +376,258 @@ function statBoxes(pdf: Pdf, stats: DistrictBrief['stats']) {
   }
 }
 
+/* ------------------------------------------------------------------ *
+ * Visuals
+ * ------------------------------------------------------------------ */
+
+/**
+ * A bar label, matching the web renderer exactly.
+ *
+ * This deliberately shares `fmtMoneyOnGrid` with IssueVisual.tsx rather than
+ * keeping a local copy. The two used to be byte-identical duplicates, which
+ * meant a rounding fix applied on screen would silently leave the printed
+ * brief - the artifact people actually hand to a legislator - still wrong.
+ */
+function visualValue(
+  n: number,
+  visual: Extract<IssueVisual, { kind: 'versus' }>,
+): string {
+  if (visual.format !== 'money') return Math.round(n).toLocaleString('en-US');
+  return visual.step ? fmtMoneyOnGrid(n, visual.step) : fmtMoney(n);
+}
+
+/**
+ * Draw an issue's chart.
+ *
+ * These mirror the shapes the web page draws, in the same order and the same
+ * colours, so someone who read the page recognises the printout. Each returns
+ * having advanced pdf.y past what it drew.
+ */
+function drawVisual(pdf: Pdf, visual: IssueVisual, x: number, width: number) {
+  switch (visual.kind) {
+    case 'versus': {
+      const max = Math.max(visual.a, visual.b, 1);
+      const rows = [
+        { label: visual.aLabel, amount: visual.a, fill: ACCENT },
+        { label: visual.bLabel, amount: visual.b, fill: ACCENT_SOFT },
+      ];
+      for (const row of rows) {
+        pdf.ensure(30);
+        const top = pdf.y;
+        pdf.text(row.label, {
+          x,
+          size: 8,
+          colour: INK_SECONDARY,
+          width: width - 70,
+          leading: 10,
+        });
+        // The amount is right-aligned against the column edge, so the two
+        // figures line up and can be compared without re-reading the labels.
+        const amount = visualValue(row.amount, visual);
+        const amountX = x + width - measure(amount, 'bold', 9);
+        pdf.y = top;
+        pdf.text(amount, {
+          x: amountX,
+          size: 9,
+          font: 'bold',
+          colour: INK,
+          width: 70,
+          leading: 10,
+        });
+        pdf.gap(2);
+        const barTop = pdf.y;
+        pdf.rect(x, barTop - 9, width, 9, PAPER);
+        pdf.rect(x, barTop - 9, Math.max(2, (width * row.amount) / max), 9, row.fill);
+        pdf.y = barTop - 9;
+        pdf.gap(7);
+      }
+      pdf.text(visual.gapLabel, {
+        x,
+        size: 9,
+        font: 'bold',
+        colour: CRITICAL,
+        width,
+        leading: 12,
+      });
+      break;
+    }
+
+    case 'dots': {
+      const filled = Math.max(0, Math.min(100, visual.filled));
+      pdf.ensure(46);
+      const headTop = pdf.y;
+      pdf.text(String(filled), {
+        x,
+        size: 17,
+        font: 'bold',
+        colour: ACCENT,
+        width: 40,
+        leading: 19,
+      });
+      pdf.y = headTop - 5;
+      pdf.text(`out of every 100 ${visual.label}`, {
+        x: x + measure(String(filled), 'bold', 17) + 5,
+        size: 8.5,
+        colour: INK_SECONDARY,
+        width: width - 40,
+        leading: 11,
+      });
+      pdf.y = headTop - 21;
+
+      // Twenty across, five down: a shape the eye can count in blocks.
+      const perRow = 20;
+      const dot = 3.2;
+      const gap = 1.6;
+      pdf.ensure(5 * (dot + gap) + 12);
+      const gridTop = pdf.y;
+      for (let i = 0; i < 100; i += 1) {
+        const col = i % perRow;
+        const row = Math.floor(i / perRow);
+        pdf.rect(
+          x + col * (dot + gap),
+          gridTop - (row + 1) * (dot + gap),
+          dot,
+          dot,
+          i < filled ? ACCENT : LINE
+        );
+      }
+      pdf.y = gridTop - 5 * (dot + gap) - 4;
+      pdf.text(`Statewide it is ${visual.compare} out of 100.`, {
+        x,
+        size: 7.5,
+        colour: INK_SECONDARY,
+        width,
+        leading: 10,
+      });
+      break;
+    }
+
+    case 'gauge': {
+      pdf.ensure(40);
+      const min = Math.min(0, visual.value);
+      const max = Math.max(visual.safe * 3, visual.value, 15);
+      const span = max - min || 1;
+      const at = (n: number) => x + ((n - min) / span) * width;
+
+      const headTop = pdf.y;
+      const reading = `${visual.value.toFixed(1)}%`;
+      pdf.text(reading, {
+        x,
+        size: 17,
+        font: 'bold',
+        colour: visual.value < 0 ? CRITICAL : INK,
+        width: 70,
+        leading: 19,
+      });
+      pdf.y = headTop - 5;
+      pdf.text(visual.label, {
+        x: x + measure(reading, 'bold', 17) + 5,
+        size: 8.5,
+        colour: INK_SECONDARY,
+        width: width - 70,
+        leading: 11,
+      });
+      pdf.y = headTop - 22;
+
+      const barTop = pdf.y;
+      pdf.rect(x, barTop - 9, width, 9, PAPER);
+      const from = at(Math.min(0, visual.value));
+      const to = at(Math.max(0, visual.value));
+      pdf.rect(
+        from,
+        barTop - 9,
+        Math.max(2, to - from),
+        9,
+        visual.value < 0 ? CRITICAL : ACCENT
+      );
+      // The safe line sits proud of the bar so it reads as a threshold.
+      pdf.rect(at(visual.safe), barTop - 12, 1, 15, INK);
+      pdf.y = barTop - 13;
+      pdf.text(
+        /*
+          Do not fold safeLabel into this sentence - it is a caption for the
+          tick mark ("This site flags below 5%"), not a noun phrase, and
+          lowercasing it into the middle of a clause produced broken grammar.
+        */
+        `The black line marks ${visual.safe}%, the level this site flags as thin. Below it, one bad year means cuts.`,
+        { x, size: 7.5, colour: INK_SECONDARY, width, leading: 10 }
+      );
+      break;
+    }
+
+    case 'steps': {
+      pdf.ensure(30);
+      const top = pdf.y;
+      const gap = 4;
+      const stepW = (width - gap * (visual.steps.length - 1)) / visual.steps.length;
+      visual.steps.forEach((step, i) => {
+        const left = x + i * (stepW + gap);
+        /*
+          Only the stage the district is actually at is red. Filling the
+          earlier ones in the same colour painted "Healthy" as an alarm, which
+          is the opposite of what it means; grey reads as "already passed".
+        */
+        const tone = i < visual.current ? BASELINE : i === visual.current ? CRITICAL : LINE;
+        pdf.rect(left, top - 4, stepW, 3, tone);
+        pdf.y = top - 8;
+        pdf.text(step, {
+          x: left,
+          size: 7,
+          font: i === visual.current ? 'bold' : 'regular',
+          colour: i === visual.current ? CRITICAL : INK_MUTED,
+          width: stepW,
+          leading: 9,
+        });
+      });
+      pdf.y = top - 22;
+      break;
+    }
+
+    case 'trend': {
+      pdf.ensure(56);
+      const max = Math.max(visual.from, visual.to, 1);
+      const top = pdf.y;
+      const colW = Math.min(90, (width - 12) / 2);
+      const points = [
+        { label: visual.fromLabel, amount: visual.from, fill: ACCENT_SOFT },
+        { label: visual.toLabel, amount: visual.to, fill: ACCENT },
+      ];
+      points.forEach((point, i) => {
+        const left = x + i * (colW + 12);
+        const barH = Math.max(6, (30 * point.amount) / max);
+        pdf.y = top;
+        pdf.text(Math.round(point.amount).toLocaleString('en-US'), {
+          x: left,
+          size: 11,
+          font: 'bold',
+          colour: INK,
+          width: colW,
+          leading: 13,
+        });
+        pdf.rect(left, top - 13 - barH, colW, barH, point.fill);
+        pdf.y = top - 15 - barH;
+        pdf.text(point.label, {
+          x: left,
+          size: 7.5,
+          colour: INK_SECONDARY,
+          width: colW,
+          leading: 10,
+        });
+      });
+      pdf.y = top - 48;
+      pdf.text(visual.changeLabel, {
+        x,
+        size: 9,
+        font: 'bold',
+        colour: CRITICAL,
+        width,
+        leading: 12,
+      });
+      break;
+    }
+  }
+}
+
 function issueSection(pdf: Pdf, issue: DistrictBrief['issues'][number], index: number) {
   // Keep the number, title and at least the headline together; a section that
   // starts one line above a page break reads as an orphan.
@@ -394,47 +661,35 @@ function issueSection(pdf: Pdf, issue: DistrictBrief['issues'][number], index: n
 
   pdf.y = badgeTop;
   const indent = MARGIN + badgeSize + 9;
+  const bodyWidth = CONTENT_W - (indent - MARGIN);
   pdf.text(issue.title, {
     x: indent,
-    size: 11.5,
+    size: 12,
     font: 'bold',
     colour: INK,
-    width: CONTENT_W - (indent - MARGIN),
-    leading: 14.5,
+    width: bodyWidth,
+    leading: 15,
   });
-  pdf.gap(2);
-  pdf.text(issue.headline, {
+  pdf.gap(3);
+  pdf.text(issue.fact, {
     x: indent,
     size: 9.5,
     colour: INK_SECONDARY,
-    width: CONTENT_W - (indent - MARGIN),
+    width: bodyWidth,
     leading: 13,
   });
-  pdf.gap(6);
-
-  for (const bullet of issue.bullets) {
-    pdf.ensure(16);
-    const bulletTop = pdf.y;
-    pdf.rect(indent + 1, bulletTop - 7, 2.5, 2.5, ACCENT);
-    pdf.y = bulletTop;
-    pdf.text(bullet, {
-      x: indent + 10,
-      size: 9,
-      colour: INK_SECONDARY,
-      width: CONTENT_W - (indent + 10 - MARGIN),
-      leading: 12.4,
-    });
-    pdf.gap(3);
-  }
+  pdf.gap(8);
+  drawVisual(pdf, issue.visual, indent, bodyWidth);
+  pdf.gap(4);
 
   // "The ask" panel. Measured before drawing so the wash sits behind the text.
   const askWidth = CONTENT_W - (indent - MARGIN) - 20;
-  const askLines = wrap(issue.ask, 'regular', 9, askWidth).length;
-  const refLines = issue.refs.reduce(
-    (sum, ref) => sum + wrap(`${ref.bill} - ${ref.note}`, 'regular', 7.5, askWidth).length,
-    0
-  );
-  const askH = 26 + askLines * 12.4 + (refLines > 0 ? 6 + refLines * 10 : 0);
+  const askLines = wrap(issue.ask, 'regular', 9.5, askWidth).length;
+  // Citations collapse to one line of bill numbers. The page hides them behind
+  // a disclosure; print has no such affordance, so they shrink instead.
+  const refLine = issue.refs.map((ref) => ref.bill).join('  ·  ');
+  const refLines = refLine ? wrap(refLine, 'regular', 7.5, askWidth).length : 0;
+  const askH = 26 + askLines * 13 + (refLines > 0 ? 5 + refLines * 10 : 0);
 
   pdf.gap(4);
   pdf.ensure(askH + 6);
@@ -443,7 +698,7 @@ function issueSection(pdf: Pdf, issue: DistrictBrief['issues'][number], index: n
   pdf.rect(indent, askTop - askH, 2.5, askH, ACCENT);
 
   pdf.y = askTop - 9;
-  pdf.text('THE ASK', {
+  pdf.text('WHAT TO ASK FOR', {
     x: indent + 10,
     size: 7.5,
     font: 'bold',
@@ -451,19 +706,24 @@ function issueSection(pdf: Pdf, issue: DistrictBrief['issues'][number], index: n
     width: askWidth,
     leading: 11,
   });
-  pdf.text(issue.ask, { x: indent + 10, size: 9, colour: INK, width: askWidth, leading: 12.4 });
+  pdf.text(issue.ask, {
+    x: indent + 10,
+    size: 9.5,
+    font: 'bold',
+    colour: INK,
+    width: askWidth,
+    leading: 13,
+  });
 
-  if (issue.refs.length > 0) {
-    pdf.gap(3);
-    for (const ref of issue.refs) {
-      pdf.text(`${ref.bill} - ${ref.note}`, {
-        x: indent + 10,
-        size: 7.5,
-        colour: INK_SECONDARY,
-        width: askWidth,
-        leading: 10,
-      });
-    }
+  if (refLine) {
+    pdf.gap(2);
+    pdf.text(refLine, {
+      x: indent + 10,
+      size: 7.5,
+      colour: INK_MUTED,
+      width: askWidth,
+      leading: 10,
+    });
   }
 
   pdf.y = askTop - askH - 12;
@@ -493,10 +753,12 @@ export function buildBriefPdf(brief: DistrictBrief, meta: BriefPdfMeta): Blob {
     colour: INK,
     leading: 23,
   });
-  pdf.gap(8);
-  pdf.text(brief.headline, { size: 11.5, font: 'bold', colour: INK, leading: 15 });
+  /*
+    No separate headline line. It restated the first issue's title verbatim,
+    so the reader met the same sentence twice before reaching any number.
+  */
   pdf.gap(6);
-  pdf.text(brief.summary, { size: 9.5, colour: INK_SECONDARY, leading: 13.2 });
+  pdf.text(brief.summary, { size: 10, colour: INK_SECONDARY, leading: 13.8 });
   pdf.gap(12);
 
   statBoxes(pdf, brief.stats);
@@ -511,17 +773,19 @@ export function buildBriefPdf(brief: DistrictBrief, meta: BriefPdfMeta): Blob {
 
   pdf.gap(4);
   pdf.rule();
+  /*
+    Kept to three short lines. The previous version ran long enough to push a
+    lone URL onto a second page - a whole sheet of paper for one sentence.
+  */
   pdf.text(
-    `Every figure above is computed from the OSPI data behind this site - F-196 revenue and expenditure actuals and the Apportionment final extract for ${meta.year}, the enrichment levy worksheet, and OSPI enrollment and demographic reporting. Districts are ranked against the other 314 in Washington, so "unusually high" always means unusual for this state.`,
+    `All numbers come from OSPI records for ${meta.year}. Each district is compared with the other 314 in Washington.`,
     { size: 7.5, colour: INK_MUTED, leading: 10.5 }
   );
-  pdf.gap(3);
   pdf.text(
-    'This brief explains the educational content and data on this website. It is not an official fiscal or legal source. An independent civic education project, not affiliated with OSPI or the Washington State Legislature.',
+    'Not an official fiscal or legal source. An independent civic education project, not affiliated with OSPI or the Washington State Legislature.',
     { size: 7.5, colour: INK_MUTED, leading: 10.5 }
   );
-  pdf.gap(3);
-  pdf.text(`Full sources and methodology: ${meta.siteUrl}/sources`, {
+  pdf.text(`Sources: ${meta.siteUrl}/sources`, {
     size: 7.5,
     colour: ACCENT,
     leading: 10.5,

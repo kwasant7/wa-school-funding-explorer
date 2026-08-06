@@ -15,8 +15,15 @@ export default function TabNav() {
   const pathname = usePathname();
 
   return (
-    <nav aria-label="Sections" className="-mb-px mt-4 overflow-x-auto">
-      <ul className="flex gap-1 md:gap-2 whitespace-nowrap">
+    <nav aria-label="Sections" className="-mb-px mt-4">
+      {/*
+        Five tabs at their natural width don't fit a phone screen. The old
+        overflow-x-auto row hid "Take Action" and "Sources" off-screen with no
+        scroll cue - iOS hides overlay scrollbars, so there was nothing to
+        show a visitor more existed. Wrapping to a second row keeps every
+        section visible without requiring anyone to discover a scroll gesture.
+      */}
+      <ul className="flex flex-wrap gap-x-1 gap-y-0 md:gap-x-2">
         {TABS.map((tab, i) => {
           const active =
             tab.href === '/'

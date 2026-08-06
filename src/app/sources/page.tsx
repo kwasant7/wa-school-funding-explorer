@@ -1,11 +1,21 @@
 import type { Metadata } from 'next';
 import { OVERSIGHT_CHECKED_ON } from '@/data/oversight';
+import { pageMetadata } from '@/lib/site-metadata';
+import levyData from '@/data/levy.json';
 
-export const metadata: Metadata = {
+const LEA = levyData.assumptions;
+// This page states precise dollars-and-cents figures rather than the rounded
+// whole-dollar amounts shown elsewhere on the site - it's the methodology
+// page, where the exact statutory figure is the point.
+const money2 = (n: number) =>
+  `$${n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+
+export const metadata: Metadata = pageMetadata({
   title: 'Sources & Methodology',
   description:
     'Every dataset, statute, and court record behind this site, with direct links so all numbers can be cross-verified.',
-};
+  path: '/sources/',
+});
 
 const ENROLLMENT_YEARS = [
   ['2019-20', 'gtd3-scga'],
@@ -113,9 +123,43 @@ export default function SourcesPage() {
         Every number on this site comes from public data published by
         Washington&apos;s Office of Superintendent of Public Instruction (OSPI)
         or from state law. This page lists the exact sources so you can verify
-        anything yourself - no number here is hand-entered or estimated except
-        where labeled.
+        anything yourself. Three things on this site are not pulled directly
+        from a dataset, and are labeled everywhere they appear:
       </p>
+      <ul className="mt-2 max-w-2xl list-disc pl-5 text-sm text-ink-secondary space-y-1">
+        <li>
+          The list of districts under state financial oversight is
+          hand-transcribed from an OSPI web page that has no downloadable
+          dataset, and dated when it was last checked.
+        </li>
+        <li>
+          The policy simulator prices two sliders (special education,
+          multilingual learners) using flat statewide dollar constants
+          instead of each district&apos;s own cost ratio - disclosed under
+          &ldquo;Estimate details and assumptions&rdquo; on that page.
+        </li>
+        <li>
+          The reserve-fund &ldquo;danger line&rdquo; (5% of annual spending)
+          is this site&apos;s own judgment call, not a state or GFOA
+          standard - GFOA&apos;s published benchmark is about 17%, shown for
+          comparison on the District Explorer.
+        </li>
+      </ul>
+
+      <div className="mt-6 card p-5 md:p-6 bg-accent-wash border-accent-soft">
+        <h2 className="font-bold">See the actual data behind this site</h2>
+        <p className="mt-1 text-sm text-ink-secondary">
+          Every district's enrollment, demographics, and revenue by source, as
+          joined from the OSPI files below - the same file this site itself
+          reads from.
+        </p>
+        <a
+          href={`${process.env.NEXT_PUBLIC_BASE_PATH ?? ''}/data/districts.json`}
+          className="mt-2 inline-block font-semibold text-accent hover:underline break-all"
+        >
+          /data/districts.json →
+        </a>
+      </div>
 
       <section className="mt-10">
         <h2 className="text-2xl font-bold">1 · Enrollment & demographics</h2>
@@ -304,9 +348,11 @@ export default function SourcesPage() {
             calculation reproduces that workbook&apos;s LevyCalc sheet
             (capacity per pupil, maximum LEA per pupil, levy rate, and payable
             LEA), and the LEA a district actually received is F-196 revenue code
-            3300. The per-student levy cap has two tiers: $3,838.26 for 2026,
-            and $4,505.91 for districts of 40,000 or more FTE students, which
-            under RCW 84.52.0531 means Seattle and no one else. Script:{' '}
+            3300. The per-student levy cap has two tiers:{' '}
+            {money2(LEA.maxLevyPerPupil)} for {levyData.calendarYear}, and{' '}
+            {money2(LEA.maxLevyPerPupilLarge)} for districts of 40,000 or more
+            FTE students, which under RCW 84.52.0531 means Seattle and no one
+            else. Script:{' '}
             <code className="text-ink">scripts/build-levy-lea.py</code>.
           </p>
         </div>
@@ -322,8 +368,14 @@ export default function SourcesPage() {
               Actuals - General Fund Expenditures
             </Ext>{' '}
             CSV for 2024-25, broken out by the F-196 Program and Object
-            dimensions. Special education is programs 21/22/24/26 divided by the
-            October headcount of students with disabilities; transportation is
+            dimensions. Special education is the{' '}
+            <strong className="text-ink">state</strong> programs 21, 22 and 26
+            divided by the October headcount of students with disabilities -
+            program 24 is the federally funded IDEA supplemental program and is
+            left out, because this figure is compared against the state
+            allocation and counting federal spending on the cost side would
+            report federal grant money as money the district paid;
+            transportation is
             program 99 divided by headcount enrollment; MSOC is objects 5/7/8
             within basic-education programs 01/02/03 plus objects 7/8 in
             districtwide support (program 97), divided by funding FTE. All three
@@ -402,8 +454,15 @@ export default function SourcesPage() {
             <Ext href="https://fiscal.wa.gov/K12/K12FinanceDistrict">
               fiscal.wa.gov&apos;s K-12 finance page
             </Ext>
-            ), joined by district code. Reserve ratios below the 4-5% experts
-            treat as a safe minimum are flagged on each district profile.
+            ), joined by district code. Reserve ratios below{' '}
+            <strong className="text-ink">5%</strong> are flagged on each district
+            profile. That threshold is this site&apos;s own editorial choice, not
+            a statutory or professional standard: it reflects Washington
+            school-finance practice and OSPI&apos;s budget-challenge process, and
+            it is deliberately conservative next to the Government Finance
+            Officers Association&apos;s general guideline of two months of
+            operating spending, about 17%. Almost every Washington district
+            clears 5%; almost none clears 17%.
             Script: <code className="text-ink">scripts/build-fund-balance.py</code>.
           </p>
         </div>

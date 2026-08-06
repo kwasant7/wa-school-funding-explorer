@@ -11,9 +11,11 @@ import TrendChart from '@/components/charts/TrendChart';
 import RevenueTrendChart from '@/components/charts/RevenueTrendChart';
 import NeedVsFundingChart, { NeedPoint } from '@/components/charts/NeedVsFundingChart';
 import WaMap from '@/components/charts/WaMap';
+import ChartErrorBoundary from '@/components/ChartErrorBoundary';
 import { oversightFor, OVERSIGHT_SOURCE, OVERSIGHT_CHECKED_ON } from '@/data/oversight';
 import { fmtInt, fmtMoney, fmtMoneyFull, fmtSignedMoney, pct } from '@/lib/format';
 import { useAssistantDistrict, useAssistantYear } from '@/lib/assistant/store';
+import { writeSelectedDistrict } from '@/lib/selected-district';
 
 export default function DistrictsExplorer() {
   const router = useRouter();
@@ -27,7 +29,7 @@ export default function DistrictsExplorer() {
 
   useEffect(() => {
     if (selectedCode) {
-      window.localStorage.setItem('wa-selected-district', selectedCode);
+      writeSelectedDistrict(selectedCode);
     }
   }, [selectedCode]);
 
@@ -153,7 +155,9 @@ function DistrictOverview({
         <p className="mt-0.5 mb-4 text-sm text-ink-secondary">
           Pick from the dropdown or click your district to open its profile.
         </p>
-        <WaMap year={year} onSelect={onSelect} />
+        <ChartErrorBoundary label="The map">
+          <WaMap year={year} onSelect={onSelect} />
+        </ChartErrorBoundary>
       </div>
       <p className="mt-3 text-xs text-ink-muted max-w-2xl">
         Per-student figures divide general fund revenues by OSPI&apos;s final
@@ -232,7 +236,7 @@ function FundBalanceCard({ district: d, year }: { district: District; year: stri
               rr >= 5
                 ? 'Healthy cushion'
                 : rr >= 0
-                  ? 'Thin - under the 5% experts treat as a safe minimum'
+                  ? 'Thin - under the 5% this site flags'
                   : 'Negative - no cushion left';
             return (
               <div className={`rounded-lg border p-4 ${cls}`}>
@@ -243,8 +247,11 @@ function FundBalanceCard({ district: d, year }: { district: District; year: stri
                 </div>
                 <div className="text-xs text-ink-muted mt-1">
                   Savings as a share of annual spending (fund balance ÷ spending).
-                  Experts recommend keeping at least 4-5%; below that, one bad year
-                  can force cuts.
+                  This site flags anything under 5%, the level Washington
+                  school-finance practice treats as a working floor and the point
+                  where one bad year can force cuts. It is a low bar: the
+                  Government Finance Officers Association&apos;s general guideline
+                  is two months of operating spending, about 17%.
                 </div>
               </div>
             );
@@ -378,7 +385,7 @@ function TrendAnalysis({ district: d }: { district: District }) {
     );
   } else if (d.reserveRatio != null && d.reserveRatio < 5) {
     sentences.push(
-      `Its reserve ratio has slipped to ${d.reserveRatio.toFixed(1)}%, under the 5% experts treat as a safe minimum - a single bad year could force cuts.`
+      `Its reserve ratio has slipped to ${d.reserveRatio.toFixed(1)}%, under the 5% this site flags as thin - a single bad year could force cuts.`
     );
   } else {
     sentences.push(
@@ -561,7 +568,9 @@ function DistrictDetail({
         <p className="text-xs text-ink-muted mb-4">
           Every Washington district in {year} · <span data-no-translate>{d.name}</span> highlighted
         </p>
-        <NeedVsFundingChart points={needPoints} highlight={d.code} />
+        <ChartErrorBoundary label="This chart">
+          <NeedVsFundingChart points={needPoints} highlight={d.code} />
+        </ChartErrorBoundary>
       </div>
 
       <div data-assistant-section="funding-sources" className="mt-4 grid lg:grid-cols-2 gap-4 items-start">
@@ -620,13 +629,38 @@ function DistrictDetail({
       </p>
 
       <p className="mt-3 text-xs text-ink-muted max-w-2xl">
-        Higher-need districts generally receive more per student - categorical
-        programs (special education, LAP, bilingual education) and federal Title
-        dollars follow need. Small rural districts also cost more per student to
-        run. That&apos;s why per-student funding ranges from{' '}
+        Higher-need districts generally receive more per student - targeted
+        programs (special education, the Learning Assistance Program for students
+        who are behind, bilingual education) and federal Title dollars follow
+        need. Small rural districts also cost more per student to run.
+        That&apos;s why per-student funding ranges from{' '}
         {fmtMoneyFull(s.minPerPupil)} to {fmtMoneyFull(s.maxPerPupil)} across the
         state in {year}.
       </p>
+
+      {/*
+        The page used to end on two grey caveats. Someone who has just read that
+        their district drew down its reserves had nowhere to go: the diagnosis,
+        the downloadable brief and their legislators all live on Take Action,
+        and nothing here said so.
+      */}
+      <Link
+        href={`/take-action?d=${d.code}`}
+        className="card mt-8 flex items-center justify-between gap-4 p-5 no-underline hover:border-accent"
+      >
+        <span>
+          <span className="block font-semibold text-accent">
+            What to do about it
+          </span>
+          <span className="mt-0.5 block text-sm text-ink-secondary">
+            {d.name}&apos;s funding brief, a printable one-page PDF, and the
+            three legislators who represent it.
+          </span>
+        </span>
+        <span aria-hidden className="text-xl leading-none text-accent">
+          →
+        </span>
+      </Link>
     </div>
   );
 }

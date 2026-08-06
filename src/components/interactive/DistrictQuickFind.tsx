@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import { District, LATEST, yearData } from '@/lib/data';
 import { fmtInt, fmtMoneyFull } from '@/lib/format';
+import { writeSelectedDistrict } from '@/lib/selected-district';
 
 export default function DistrictQuickFind({
   onPick,
@@ -71,7 +72,7 @@ export default function DistrictQuickFind({
     setPicked(district);
     setQuery(district.name);
     setOpen(false);
-    window.localStorage.setItem('wa-selected-district', district.code);
+    writeSelectedDistrict(district.code);
     onPick?.(district);
   };
 

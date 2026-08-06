@@ -7,10 +7,22 @@
  * files) - the same CSV scripts/fetch-data.mjs uses for total expenditures,
  * but broken out by the F-196 Program and Object dimensions:
  *
- *   Special education  - Program 21 (state supplemental), 22 (infants and
- *                        toddlers), 24 (federal supplemental), 26
- *                        (institutions). Divided by students with
- *                        disabilities.
+ *   Special education  - Programs 21 (supplemental, state), 22 (infants and
+ *                        toddlers, state) and 26 (institutions, state).
+ *                        Divided by students with disabilities.
+ *
+ *                        Program 24 is supplemental special education paid for
+ *                        with FEDERAL IDEA Part B money, and it is deliberately
+ *                        excluded. The figure this file produces is compared
+ *                        against the STATE allocation (revenue codes 3121,
+ *                        4121, 4122, 4126 - see build-state-allocation.py),
+ *                        and the brief reports the difference as money the
+ *                        district covers out of its own general fund. Counting
+ *                        federally-funded spending on the cost side made that
+ *                        difference $254M too large statewide and described
+ *                        federal grant money as money the district paid. The
+ *                        three programs kept here line up one-for-one with the
+ *                        three 41xx revenue codes on the allocation side.
  *   Transportation     - Program 99 (pupil transportation). Divided by
  *                        headcount enrollment. GENERAL FUND ONLY: buses
  *                        bought through the Transportation Vehicle Fund are
@@ -37,7 +49,9 @@ const EXPENDITURE_FILE = 'gf-exp-2425.csv';
 const EXPENDITURE_URL = `${OSPI}/2025-12/24-25-actuals-general-fund-expenditures.csv`;
 const SCHOOL_YEAR = '2024-2025';
 
-const SPED_PROGRAMS = new Set(['21', '22', '24', '26']);
+// State-funded special education only. Program 24 (federal IDEA supplemental)
+// is excluded on purpose - see the note in the module docstring.
+const SPED_PROGRAMS = new Set(['21', '22', '26']);
 const TRANSPORTATION_PROGRAMS = new Set(['99']);
 const MSOC_BASIC_PROGRAMS = new Set(['01', '02', '03']);
 const MSOC_BASIC_OBJECTS = new Set(['5', '7', '8']);
@@ -161,7 +175,7 @@ async function main() {
     source: {
       file: EXPENDITURE_URL,
       note:
-        'OSPI F-196 General Fund expenditure actuals, 2024-25. Special education = programs 21/22/24/26; transportation = program 99 (general fund only, excludes the Transportation Vehicle Fund); MSOC = objects 5/7/8 in basic-education programs 01/02/03 plus objects 7/8 in districtwide support program 97; excludes capital outlay, special education, food service, and transportation.',
+        'OSPI F-196 General Fund expenditure actuals, 2024-25. Special education = state programs 21/22/26, excluding program 24 (federally funded IDEA supplemental) so the figure is comparable with the state allocation; transportation = program 99 (general fund only, excludes the Transportation Vehicle Fund); MSOC = objects 5/7/8 in basic-education programs 01/02/03 plus objects 7/8 in districtwide support program 97; excludes capital outlay, special education, food service, and transportation.',
     },
     statewide: {
       sped: Math.round(statewide.sped),

@@ -54,7 +54,7 @@ The supplied figures are the only place any number may come from. Never answer a
 - Current law is not a modeled policy proposal.
 - Official OSPI figures are not simulator estimates.
 - Revenue is not spending.
-- The statewide per-pupil average is an average across districts, not across students, and it is not the same as the median. Do not describe one as the other, and do not call either figure what any particular district receives.
+- The statewide per-pupil average is every dollar divided by every student, so large districts weigh more heavily in it than small ones. It is NOT the average of the individual district figures, and it is not the same as the median. The median runs higher than the average because small rural districts cost more per student and there are many of them. Do not describe one as the other, and do not call either figure what any particular district receives.
 
 # Statewide figures
 When the input includes a block introduced as this website's published statewide figures, those are its own published figures for the year named there.

@@ -2,12 +2,14 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import levyData from '@/data/levy.json';
 import { fmtInt, fmtMoney, fmtMoneyFull } from '@/lib/format';
+import { pageMetadata } from '@/lib/site-metadata';
 
-export const metadata: Metadata = {
+export const metadata: Metadata = pageMetadata({
   title: 'How Local Effort Assistance works',
   description:
     "Washington's Local Effort Assistance formula, step by step: the per-student goal, the $1.50 wealth test, the levy-effort discount, and a worked example using real district numbers.",
-};
+  path: '/lea/',
+});
 
 const LEA = levyData.assumptions;
 const DISTRICTS = levyData.districts as Record<

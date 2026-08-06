@@ -1,19 +1,20 @@
 'use client';
 
 /**
- * The one-page brief for a single district: what is distinctive about its
- * funding problem, the numbers behind that claim, and what to ask for.
+ * The brief for a single district: what is wrong with its funding, in
+ * pictures, and what to ask a lawmaker for.
  *
- * Laid out as a document rather than a dashboard. Someone should be able to
- * read it top to bottom, print it, and walk into a legislator's office with
- * it. That is why the issues are numbered sections with bullets instead of
- * cards in a grid - a grid invites skimming, and the argument here is
- * cumulative.
+ * Written for a reader with no background in school finance - a student, a
+ * parent at a board meeting - so each problem gets one number, one chart and
+ * one sentence, and the supporting citations collapse out of the way. An
+ * earlier version argued the case in full prose and ran to seven hundred
+ * words; it was accurate and almost nobody would have finished it.
  */
 
 import { useCallback, useState } from 'react';
 import Link from 'next/link';
 import StatTile from '@/components/StatTile';
+import IssueVisual from '@/components/brief/IssueVisual';
 import {
   briefFor,
   DIAGNOSIS_YEAR,
@@ -90,42 +91,44 @@ function DownloadBriefButton({ brief }: { brief: Brief }) {
   );
 }
 
-function IssueSection({ issue, index }: { issue: Issue; index: number }) {
+/**
+ * One problem, as a card: a number, a picture, and one thing to ask for.
+ *
+ * The bill citations are collapsed behind a <details> rather than listed. They
+ * are the part a curious reader or a journalist wants and the part that made
+ * the old brief look like homework - keeping them one click away means the
+ * page can be read in a minute without losing the receipts.
+ */
+function IssueCard({ issue, index }: { issue: Issue; index: number }) {
   return (
-    <section className="pt-6 first:pt-0 border-t first:border-t-0 border-line">
+    <section className="card p-5">
       <div className="flex items-start gap-3">
         <span
           aria-hidden
-          className="mt-0.5 w-7 h-7 shrink-0 rounded-full bg-accent text-white text-sm font-bold flex items-center justify-center"
+          className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-accent text-sm font-bold text-white"
         >
           {index + 1}
         </span>
-        <div className="min-w-0">
-          <h3 className="text-lg md:text-xl font-bold leading-snug">
-            {issue.title}
-          </h3>
-          <p className="mt-1 font-medium text-ink-secondary">
-            {issue.headline}
-          </p>
-        </div>
+        <h3 className="text-lg font-bold leading-snug md:text-xl">{issue.title}</h3>
       </div>
 
-      <ul className="mt-4 md:ml-10 space-y-2">
-        {issue.bullets.map((bullet) => (
-          <li key={bullet} className="flex gap-2.5 text-sm text-ink-secondary">
-            <span aria-hidden className="mt-2 w-1.5 h-1.5 shrink-0 rounded-full bg-accent" />
-            <span>{bullet}</span>
-          </li>
-        ))}
-      </ul>
+      <p className="mt-2.5 text-ink-secondary">{issue.fact}</p>
 
-      <div className="mt-4 md:ml-10 card bg-accent-wash border-accent-soft p-4">
+      <IssueVisual visual={issue.visual} />
+
+      <div className="mt-4 rounded-xl border border-accent-soft bg-accent-wash p-3.5">
         <p className="text-xs font-semibold uppercase tracking-wide text-accent-deep">
-          The ask
+          What to ask for
         </p>
-        <p className="mt-1 text-sm text-ink">{issue.ask}</p>
-        {issue.refs.length > 0 && (
-          <ul className="mt-3 space-y-1.5">
+        <p className="mt-1 font-medium text-ink">{issue.ask}</p>
+      </div>
+
+      {issue.refs.length > 0 && (
+        <details className="mt-3 group">
+          <summary className="cursor-pointer text-xs font-semibold text-accent hover:underline">
+            Where this comes from
+          </summary>
+          <ul className="mt-2 space-y-1.5">
             {issue.refs.map((ref) => (
               <li key={ref.bill} className="text-xs text-ink-secondary">
                 <a
@@ -140,8 +143,8 @@ function IssueSection({ issue, index }: { issue: Issue; index: number }) {
               </li>
             ))}
           </ul>
-        )}
-      </div>
+        </details>
+      )}
     </section>
   );
 }
@@ -165,48 +168,79 @@ export default function DistrictBrief({ code }: { code: string }) {
         <DownloadBriefButton brief={brief} />
       </div>
 
-      <article className="mt-4 card p-5 md:p-7">
-        <p className="text-lg md:text-xl font-semibold leading-snug">
-          {brief.headline}
-        </p>
-        <p className="mt-2 text-ink-secondary max-w-3xl">{brief.summary}</p>
+      <p className="mt-2 max-w-2xl text-ink-secondary">{brief.summary}</p>
 
-        <div className="mt-5 grid grid-cols-2 lg:grid-cols-4 gap-3">
-          {brief.stats.map((stat) => (
-            <StatTile
-              key={stat.label}
-              label={stat.label}
-              value={stat.value}
-              note={stat.note}
-            />
+      <div className="mt-5 grid grid-cols-2 gap-3 lg:grid-cols-4">
+        {brief.stats.map((stat) => (
+          <StatTile
+            key={stat.label}
+            label={stat.label}
+            value={stat.value}
+            note={stat.note}
+          />
+        ))}
+      </div>
+
+      {brief.steadyNote ? (
+        <p className="mt-5 card p-5 text-ink-secondary">{brief.steadyNote}</p>
+      ) : (
+        /*
+          One card per problem, side by side on a wide screen. The old brief
+          stacked everything in a single tall column, which made four problems
+          read as one long document; separate cards let a reader take in the
+          shape of all four before reading any of them.
+        */
+        <div className="mt-5 grid gap-4 lg:grid-cols-2">
+          {brief.issues.map((issue, index) => (
+            <IssueCard key={issue.id} issue={issue} index={index} />
           ))}
         </div>
+      )}
 
-        {brief.steadyNote ? (
-          <p className="mt-6 pt-6 border-t border-line text-sm text-ink-secondary">
-            {brief.steadyNote}
+      <p className="mt-4 text-xs text-ink-muted">
+        All numbers come from OSPI records for {DIAGNOSIS_YEAR}, and each
+        district is compared against the other 314 in Washington.{' '}
+        <Link href="/sources" className="font-semibold text-accent hover:underline">
+          See where the data comes from
+        </Link>
+        .
+      </p>
+
+      <details className="mt-2 group">
+        <summary className="cursor-pointer text-xs font-semibold text-accent hover:underline">
+          How these problems are picked
+        </summary>
+        <div className="mt-2 max-w-2xl text-xs text-ink-secondary space-y-1.5">
+          <p>
+            A problem only appears here if this district&apos;s number is both
+            large in dollar terms and unusual next to the rest of the state -
+            not just below average. The cutoffs, in the rank a district needs
+            to clear:
           </p>
-        ) : (
-          <div className="mt-6 pt-6 border-t border-line space-y-6">
-            {brief.issues.map((issue, index) => (
-              <IssueSection key={issue.id} issue={issue} index={index} />
-            ))}
-          </div>
-        )}
-
-        <p className="mt-6 pt-4 border-t border-line text-xs text-ink-muted">
-          Every figure above is computed from the OSPI data behind this site -
-          F-196 revenue and expenditure actuals and the Apportionment final
-          extract for {DIAGNOSIS_YEAR}, the enrichment levy worksheet, and OSPI
-          enrollment and demographic reporting. Districts are ranked against the
-          other 314 in Washington, so &quot;unusually high&quot; always means
-          unusual for this state.{' '}
-          <Link href="/sources" className="font-semibold text-accent hover:underline">
-            See the full source list
-          </Link>
-          .
-        </p>
-      </article>
+          <ul className="list-disc pl-4 space-y-1">
+            <li>
+              Special education, everyday running costs: gap per student in
+              the top 45% of districts, and at least $300 (special education)
+              or $250 (running costs) per student.
+            </li>
+            <li>
+              Transportation, English learners: gap or share in the top 30%,
+              and at least $120 per student or 12% of enrollment.
+            </li>
+            <li>Student poverty: share in the top 28%, and at least 60% of enrollment.</li>
+            <li>
+              Not much local property to tax: Local Effort Assistance share in
+              the top 30% of districts that receive any.
+            </li>
+          </ul>
+          <p>
+            A district that clears none of these gets a short brief saying so
+            - not a manufactured problem list. Clearing a cutoff means a
+            problem is worth naming here, not that districts below it have
+            nothing to improve.
+          </p>
+        </div>
+      </details>
     </section>
   );
 }

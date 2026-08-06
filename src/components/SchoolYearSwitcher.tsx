@@ -15,7 +15,7 @@
  * it means the control is absent on pages that have no year to change: the
  * Simulator, Take Action and Sources never publish one, so nothing renders.
  */
-import { YEARS } from '@/lib/data';
+import { YEARS } from '@/lib/years';
 import { assistantHandlers, useAssistantSnapshot } from '@/lib/assistant/store';
 
 export default function SchoolYearSwitcher() {

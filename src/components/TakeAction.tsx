@@ -8,8 +8,7 @@ import data from '@/data/districts.json';
 import representation from '@/data/legislators.json';
 import { briefFor } from '@/lib/diagnosis';
 import { useAssistantDistrict } from '@/lib/assistant/store';
-
-const SELECTED_DISTRICT_KEY = 'wa-selected-district';
+import { readSelectedDistrict, writeSelectedDistrict } from '@/lib/selected-district';
 // Portraits live in public/legislators; prefix with the deploy base path so
 // they resolve under the GitHub Pages project subpath.
 const BASE_PATH = process.env.NEXT_PUBLIC_BASE_PATH ?? '';
@@ -291,9 +290,20 @@ export default function TakeAction() {
   const [selectedCode, setSelectedCode] = useState('');
 
   useEffect(() => {
-    const saved = window.localStorage.getItem(SELECTED_DISTRICT_KEY);
+    /*
+      A `?d=` in the URL - as on the link from a district's profile page -
+      means a specific link was followed and should win even on a first visit
+      with nothing in storage yet. Read it from `location.search` directly
+      rather than `useSearchParams()`, which would force this whole page
+      behind a Suspense boundary with no build-time content, the same
+      empty-shell problem the District Explorer had before it was split into
+      static per-district routes.
+    */
+    const fromUrl = new URLSearchParams(window.location.search).get('d');
+    const saved = fromUrl ?? readSelectedDistrict();
     if (saved && data.districts.some((district) => district.code === saved)) {
       setSelectedCode(saved);
+      if (fromUrl) writeSelectedDistrict(fromUrl);
     }
   }, []);
 
@@ -349,11 +359,7 @@ export default function TakeAction() {
 
   const chooseDistrict = useCallback((code: string) => {
     setSelectedCode(code);
-    if (code) {
-      window.localStorage.setItem(SELECTED_DISTRICT_KEY, code);
-    } else {
-      window.localStorage.removeItem(SELECTED_DISTRICT_KEY);
-    }
+    writeSelectedDistrict(code || null);
   }, []);
 
   const clearDistrict = useCallback(() => chooseDistrict(''), [chooseDistrict]);

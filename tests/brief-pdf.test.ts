@@ -11,7 +11,7 @@ import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 
 import { briefFor } from '@/lib/diagnosis';
-import { buildBriefPdf, briefFileName } from '@/lib/brief-pdf';
+import { buildBriefPdf, briefFileName, pdfStringForTest } from '@/lib/brief-pdf';
 
 const META = {
   year: '2024-25',
@@ -22,9 +22,9 @@ const META = {
 // no outlier and takes the short single-page path.
 const BELLEVUE = '17405';
 const STEADY = '06119';
-// Marysville is the enhanced-oversight case, whose section title carries the
-// corpus's only curly apostrophe.
 const ENHANCED_OVERSIGHT = '31025';
+// Almira's MSOC ask cites "(SSB 5918)" - parentheses inside drawn text.
+const HAS_PARENS = '22017';
 
 async function bytesFor(code: string): Promise<string> {
   const brief = briefFor(code);
@@ -106,14 +106,13 @@ describe('brief PDF content', () => {
   it('carries the district name and headline into the file', async () => {
     const pdf = await bytesFor(BELLEVUE);
     assert.ok(pdf.includes('Bellevue School District'));
-    assert.ok(pdf.includes('THE ASK'));
+    assert.ok(pdf.includes('WHAT TO ASK FOR'));
     assert.ok(pdf.includes('WA SCHOOL FUNDING EXPLORER'));
   });
 
   it('escapes parentheses so they cannot terminate a PDF string early', async () => {
-    const pdf = await bytesFor(BELLEVUE);
-    // The oversight bullet cites "(RCW 28A.505.110)".
-    assert.ok(pdf.includes('\\(RCW 28A.505.110\\)'));
+    const pdf = await bytesFor(HAS_PARENS);
+    assert.ok(pdf.includes('\\(SSB 5918\\)'), 'expected escaped parentheses');
     // A bare "(" inside a drawn string would break the content stream.
     for (const match of Array.from(pdf.matchAll(/\(((?:[^()\\]|\\.)*)\) Tj/g))) {
       assert.equal(
@@ -124,16 +123,21 @@ describe('brief PDF content', () => {
     }
   });
 
-  it('encodes a curly apostrophe as its WinAnsi octal, not raw UTF-8', async () => {
+  it('encodes non-ASCII as WinAnsi octal rather than raw UTF-8', () => {
     /*
-      Marysville is under enhanced oversight, and that section's title is the
-      one string in the corpus carrying a curly apostrophe (U+2019). WinAnsi
-      146 is octal 222; emitting the character raw would be multi-byte UTF-8
-      and would shift every subsequent byte offset in the xref table.
+      A raw multi-byte character would shift every byte offset in the xref
+      table and break the file. WinAnsi 146 (a right single quote) is octal
+      222; 151 (an em dash) is 227.
     */
-    const pdf = await bytesFor(ENHANCED_OVERSIGHT);
-    assert.ok(pdf.includes('district\\222s'), 'expected an octal-escaped U+2019');
-    assert.equal(pdf.includes('’'), false, 'raw U+2019 would corrupt byte offsets');
+    assert.equal(pdfStringForTest('district\u2019s'), 'district\\222s');
+    assert.equal(pdfStringForTest('a\u2014b'), 'a\\227b');
+    // Outside WinAnsi entirely: degrade, never emit a raw byte.
+    assert.equal(pdfStringForTest('\u4e2d'), ' ');
+  });
+
+  it('escapes the characters that would terminate a PDF string', () => {
+    assert.equal(pdfStringForTest('a(b)c'), 'a\\(b\\)c');
+    assert.equal(pdfStringForTest('a\\b'), 'a\\\\b');
   });
 
   it('never writes a byte above the ASCII range', async () => {

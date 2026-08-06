@@ -102,13 +102,18 @@ function CloseIcon() {
   );
 }
 
-export default function FundingAssistant() {
+/**
+ * `initialOpen` exists for AssistantLauncher, which renders a stand-in button
+ * and only then loads this module. Without it the visitor's first click would
+ * merely mount a closed assistant and they would have to click again.
+ */
+export default function FundingAssistant({ initialOpen = false }: { initialOpen?: boolean }) {
   const pathname = usePathname();
   const language = useAssistantLanguage();
   const strings = assistantStrings(language);
   const runAction = useActionRunner();
 
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(initialOpen);
   const [turns, setTurns] = useState<AssistantTurn[]>([]);
   const [draft, setDraft] = useState('');
   const [busy, setBusy] = useState(false);
