@@ -90,16 +90,7 @@ export default function SourceShareBar({
               onMouseLeave={() => setHover(null)}
             >
               {share >= MIN_LABEL_SHARE && (
-                /*
-                  A solid white chip rather than white text straight on the
-                  fill. White text failed WCAG contrast on three of these four
-                  colors (as low as 2.17:1 on the federal amber) - a fix that
-                  picked black-or-white per color still failed on the state
-                  blue, since neither reaches 4.5:1 against it. A white chip
-                  under dark text passes regardless of the segment color
-                  underneath, including any color added later.
-                */
-                <span className="rounded bg-white px-1 py-0.5 text-[11px] font-semibold text-ink select-none">
+                <span className="text-xs font-semibold text-white select-none">
                   {Math.round(share)}%
                 </span>
               )}

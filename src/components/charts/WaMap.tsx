@@ -403,8 +403,8 @@ export default function WaMap({
                 key={d.code}
                 d={d.d}
                 fill={fills.get(d.code) ?? NO_DATA}
-                stroke={hovered === d.code ? '#104281' : '#fcfcfb'}
-                strokeWidth={hovered === d.code ? 1.6 : 0.7}
+                stroke="#fcfcfb"
+                strokeWidth={0.7}
                 vectorEffect="non-scaling-stroke"
                 style={{ cursor: 'pointer' }}
                 aria-label={
@@ -435,6 +435,26 @@ export default function WaMap({
               <path key={index} d={water.d} fill="#9fd4ef" />
             ))}
           </g>
+          {/*
+            The hovered district's highlight, redrawn on top of every other
+            path. Each district used to carry its own conditional stroke, so a
+            neighbor sharing a border and painted later in the list drew its
+            own thin light edge right over part of the highlight - the
+            outline looked broken or partial depending on which side of the
+            shared border it was on. A single overlay painted last is never
+            interrupted by paint order.
+          */}
+          {hovered && (
+            <path
+              d={map.districts.find((d) => d.code === hovered)?.d}
+              fill="none"
+              stroke="#104281"
+              strokeWidth={1.6}
+              vectorEffect="non-scaling-stroke"
+              pointerEvents="none"
+              clipPath="url(#wa-land-extent)"
+            />
+          )}
         </svg>
 
         {/* hover tooltip - compact, tucked beside the cursor */}
