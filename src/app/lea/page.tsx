@@ -2,12 +2,20 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import levyData from '@/data/levy.json';
 import { fmtInt, fmtMoney, fmtMoneyFull } from '@/lib/format';
-import { pageMetadata } from '@/lib/site-metadata';
+import JsonLd from '@/components/JsonLd';
+import {
+  breadcrumbJsonLd,
+  pageMetadata,
+  webPageJsonLd,
+} from '@/lib/site-metadata';
+
+const TITLE = 'How Local Effort Assistance works';
+const DESCRIPTION =
+  "Washington's Local Effort Assistance formula, step by step: the per-student goal, the $1.50 wealth test, the levy-effort discount, and a worked example using real district numbers.";
 
 export const metadata: Metadata = pageMetadata({
-  title: 'How Local Effort Assistance works',
-  description:
-    "Washington's Local Effort Assistance formula, step by step: the per-student goal, the $1.50 wealth test, the levy-effort discount, and a worked example using real district numbers.",
+  title: TITLE,
+  description: DESCRIPTION,
   path: '/lea/',
 });
 
@@ -57,6 +65,16 @@ export default function LeaPage() {
 
   return (
     <div className="max-w-site mx-auto px-4 md:px-6 pt-10 pb-16">
+      <JsonLd
+        data={[
+          webPageJsonLd({ title: TITLE, description: DESCRIPTION, path: '/lea/' }),
+          breadcrumbJsonLd([
+            { name: 'Home', path: '/' },
+            { name: 'School levies and LEA', path: '/school-levies-and-lea/' },
+            { name: TITLE, path: '/lea/' },
+          ]),
+        ]}
+      />
       <p className="text-sm text-ink-secondary">
         <Link href="/simulator" className="text-accent hover:underline">
           ← Back to the Policy Simulator

@@ -81,7 +81,10 @@ export default function DistrictQuickFind({
       <h2 className="text-lg md:text-xl font-bold">
         Start with your own school district
       </h2>
-      <p className="mt-1 text-sm text-ink-secondary">
+      {/* Operating instructions for the control below - useless as a search
+          snippet, and it sits high enough in the home page's HTML to be picked
+          as one. The heading above it stays snippetable. */}
+      <p className="mt-1 text-sm text-ink-secondary" data-nosnippet>
         Choose from the dropdown or type a district or county to narrow the list.
       </p>
       <div ref={selectorRef} className="relative mt-3 max-w-md">

@@ -45,7 +45,11 @@ export default function CopyBlock({ title, text }: { title: string; text: string
     <div className="card overflow-hidden">
       <div className="flex items-center justify-between gap-3 px-4 py-2.5 border-b border-line bg-paper">
         <span className="text-sm font-semibold">{title}</span>
+        {/* "Copy" / "Press ⌘C" is instruction for operating this control, not
+            content. The <pre> below - the actual draft letter or testimony -
+            stays snippetable. */}
         <button
+          data-nosnippet
           onClick={copy}
           className={`text-sm font-medium px-3 py-1 rounded-md border transition-colors ${
             state === 'copied'

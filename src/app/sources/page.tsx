@@ -1,6 +1,11 @@
 import type { Metadata } from 'next';
 import { OVERSIGHT_CHECKED_ON } from '@/data/oversight';
-import { pageMetadata } from '@/lib/site-metadata';
+import JsonLd from '@/components/JsonLd';
+import {
+  breadcrumbJsonLd,
+  pageMetadata,
+  webPageJsonLd,
+} from '@/lib/site-metadata';
 import levyData from '@/data/levy.json';
 
 const LEA = levyData.assumptions;
@@ -10,10 +15,13 @@ const LEA = levyData.assumptions;
 const money2 = (n: number) =>
   `$${n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
+const TITLE = 'Sources & Methodology';
+const DESCRIPTION =
+  'Every dataset, statute, and court record behind this site, with direct links so all numbers can be cross-verified.';
+
 export const metadata: Metadata = pageMetadata({
-  title: 'Sources & Methodology',
-  description:
-    'Every dataset, statute, and court record behind this site, with direct links so all numbers can be cross-verified.',
+  title: TITLE,
+  description: DESCRIPTION,
   path: '/sources/',
 });
 
@@ -116,6 +124,15 @@ function Ext({ href, children }: { href: string; children: React.ReactNode }) {
 export default function SourcesPage() {
   return (
     <div className="max-w-site mx-auto px-4 md:px-6 pt-10">
+      <JsonLd
+        data={[
+          webPageJsonLd({ title: TITLE, description: DESCRIPTION, path: '/sources/' }),
+          breadcrumbJsonLd([
+            { name: 'Home', path: '/' },
+            { name: TITLE, path: '/sources/' },
+          ]),
+        ]}
+      />
       <h1 className="text-3xl md:text-4xl font-bold tracking-tight">
         Sources & Methodology
       </h1>

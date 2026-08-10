@@ -106,18 +106,18 @@ function DistrictOverview({
   const s = data.statewide;
 
   return (
-    <div className="max-w-site mx-auto px-4 md:px-6 pt-10">
-      {/* The school-year control lives in the site header, beside the
-          language control - see SchoolYearSwitcher. */}
-      <h1 className="text-3xl md:text-4xl font-bold tracking-tight">
-        District Explorer
-      </h1>
-      <p className="mt-3 max-w-2xl text-ink-secondary">
-        Funding for every school district and charter school in Washington,
-        from the F-196 financial reports, any year since 2019-20. Pick your
-        district on the map - its full profile opens on this page.
-      </p>
+    <div className="max-w-site mx-auto px-4 md:px-6">
+      {/*
+        The <h1> and intro that used to open this component now live in
+        app/districts/page.tsx. This component calls useSearchParams(), which
+        under `output: 'export'` makes its whole Suspense subtree client-only -
+        so nothing rendered here reaches the exported HTML, and the page was
+        shipping with no <h1> at all. Static text belongs on the server side of
+        that boundary.
 
+        The school-year control lives in the site header, beside the
+        language control - see SchoolYearSwitcher.
+      */}
       <div data-assistant-section="district-stats" className="mt-6 grid lg:grid-cols-[1fr,22rem] gap-4 items-stretch">
         <div className="grid grid-cols-2 gap-3">
           <StatTile label={`Districts & charters (${year})`} value={String(s.districts)} />
@@ -496,9 +496,16 @@ function DistrictDetail({
         ← District Explorer
       </Link>
       <div className="mt-3 flex items-baseline gap-3 flex-wrap">
-        <h1 className="text-3xl md:text-4xl font-bold tracking-tight" data-no-translate>
+        {/*
+          An <h2>, not an <h1>: this detail view is swapped in below the
+          page's own "District Explorer" heading rather than replacing it, so a
+          second <h1> would give the hydrated page two competing top-level
+          headings. The district's <h1> lives on its static page at
+          /districts/<slug>/. Styling is unchanged.
+        */}
+        <h2 className="text-3xl md:text-4xl font-bold tracking-tight" data-no-translate>
           {d.name}
-        </h1>
+        </h2>
       </div>
       <p className="mt-1 text-ink-secondary" data-no-translate>
         {d.county} County · {d.esd}

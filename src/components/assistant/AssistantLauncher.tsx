@@ -54,7 +54,14 @@ export default function AssistantLauncher() {
   if (loaded) return <FundingAssistant initialOpen />;
 
   return (
-    <div data-no-translate>
+    /*
+      data-nosnippet: this button ships in the static HTML of every route, so
+      without it "Site guide" is a candidate snippet for any page on the site -
+      chrome describing a chat widget, offered to someone searching for funding
+      data. The assistant's own conversation UI is inside FundingAssistant,
+      which is client-only and never reaches a crawler at all.
+    */
+    <div data-no-translate data-nosnippet>
       <button
         type="button"
         onClick={() => setLoaded(true)}

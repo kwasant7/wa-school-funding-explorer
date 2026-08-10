@@ -19,17 +19,18 @@ export const metadata: Metadata = {
   },
   description: DESCRIPTION,
   /*
-    Covers the home page specifically: it's a client component ('use client'
-    for its interactive picker), so it cannot export its own metadata the way
-    every other route does through pageMetadata() below.
+    Deliberately no `alternates.canonical` here. Every indexable route sets its
+    own through pageMetadata(), and a root-level canonical is inherited rather
+    than overridden by children that forget to - which would quietly tell
+    crawlers that a district page's canonical URL is the home page. The home
+    page now sets its own: it was split into a server page wrapping the client
+    explainer precisely so it could.
   */
-  alternates: { canonical: SITE_URL },
   /*
-    Site-wide fallback so a page that doesn't call pageMetadata() (the home
-    page, which is a client component and can't export metadata at all)
-    still shares with a real title, description, and image instead of a
-    blank card - every route used to render identically empty when pasted
-    into Slack, iMessage, or a social feed.
+    Site-wide fallback so a route that doesn't call pageMetadata() still shares
+    with a real title, description, and image instead of a blank card - every
+    route used to render identically empty when pasted into Slack, iMessage, or
+    a social feed.
   */
   openGraph: {
     title: 'WA School Funding Explorer',

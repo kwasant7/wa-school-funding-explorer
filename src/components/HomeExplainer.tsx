@@ -14,7 +14,7 @@ import { useAssistantDistrict, useAssistantYear } from '@/lib/assistant/store';
 import { yearData as yearDataFor } from '@/lib/data';
 import { readSelectedDistrict, writeSelectedDistrict } from '@/lib/selected-district';
 
-export default function HomePage() {
+export default function HomeExplainer() {
   const [year, setYear] = useState(LATEST);
   const [selectedDistrict, setSelectedDistrict] = useState<District | null>(null);
   /*
@@ -217,7 +217,13 @@ export default function HomePage() {
         </>
       ) : (
         <section className="pb-10">
-          <div className="card p-5 md:p-6 text-center border-dashed">
+          {/*
+            The pre-selection empty state. It is the only thing standing where
+            the district content will be, so before data-nosnippet it was the
+            most likely snippet for the home page - a search result reading
+            "Choose a school district above" instead of anything about funding.
+          */}
+          <div className="card p-5 md:p-6 text-center border-dashed" data-nosnippet>
             <p className="font-semibold">Choose a school district above</p>
             <p className="mt-1 text-sm text-ink-secondary">
               Its funding sources and personalized prototypical-school model
