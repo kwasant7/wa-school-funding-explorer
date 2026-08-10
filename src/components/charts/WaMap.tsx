@@ -397,7 +397,7 @@ export default function WaMap({
               )}
             </clipPath>
           </defs>
-          <g clipPath="url(#wa-land-extent)">
+          <g>
             {map.districts.map((d) => (
               <path
                 key={d.code}
@@ -443,6 +443,13 @@ export default function WaMap({
             outline looked broken or partial depending on which side of the
             shared border it was on. A single overlay painted last is never
             interrupted by paint order.
+
+            Not clipped to wa-land-extent: that clip traces a lower-resolution
+            coastline from a different data source than the OSPI district
+            boundaries, so it disagreed with district shapes near water
+            (chewing up Peninsula/South Kitsap and nearly erasing Vashon
+            Island). District polygons are already correct, closed shapes and
+            don't need re-clipping against a second, mismatched coastline.
           */}
           {hovered && (
             <path
@@ -452,7 +459,6 @@ export default function WaMap({
               strokeWidth={1.6}
               vectorEffect="non-scaling-stroke"
               pointerEvents="none"
-              clipPath="url(#wa-land-extent)"
             />
           )}
         </svg>
