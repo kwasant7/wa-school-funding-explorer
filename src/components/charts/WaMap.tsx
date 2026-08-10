@@ -397,7 +397,15 @@ export default function WaMap({
               )}
             </clipPath>
           </defs>
-          <g>
+          {/*
+            Fills are clipped to the coastline, and must stay that way: OSPI
+            district boundaries are jurisdictional, so a shoreline district's
+            polygon covers open water - Vashon Island's is roughly half Puget
+            Sound, Bainbridge's more. Unclipped, those polygons paint over the
+            Sound and the San Juan channels and the state renders as one solid
+            landmass with no water anywhere.
+          */}
+          <g clipPath="url(#wa-land-extent)">
             {map.districts.map((d) => (
               <path
                 key={d.code}
@@ -444,12 +452,20 @@ export default function WaMap({
             shared border it was on. A single overlay painted last is never
             interrupted by paint order.
 
-            Not clipped to wa-land-extent: that clip traces a lower-resolution
-            coastline from a different data source than the OSPI district
-            boundaries, so it disagreed with district shapes near water
-            (chewing up Peninsula/South Kitsap and nearly erasing Vashon
-            Island). District polygons are already correct, closed shapes and
-            don't need re-clipping against a second, mismatched coastline.
+            Deliberately NOT clipped to wa-land-extent, unlike the fills above.
+            Clipping a fill trims a shape; clipping a stroke deletes the parts
+            of the line that fall outside the clip. A shoreline district's
+            boundary runs mostly through open water, so the clipped stroke
+            survived only where the boundary happened to cross land - Peninsula
+            and South Kitsap drew a highlight along their northern edge and
+            nothing else, and Vashon Island, whose boundary is almost entirely
+            in Puget Sound, drew no highlight at all.
+
+            So this traces the district's real jurisdictional boundary, water
+            included. It reads slightly wider than the painted land for island
+            districts, which is accurate - that is where the district's
+            authority actually ends - and it is always a complete, closed
+            outline.
           */}
           {hovered && (
             <path
