@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import { District, LATEST, yearData } from '@/lib/data';
+import { districtPath } from '@/lib/district-slug';
 import { fmtInt, fmtMoneyFull } from '@/lib/format';
 import { writeSelectedDistrict } from '@/lib/selected-district';
 
@@ -208,7 +209,7 @@ export default function DistrictQuickFind({
             </div>
           </div>
           <Link
-            href={`/districts?d=${picked.code}`}
+            href={districtPath(picked.code)}
             className="card px-4 py-3 flex flex-col justify-center hover:border-accent transition-colors group"
           >
             <span className="font-semibold text-accent group-hover:underline">

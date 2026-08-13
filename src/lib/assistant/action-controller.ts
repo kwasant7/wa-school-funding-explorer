@@ -21,6 +21,7 @@ import { useRouter } from 'next/navigation';
 import type { AssistantAction } from '@/lib/assistant/types';
 import { assistantHandlers } from '@/lib/assistant/store';
 import { assistantSource } from '@/lib/assistant/knowledge';
+import { districtPath } from '@/lib/district-slug';
 import { simulatorControl } from '@/lib/simulator-config';
 import { requestsAction, shouldAutoRun } from '@/lib/assistant/intent';
 import type { AssistantStrings } from '@/lib/assistant/i18n';
@@ -178,11 +179,11 @@ export function useActionRunner() {
           if (!handlers.selectDistrict) {
             /*
               No page currently owns a district picker - the visitor is on
-              Sources, say. Navigating to the District Explorer with the code
-              in the query string selects it there, which is exactly what the
-              Explorer already does for its own links.
+              Sources, say. Send them to the district's own page, which is a
+              readable URL naming the district rather than its OSPI code, and
+              is the whole profile rather than the Explorer's charts view.
             */
-            router.push(`/districts?d=${encodeURIComponent(action.districtCode)}`);
+            router.push(districtPath(action.districtCode));
             return { ok: true, label };
           }
           handlers.selectDistrict(action.districtCode);
