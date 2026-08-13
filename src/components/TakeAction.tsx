@@ -19,13 +19,11 @@ Dear [Senator/Representative Last Name],
 
 My name is [YOUR NAME], and I'm a [student/parent/community member] in [YOUR SCHOOL DISTRICT].
 
-I'm writing about K-12 school funding. [ONE OR TWO SENTENCES ABOUT WHAT YOU'VE SEEN FIRSTHAND - a counselor shared across three schools, outdated materials, a program cut, or a class of 32.]
+I'm writing about K-12 school funding. [TALK ABOUT WHAT YOU HAVE SEEN FIRSTHAND - class sizes climbing, no mental health support when someone needed it, a program cut. Write the one you would tell a neighbor about.]
 
 Washington's funding formula currently [PICK YOUR ISSUE: does not fully cover special education costs / leaves transportation gaps / has not kept operating-cost funding level with district expenses].
 
 I'm asking you to [YOUR ASK: name a policy change or bill you want supported].
-
-Students notice these gaps every day, and we vote - now or soon.
 
 Thank you for your time and your service.
 
@@ -33,17 +31,17 @@ Thank you for your time and your service.
 [YOUR CITY], WA
 [YOUR SCHOOL OR DISTRICT]`;
 
-const TESTIMONY_TEMPLATE = `Good [morning/afternoon], Chair [NAME] and members of the committee.
+const TESTIMONY_TEMPLATE = `Good [morning/afternoon], Chair [NAME], members of the [COMMITTEE NAME] Committee.
 
-For the record, my name is [YOUR NAME], and I am a [student at X high school / parent in Y district / resident of Z].
+Thank you for giving me the opportunity to testify today. My name is [YOUR NAME], and I am [a short bio - who you are, and anything that makes you worth hearing on this bill].
 
-I am testifying [in support of / with concerns about] [BILL NUMBER].
+I am testifying [in support of / against] [BILL NUMBER].
 
-[YOUR STORY - 2 to 3 sentences. What have you personally seen? Specific beats general.]
+[NOW TELL THEM WHY. Summarize the position you are taking, then back it up - a statistic, a case study, or what you have watched happen at your own school. A paragraph or two is plenty. The personal anecdote is the part they will remember.]
 
-[YOUR ASK - 1 sentence. What do you want the committee to do?]
+I ask you to consider my testimony and vote [YES/NO] on this bill.
 
-Thank you.`;
+Thank you again for the opportunity to testify.`;
 
 const PASSED_BILLS = [
   {
