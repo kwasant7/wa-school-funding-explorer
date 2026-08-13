@@ -83,7 +83,7 @@ export default function LeaPage() {
       <h1 className="mt-3 text-3xl md:text-4xl font-bold tracking-tight">
         How Local Effort Assistance works
       </h1>
-      <p className="mt-3 max-w-3xl text-lg text-ink-secondary">
+      <p className="mt-3 text-lg text-ink-secondary">
         Local Effort Assistance (LEA), often called levy equalization, is the
         state&apos;s answer to a simple problem: the same school tax rate raises
         far more money in a property-rich district than a property-poor one. LEA
@@ -99,7 +99,7 @@ export default function LeaPage() {
           the district taxes itself at less than the standard rate.
         </p>
         <p className="mt-3 text-sm text-ink-secondary">
-          In 2026 the goal is{' '}
+          In {levyData.calendarYear} the goal is{' '}
           <strong className="text-ink">
             {fmtMoneyFull(LEA.leaThresholdPerPupil)} per student
           </strong>{' '}
@@ -225,21 +225,24 @@ export default function LeaPage() {
           Yakima actually received{' '}
           <strong className="text-ink">{fmtMoney(EXAMPLE.actualLea)}</strong> in
           LEA in 2024-25 (F-196 revenue code 3300). The formula figure above is
-          the 2026 estimate, so the two differ by year, by enrollment counts,
-          and by mid-year adjustments.
+          the {levyData.calendarYear} estimate, so the two differ by year, by
+          enrollment counts, and by mid-year adjustments.
         </p>
       </div>
 
       <h2 className="mt-10 text-2xl font-bold">Why the goal moves</h2>
-      <p className="mt-2 max-w-3xl text-ink-secondary">
+      <p className="mt-2 text-ink-secondary">
         The per-student goal is set in statute and inflated each year.{' '}
         <strong className="text-ink">HB 2050 (2025)</strong> changed which
         enrollment counts in the calculation, and{' '}
         <strong className="text-ink">RCW 28A.500.015</strong> was updated in the
         2025 session to index LEA to the implicit price deflator (IPD) instead
-        of CPI beginning in calendar year 2026. That is why the goal is{' '}
-        {fmtMoneyFull(LEA.leaThresholdPerPupil)} in 2026 rather than a round
-        number.
+        of CPI beginning in calendar year 2026. On top of that inflated base,
+        the goal carries a one-year enhancement, which the 2026 session cut
+        from $250 to $150 for {levyData.calendarYear}. That is why the goal is{' '}
+        {fmtMoneyFull(LEA.leaThresholdPerPupil)} in {levyData.calendarYear}{' '}
+        rather than a round number - and why it steps back down to $2,179 in{' '}
+        {levyData.calendarYear + 1}, when the enhancement drops away.
       </p>
 
       <h2 className="mt-10 text-2xl font-bold">Sources</h2>

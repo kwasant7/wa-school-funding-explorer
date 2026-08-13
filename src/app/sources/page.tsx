@@ -136,14 +136,14 @@ export default function SourcesPage() {
       <h1 className="text-3xl md:text-4xl font-bold tracking-tight">
         Sources & Methodology
       </h1>
-      <p className="mt-3 max-w-2xl text-ink-secondary">
+      <p className="mt-3 text-ink-secondary">
         Every number on this site comes from public data published by
         Washington&apos;s Office of Superintendent of Public Instruction (OSPI)
         or from state law. This page lists the exact sources so you can verify
         anything yourself. Three things on this site are not pulled directly
         from a dataset, and are labeled everywhere they appear:
       </p>
-      <ul className="mt-2 max-w-2xl list-disc pl-5 text-sm text-ink-secondary space-y-1">
+      <ul className="mt-2 list-disc pl-5 text-sm text-ink-secondary space-y-1">
         <li>
           The list of districts under state financial oversight is
           hand-transcribed from an OSPI web page that has no downloadable
@@ -180,7 +180,7 @@ export default function SourcesPage() {
 
       <section className="mt-10">
         <h2 className="text-2xl font-bold">1 · Enrollment & demographics</h2>
-        <p className="mt-2 max-w-2xl text-ink-secondary">
+        <p className="mt-2 text-ink-secondary">
           OSPI &ldquo;Report Card Enrollment&rdquo; datasets on{' '}
           <Ext href="https://data.wa.gov">data.wa.gov</Ext>, one per school
           year. We use district-level, all-grades rows: October headcount plus
@@ -222,7 +222,7 @@ export default function SourcesPage() {
             </tbody>
           </table>
         </div>
-        <p className="mt-3 text-sm text-ink-muted max-w-2xl">
+        <p className="mt-3 text-sm text-ink-muted">
           &ldquo;The exact rows we use&rdquo; = each district&apos;s one
           district-total row (all grades combined) - the same filter our data
           script applies. Open it in any spreadsheet app and compare against
@@ -266,7 +266,7 @@ export default function SourcesPage() {
 
       <section className="mt-10">
         <h2 className="text-2xl font-bold">2 · District finances (F-196)</h2>
-        <p className="mt-2 max-w-2xl text-ink-secondary">
+        <p className="mt-2 text-ink-secondary">
           The F-196 is the year-end financial report every district, charter,
           and tribal-compact school files with OSPI. Raw CSVs come from the{' '}
           <Ext href="https://ospi.k12.wa.us/safs-data-files">
@@ -369,7 +369,10 @@ export default function SourcesPage() {
             {money2(LEA.maxLevyPerPupil)} for {levyData.calendarYear}, and{' '}
             {money2(LEA.maxLevyPerPupilLarge)} for districts of 40,000 or more
             FTE students, which under RCW 84.52.0531 means Seattle and no one
-            else. Script:{' '}
+            else. The voter-approved levy amounts are OSPI&apos;s{' '}
+            {levyData.calendarYear} column, final as of June 26, 2026, so they
+            include the results of the February 10 and April 28, 2026 levy
+            elections. Script:{' '}
             <code className="text-ink">scripts/build-levy-lea.py</code>.
           </p>
         </div>

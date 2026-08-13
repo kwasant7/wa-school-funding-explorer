@@ -145,33 +145,73 @@ district inputs, not statewide averages.
 the School Apportionment budget-preparations page:
 
 - Page: https://ospi.k12.wa.us/policy-funding/school-apportionment/budget-preparations
-- Workbook (CY2026): https://ospi.k12.wa.us/sites/default/files/2025-04/2026multiyearlacombined.xlsx
+- Workbook (CY2027): https://ospi.k12.wa.us/sites/default/files/2026-03/2027levyprojectiontool.xlsx
 - Assessed valuations (standalone): https://ospi.k12.wa.us/sites/default/files/2025-06/assess25rpt.xlsx
+
+Note the filename convention changed: through CY2026 the workbook was
+`NNNNmultiyearlacombined.xlsx`; from CY2027 it is `2027levyprojectiontool.xlsx`,
+and it is filed under a `2026-03/` path even though OSPI's page labels it
+"Updated June 15, 2026". Don't construct the URL from the label.
 
 `scripts/build-levy-lea.py` reads three sheets - `Data` (assessed valuation by
 calendar year), `Voter Approved` (levy amounts), and `District AAFTE` (LEA
 enrollment net of high/non-high transfers) - plus the statutory assumptions from
 `LevyCalc`, and writes `src/data/levy.json`.
 
-The calculation reproduces LevyCalc rows Q, R, T, V, and X:
+**Why the site models CY2027 rather than the current collection year.** The
+CY2027 "Voter Approved" column is the first one that reflects the **February 10
+and April 28, 2026 levy elections** - OSPI stamps it "updated final as of June
+26, 2026". The CY2026 voter-approved amounts are unchanged from the previous
+workbook, so staying on CY2026 would mean the site never reflected what
+districts just voted on. CY2027 is also the last year OSPI models from real
+inputs rather than pure projection: assessed valuation is the **actual** CY2025
+AV (the previous workbook carried only a projection of it, which ran about 4.4%
+high statewide), and enrollment is March 2025-26 AAFTE. Out-years 2028-2031 are
+caseload-forecast projections and are deliberately not published here.
+
+The calculation reproduces LevyCalc rows Q, R, T, V, and X. Enrollment (row K)
+is total AAFTE minus high/non-high transfers out plus transfers in; the LEA
+denominator adds the ALE adjustment (row I.1), while the levy cap does not:
 
 | Step | Formula |
 |---|---|
-| Capacity per pupil (Q) | AV × $1.50 ÷ 1,000 ÷ enrollment |
+| Capacity per pupil (Q) | AV × $1.50 ÷ 1,000 ÷ (enrollment + ALE adj) |
 | Max LEA per pupil (R) | threshold − capacity per pupil |
 | Levy rate (T) | levy ÷ AV × 1,000 |
-| Maximum LEA (V) | max LEA per pupil × enrollment |
+| Maximum LEA (V) | max LEA per pupil × (enrollment + ALE adj) |
 | Payable LEA (X) | maximum LEA × min(levy rate ÷ $1.50, 1) |
 
-CY2026 assumptions: LEA guarantee **$2,223.80** per student, LEA rate **$1.50**,
-maximum levy **$3,838.26** per student or **$2.50** per $1,000 AV, whichever is
-less. Verified against the workbook's own output for Aberdeen (capacity
-$1,416.29, max LEA per pupil $807.51, payable $2.41M).
+OSPI rounds to 2 decimals at each of Q, R, and V, and feeds the rounded value
+into the next row; the script does the same, or district totals drift by a few
+dollars against OSPI's own output.
+
+CY2027 assumptions: LEA guarantee **$2,431.77** per student, LEA rate **$1.50**,
+maximum levy **$4,077.38** per student (**$4,786.63** for districts of 40,000+
+FTE, i.e. Seattle alone) or **$2.50** per $1,000 AV, whichever is less. Verified
+against the workbook's own output for Aberdeen (capacity $1,367.92, max LEA per
+pupil $1,063.85, levy rate $2.27, payable $3,056,164 - an exact match).
+
+The LEA guarantee includes a one-year inflation enhancement that the 2026
+session cut from $250 to $150, which is why the guarantee steps back down to
+$2,178.78 in CY2028 rather than continuing to rise.
+
+**Districts with no CY2027 authority.** Five districts that collect a levy in
+2026 have $0 approved for 2027. Two failed at the ballot on February 10, 2026 -
+**Darrington** (43.2% yes) and **Oroville** (49.1% yes). The other three -
+**Skykomish**, **Southside**, and **Lopez** - simply had no enrichment measure
+on the February or April ballot and may still run one; they are not failures.
+Battle Ground and Pasco also failed in February, but Pasco re-ran and passed on
+April 28 (49.7% → 59.0%), so it does carry 2027 authority.
+
+Election results by district, including yes-percentages and pass/fail, are
+published separately by OSPI and were used to confirm the above:
+https://ospi.k12.wa.us/policy-funding/school-apportionment/election-results-school-financing
 
 **LEA actually received** is F-196 revenue code **3300** ("Local Effort
-Assistance") for 2024-25. It covers a different period than the CY2026 estimate,
-so the two are close but not identical (statewide: $179.8M actual vs $200.5M
-modeled).
+Assistance") for 2024-25. It covers a different period than the CY2027 estimate,
+so the two are not directly comparable (statewide: $179.8M actual vs $323.3M
+modeled for CY2027 - the gap widens because the CY2027 guarantee is higher and
+the actual is two years older).
 
 ## 3. District boundaries (the map)
 
