@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { District, LATEST, YEARS, districtSeries, statewideSeries, yearData } from '@/lib/data';
@@ -50,57 +50,132 @@ export default function DistrictsExplorer() {
     clear: clearDistrict,
   });
 
-  if (selectedCode && selected) {
-    return <DistrictDetail district={selected} year={year} />;
-  }
-  if (selectedCode) {
-    // District exists in another year but not this one. Offer the most
-    // recent year it actually has data for - which is not always LATEST: a
-    // district that closed, merged, or lost its charter after an earlier year
-    // has no record in 2024-25 either, and "Switch to 2024-25" would just
-    // land back on the same empty page.
-    const yearsWithData = YEARS.filter((y) =>
-      yearData(y).districts.some((d) => d.code === selectedCode)
-    );
-    const fallbackYear = yearsWithData[yearsWithData.length - 1];
-    return (
-      <div className="max-w-site mx-auto px-4 md:px-6 pt-10">
-        <Link href="/districts" className="text-sm text-accent hover:underline">
-          ← District Explorer
-        </Link>
-        <p className="mt-6 text-ink-secondary">
-          {fallbackYear ? (
-            <>
-              No data for this district in {year}.{' '}
-              <button
-                className="text-accent hover:underline"
-                onClick={() => setYear(fallbackYear)}
-              >
-                Switch to {fallbackYear}
-              </button>
-              , the most recent year it&apos;s on record.
-            </>
-          ) : (
-            "This district isn't in any year of this data - it may have moved, closed, or changed codes."
-          )}
-        </p>
-      </div>
-    );
-  }
+  /*
+    The profile opens below the map rather than replacing it. Clicking a shape
+    used to swap the whole explorer out for the district's page, which threw
+    away the one piece of context the click had just established: where in the
+    state that district actually is. Now the map stays put with the district
+    outlined, and the profile unfolds underneath it.
+  */
+  const detailRef = useRef<HTMLDivElement>(null);
+  const scrolledFor = useRef<string | null>(selectedCode);
+  useEffect(() => {
+    // Only on a selection made here - a visitor arriving on /districts?d=...
+    // is left at the top of the page to read down into it themselves, and
+    // moving them while the map JSON is still in flight would scroll to a
+    // position the map's own arrival immediately invalidates.
+    if (!selectedCode || scrolledFor.current === selectedCode) {
+      scrolledFor.current = selectedCode;
+      return;
+    }
+    scrolledFor.current = selectedCode;
+    const el = detailRef.current;
+    if (!el) return;
+    /*
+      Land the profile's opening rows in the bottom third of the screen rather
+      than at the top of it. Scrolling the profile fully into view would push
+      the map off the top edge, which is the behaviour this whole change
+      exists to get rid of - the reader needs to see the outline and the
+      district's name at the same time for one to explain the other. They can
+      scroll the rest of the way themselves.
+    */
+    const top = el.getBoundingClientRect().top + window.scrollY;
+    window.scrollTo({
+      top: Math.max(0, top - window.innerHeight * 0.62),
+      behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches
+        ? 'auto'
+        : 'smooth',
+    });
+  }, [selectedCode]);
+
   return (
-    <DistrictOverview
-      year={year}
-      onSelect={(code) => router.push(`/districts?d=${code}`)}
-    />
+    <>
+      <DistrictOverview
+        year={year}
+        onSelect={selectDistrict}
+        selectedCode={selectedCode}
+      />
+      {selectedCode && (
+        <div ref={detailRef}>
+          {selected ? (
+            <DistrictDetail district={selected} year={year} />
+          ) : (
+            <MissingYearNotice
+              code={selectedCode}
+              year={year}
+              onSwitchYear={setYear}
+            />
+          )}
+        </div>
+      )}
+    </>
+  );
+}
+
+/**
+ * The selected district exists in another year but not this one. Offers the
+ * most recent year it actually has data for - which is not always LATEST: a
+ * district that closed, merged, or lost its charter after an earlier year has
+ * no record in 2024-25 either, and "Switch to 2024-25" would just land back on
+ * the same empty panel.
+ */
+function MissingYearNotice({
+  code,
+  year,
+  onSwitchYear,
+}: {
+  code: string;
+  year: string;
+  onSwitchYear: (year: string) => void;
+}) {
+  const yearsWithData = YEARS.filter((y) =>
+    yearData(y).districts.some((d) => d.code === code)
+  );
+  const fallbackYear = yearsWithData[yearsWithData.length - 1];
+  return (
+    <div className="max-w-site mx-auto px-4 md:px-6 pt-8">
+      <ClearSelectionLink />
+      <p className="mt-4 text-ink-secondary">
+        {fallbackYear ? (
+          <>
+            No data for this district in {year}.{' '}
+            <button
+              className="text-accent hover:underline"
+              onClick={() => onSwitchYear(fallbackYear)}
+            >
+              Switch to {fallbackYear}
+            </button>
+            , the most recent year it&apos;s on record.
+          </>
+        ) : (
+          "This district isn't in any year of this data - it may have moved, closed, or changed codes."
+        )}
+      </p>
+    </div>
+  );
+}
+
+/**
+ * Drops the `?d=` selection. Replaces the old "← District Explorer" link,
+ * which now reads as a lie: the explorer is still on screen above this panel,
+ * so the only thing left to go back to is the unselected state.
+ */
+function ClearSelectionLink() {
+  return (
+    <Link href="/districts" className="text-sm text-accent hover:underline">
+      ← Clear selection
+    </Link>
   );
 }
 
 function DistrictOverview({
   year,
   onSelect,
+  selectedCode,
 }: {
   year: string;
   onSelect: (code: string) => void;
+  selectedCode: string | null;
 }) {
   const data = yearData(year);
   const s = data.statewide;
@@ -118,6 +193,12 @@ function DistrictOverview({
         The school-year control lives in the site header, beside the
         language control - see SchoolYearSwitcher.
       */}
+      {/*
+        Statewide context is what you read while deciding which district to
+        click. Once one is open it's just four tiles between the reader and the
+        profile they asked for, so it stands down until the selection clears.
+      */}
+      {!selectedCode && (
       <div data-assistant-section="district-stats" className="mt-6 grid lg:grid-cols-[1fr,22rem] gap-4 items-stretch">
         <div className="grid grid-cols-2 gap-3">
           <StatTile label={`Districts & charters (${year})`} value={String(s.districts)} />
@@ -149,22 +230,29 @@ function DistrictOverview({
           </p>
         </div>
       </div>
+      )}
 
       <div data-assistant-section="district-picker" className="mt-6 card p-5">
-        <h2 className="font-semibold">Find your district on the map</h2>
+        <h2 className="font-semibold">
+          {selectedCode ? 'Where it is on the map' : 'Find your district on the map'}
+        </h2>
         <p className="mt-0.5 mb-4 text-sm text-ink-secondary">
-          Pick from the dropdown or click your district to open its profile.
+          {selectedCode
+            ? 'The outlined district is the one open below. Pick another to switch.'
+            : 'Pick from the dropdown or click your district to open its profile.'}
         </p>
         <ChartErrorBoundary label="The map">
-          <WaMap year={year} onSelect={onSelect} />
+          <WaMap year={year} onSelect={onSelect} selected={selectedCode} />
         </ChartErrorBoundary>
       </div>
-      <p className="mt-3 text-xs text-ink-muted max-w-2xl">
-        Per-student figures divide general fund revenues by OSPI&apos;s final
-        annual-average funding FTE, including Running Start college FTE. The
-        student total above is that same funding FTE, not the Report
-        Card&apos;s October headcount.
-      </p>
+      {!selectedCode && (
+        <p className="mt-3 text-xs text-ink-muted max-w-2xl">
+          Per-student figures divide general fund revenues by OSPI&apos;s final
+          annual-average funding FTE, including Running Start college FTE. The
+          student total above is that same funding FTE, not the Report
+          Card&apos;s October headcount.
+        </p>
+      )}
     </div>
   );
 }
@@ -492,9 +580,7 @@ function DistrictDetail({
 
   return (
     <div className="max-w-site mx-auto px-4 md:px-6 pt-8">
-      <Link href="/districts" className="text-sm text-accent hover:underline">
-        ← District Explorer
-      </Link>
+      <ClearSelectionLink />
       <div className="mt-3 flex items-baseline gap-3 flex-wrap">
         {/*
           An <h2>, not an <h1>: this detail view is swapped in below the

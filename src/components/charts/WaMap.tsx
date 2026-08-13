@@ -102,9 +102,16 @@ let mapCache: MapFile | null = null;
 export default function WaMap({
   year,
   onSelect,
+  selected = null,
 }: {
   year: string;
   onSelect: (code: string) => void;
+  /**
+   * The district whose profile is open below the map. It keeps a standing
+   * outline so a reader scrolling through the profile can look back up and see
+   * which shape on the state it belongs to.
+   */
+  selected?: string | null;
 }) {
   const [map, setMap] = useState<MapFile | null>(mapCache);
   const [loadFailed, setLoadFailed] = useState(false);
@@ -196,6 +203,14 @@ export default function WaMap({
     }
     return { fills, info };
   }, [map, year, metric]);
+
+  const selectedShape = useMemo(
+    () => (selected ? map?.districts.find((d) => d.code === selected) ?? null : null),
+    [map, selected]
+  );
+  const selectedName = selectedShape
+    ? info.get(selectedShape.code)?.name ?? selectedShape.name
+    : null;
 
   // Flat district list for the searchable picker
   const comboDistricts = useMemo(
@@ -297,8 +312,18 @@ export default function WaMap({
   }
 
   if (!map || !view) {
+    /*
+      Holds the loaded map's footprint rather than collapsing to a short box,
+      so the district profile rendered below doesn't get shoved down the page
+      the moment the JSON lands. The ratio is the state extent's, restated as
+      a constant because the real figures arrive with the file we're waiting
+      on; being a few pixels off costs nothing here.
+    */
     return (
-      <div className="h-64 flex items-center justify-center text-sm text-ink-muted">
+      <div
+        className="flex w-full items-center justify-center rounded-lg bg-[#e2f3f8] text-sm text-ink-muted"
+        style={{ aspectRatio: '980 / 630' }}
+      >
         Loading map…
       </div>
     );
@@ -345,7 +370,9 @@ export default function WaMap({
           role="img"
           aria-label={`Map of Washington school districts, colored by ${
             metric === 'perPupil' ? 'funding per student' : 'reserve ratio'
-          } in ${year}. Click a district to open its profile.`}
+          } in ${year}.${
+            selectedName ? ` ${selectedName} is outlined.` : ''
+          } Click a district to open its profile below the map.`}
           onPointerDown={(e) => {
             (e.target as Element).setPointerCapture?.(e.pointerId);
             pointers.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
@@ -467,7 +494,41 @@ export default function WaMap({
             authority actually ends - and it is always a complete, closed
             outline.
           */}
-          {hovered && (
+          {/*
+            The selected district's standing outline. Same
+            not-clipped-to-the-coastline reasoning as the hover highlight
+            below. Hovering the selected district keeps this outline and skips
+            the hover one rather than stacking two lines of different weights
+            on the same border - this is the heavier of the two, so dropping
+            back to the hover line would read as the selection being lost.
+
+            Two strokes, not one: the fills underneath run from near-white
+            (#e3d3f5, the pale end of the funding ramp) to near-black
+            (#7f1d1d, an insolvent district), so no single colour reads on all
+            of them. A white casing under a dark line is the standard
+            cartographic answer - the pair is legible over anything.
+          */}
+          {selectedShape && (
+            <g pointerEvents="none">
+              <path
+                d={selectedShape.d}
+                fill="none"
+                stroke="#fcfcfb"
+                strokeWidth={4.5}
+                strokeLinejoin="round"
+                vectorEffect="non-scaling-stroke"
+              />
+              <path
+                d={selectedShape.d}
+                fill="none"
+                stroke="#0b0b0b"
+                strokeWidth={2.2}
+                strokeLinejoin="round"
+                vectorEffect="non-scaling-stroke"
+              />
+            </g>
+          )}
+          {hovered && hovered !== selected && (
             <path
               d={map.districts.find((d) => d.code === hovered)?.d}
               fill="none"
@@ -614,8 +675,18 @@ export default function WaMap({
           <span className="inline-block w-3 h-3 rounded-sm" style={{ background: NO_DATA }} />
           no data
         </span>
+        {selectedName && (
+          <span className="flex items-center gap-1.5">
+            <span
+              className="inline-block w-3 h-3 rounded-sm border-2 border-ink bg-transparent"
+              aria-hidden
+            />
+            <span data-no-translate>{selectedName}</span> (open below)
+          </span>
+        )}
         <span className="text-ink-muted">
-          click a district to open it · pinch or Ctrl+scroll to zoom · drag to pan
+          click a district to open its profile below · pinch or Ctrl+scroll to
+          zoom · drag to pan
         </span>
       </div>
     </div>
