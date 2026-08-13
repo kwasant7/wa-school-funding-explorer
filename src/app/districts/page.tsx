@@ -1,9 +1,8 @@
 import type { Metadata } from 'next';
 import { Suspense } from 'react';
-import Link from 'next/link';
 import DistrictsExplorer from '@/components/DistrictsExplorer';
 import JsonLd from '@/components/JsonLd';
-import { DISTRICT_REFS, type DistrictRef } from '@/lib/district-slug';
+import { DISTRICT_REFS } from '@/lib/district-slug';
 import {
   breadcrumbJsonLd,
   datasetJsonLd,
@@ -22,25 +21,7 @@ export const metadata: Metadata = pageMetadata({
   path: '/districts/',
 });
 
-/**
- * Groups the directory by first letter so 315 links read as a browsable index
- * rather than one undifferentiated wall, and so each group can carry a heading
- * that means something to a screen reader jumping by heading.
- */
-function groupByLetter(): [string, DistrictRef[]][] {
-  const groups = new Map<string, DistrictRef[]>();
-  for (const ref of DISTRICT_REFS) {
-    const letter = ref.name[0].toUpperCase();
-    const key = /[A-Z]/.test(letter) ? letter : '#';
-    if (!groups.has(key)) groups.set(key, []);
-    groups.get(key)!.push(ref);
-  }
-  return Array.from(groups.entries()).sort(([a], [b]) => a.localeCompare(b));
-}
-
 export default function DistrictsPage() {
-  const groups = groupByLetter();
-
   return (
     <>
       <JsonLd
@@ -81,49 +62,6 @@ export default function DistrictsPage() {
       <Suspense>
         <DistrictsExplorer />
       </Suspense>
-
-      {/*
-        The explorer above needs a click before it shows a district, and its
-        selection lives in a query string. This directory is the crawlable
-        counterpart: 315 real anchors to 315 static pages, so every district is
-        reachable without running any JavaScript.
-      */}
-      <section
-        aria-labelledby="district-directory"
-        className="max-w-site mx-auto px-4 md:px-6 pb-16 pt-12"
-      >
-        <h2 id="district-directory" className="text-2xl font-bold tracking-tight">
-          All Washington school districts
-        </h2>
-        <p className="mt-2 max-w-3xl text-ink-secondary">
-          Every district and charter school with published {LATEST} funding data.
-          Each page shows revenue by source, what the state formula allocated
-          against what programs actually cost, levy and Local Effort Assistance
-          detail, and enrollment trends.
-        </p>
-
-        <div className="mt-8 space-y-8">
-          {groups.map(([letter, refs]) => (
-            <div key={letter}>
-              <h3 className="text-sm font-bold uppercase tracking-wide text-ink-muted">
-                {letter}
-              </h3>
-              <ul className="mt-2 grid sm:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-1">
-                {refs.map((ref) => (
-                  <li key={ref.code}>
-                    <Link
-                      href={`/districts/${ref.slug}`}
-                      className="text-sm text-accent hover:underline"
-                    >
-                      {ref.name}
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          ))}
-        </div>
-      </section>
     </>
   );
 }

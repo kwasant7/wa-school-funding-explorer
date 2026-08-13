@@ -23,13 +23,23 @@ export default function HomeExplainer() {
     after that check, and keys DistrictQuickFind so it remounts with the right
     initial district instead of the empty state it opened with.
   */
+  /*
+    A first-time visitor has nothing saved, and the page used to open with no
+    district at all: every per-district panel below sat empty until they
+    thought to pick one, which reads as a page that hasn't finished loading
+    rather than one waiting for input. It falls back to the first district
+    alphabetically so there is always something real on screen to react to.
+    A saved choice always wins - this only fills the empty case.
+  */
   const [restored, setRestored] = useState(false);
   useEffect(() => {
+    const districts = yearData(LATEST).districts;
     const saved = readSelectedDistrict();
-    if (saved) {
-      const record = yearData(LATEST).districts.find((d) => d.code === saved) ?? null;
-      if (record) setSelectedDistrict(record);
-    }
+    const record =
+      (saved && districts.find((d) => d.code === saved)) ||
+      [...districts].sort((a, b) => a.name.localeCompare(b.name))[0] ||
+      null;
+    if (record) setSelectedDistrict(record);
     setRestored(true);
   }, []);
   const s = yearData(year).statewide;
