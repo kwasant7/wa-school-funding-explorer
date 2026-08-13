@@ -52,7 +52,7 @@ export default function DistrictsPage() {
         <h1 className="text-3xl md:text-4xl font-bold tracking-tight">
           District Explorer
         </h1>
-        <p className="mt-3 max-w-2xl text-ink-secondary">
+        <p className="mt-3 text-ink-secondary">
           Funding for every school district and charter school in Washington,
           from the F-196 financial reports, any year since 2019-20. Pick your
           district on the map - its full profile opens on this page.

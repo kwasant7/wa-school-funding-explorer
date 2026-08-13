@@ -124,7 +124,7 @@ export default function DistrictPage({ params }: Params) {
         <h1 className="mt-2 text-3xl md:text-4xl font-bold tracking-tight">
           {p.name} funding
         </h1>
-        <p className="mt-4 max-w-3xl text-lg text-ink-secondary">
+        <p className="mt-4 text-lg text-ink-secondary">
           In {p.schoolYear}, {p.name} reported{' '}
           <strong className="text-ink">{fmtMoneyFull(rev.total)}</strong> in
           general-fund revenue for{' '}
@@ -165,7 +165,7 @@ export default function DistrictPage({ params }: Params) {
       </div>
 
       <Section id="where-the-money-comes-from" title="Where the money comes from">
-        <p className="max-w-3xl text-ink-secondary">
+        <p className="text-ink-secondary">
           Washington districts run on three main streams. The state formula pays
           for basic education; local levies fund enrichment on top of it; federal
           money is mostly targeted at specific student groups.
@@ -221,7 +221,7 @@ export default function DistrictPage({ params }: Params) {
           id="formula-vs-actual"
           title="What the formula pays vs. what these programs cost"
         >
-          <p className="max-w-3xl text-ink-secondary">
+          <p className="text-ink-secondary">
             For three programs the state publishes both an allocation and what
             districts actually spent. Where spending runs above the allocation,
             the difference comes out of local levy, federal or other money.
@@ -265,7 +265,7 @@ export default function DistrictPage({ params }: Params) {
             </table>
           </div>
           {p.coveredLocally > 0 && (
-            <p className="mt-3 max-w-3xl">
+            <p className="mt-3">
               Across these three programs, {p.name} covered about{' '}
               <strong>{fmtMoney(p.coveredLocally)}</strong> beyond what the state
               formula allocated in {p.schoolYear}.
@@ -327,7 +327,7 @@ export default function DistrictPage({ params }: Params) {
             </table>
           </div>
           {p.enrollmentChange != null && (
-            <p className="mt-3 max-w-3xl text-ink-secondary">
+            <p className="mt-3 text-ink-secondary">
               Funded enrollment has{' '}
               {p.enrollmentChange >= 0 ? 'grown' : 'fallen'} by{' '}
               <strong className="text-ink">
@@ -352,7 +352,7 @@ export default function DistrictPage({ params }: Params) {
       )}
 
       <Section id="students" title="Students this district serves">
-        <p className="max-w-3xl text-ink-secondary">
+        <p className="text-ink-secondary">
           Several state programs are funded on these counts, so a district&apos;s
           mix of students shapes its allocation as much as its total enrollment
           does. Shares are of the October headcount.
@@ -394,7 +394,7 @@ export default function DistrictPage({ params }: Params) {
 
       {p.levy && (
         <Section id="levy" title="Local levy and Local Effort Assistance">
-          <p className="max-w-3xl text-ink-secondary">
+          <p className="text-ink-secondary">
             Enrichment levies are capped per student by state law, and
             property-poor districts receive Local Effort Assistance to close part
             of the gap between what their property base raises and the statewide
@@ -422,7 +422,7 @@ export default function DistrictPage({ params }: Params) {
             </div>
           </dl>
           {p.capBlocked > 0 && (
-            <p className="mt-4 max-w-3xl">
+            <p className="mt-4">
               About <strong>{fmtMoney(p.capBlocked)}</strong> of the levy
               {" "}voters approved here is above the statutory per-student
               cap, so the district cannot collect it without a change to the cap
@@ -462,7 +462,7 @@ export default function DistrictPage({ params }: Params) {
           />
         </div>
         {p.reserveRatio != null && (
-          <p className="mt-4 max-w-3xl text-ink-secondary">
+          <p className="mt-4 text-ink-secondary">
             {p.reserveRatio < 5 ? (
               <>
                 A reserve ratio of {p.reserveRatio}% is below the 5% that
@@ -478,7 +478,7 @@ export default function DistrictPage({ params }: Params) {
           </p>
         )}
         {oversight && (
-          <p className="mt-3 max-w-3xl rounded-lg border border-line bg-surface p-4 text-sm">
+          <p className="mt-3 rounded-lg border border-line bg-surface p-4 text-sm">
             OSPI lists {p.name} under {oversight.level} financial oversight
             {oversight.since ? ` since ${oversight.since}` : ''}.{' '}
             {oversight.detail} Checked {OVERSIGHT_CHECKED_ON}.

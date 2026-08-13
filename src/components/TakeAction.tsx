@@ -373,7 +373,7 @@ export default function TakeAction() {
       <h1 className="text-3xl md:text-4xl font-bold tracking-tight">
         Take Action
       </h1>
-      <p className="mt-3 max-w-3xl text-ink-secondary">
+      <p className="mt-3 text-ink-secondary">
         Start with the lawmakers connected to your school district, understand
         what happened to major funding bills in 2026, and turn your own school
         experience into a specific request.
@@ -568,7 +568,7 @@ export default function TakeAction() {
         <h2 className="mt-1 text-2xl md:text-3xl font-bold">
           What passed and what did not
         </h2>
-        <p className="mt-2 text-ink-secondary max-w-3xl">
+        <p className="mt-2 text-ink-secondary">
           The session ended March 12, 2026. A bill that did not pass is no
           longer active, but its idea can return in a future bill or budget.
           Every title below links to the Legislature&apos;s official history.
@@ -613,7 +613,7 @@ export default function TakeAction() {
         <h2 className="mt-1 text-2xl md:text-3xl font-bold">
           Keep researching and participating
         </h2>
-        <p className="mt-2 text-ink-secondary max-w-3xl">
+        <p className="mt-2 text-ink-secondary">
           Use official sources to verify facts, then compare the priorities of
           groups participating in the debate. Advocacy organizations are labeled
           separately because they argue for particular outcomes.
@@ -623,7 +623,7 @@ export default function TakeAction() {
           {RESOURCE_GROUPS.map((group) => (
             <div key={group.title}>
               <h3 className="text-xl font-bold">{group.title}</h3>
-              <p className="mt-1 text-sm text-ink-secondary max-w-3xl">
+              <p className="mt-1 text-sm text-ink-secondary">
                 {group.description}
               </p>
               <div className="mt-3 grid md:grid-cols-2 lg:grid-cols-3 gap-3">

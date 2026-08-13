@@ -82,7 +82,7 @@ export default function HomeExplainer() {
         <h1 className="mt-2 text-3xl md:text-5xl font-bold tracking-tight max-w-3xl">
           How K-12 schools are funded
         </h1>
-        <p className="mt-4 max-w-2xl text-lg text-ink-secondary">
+        <p className="mt-4 text-lg text-ink-secondary">
           The state funds a make-believe &ldquo;prototypical school&rdquo; and
           uses a formula to give money to each school
         </p>
@@ -145,10 +145,10 @@ export default function HomeExplainer() {
 
       {/* Model explainer -> builder */}
       <section data-assistant-section="prototypical-model" className="py-6">
-        <h2 className="text-2xl md:text-3xl font-bold max-w-2xl">
+        <h2 className="text-2xl md:text-3xl font-bold">
           How the formula funds <span data-no-translate>{selectedDistrict.name}</span>
         </h2>
-        <p className="mt-2 max-w-2xl text-ink-secondary">
+        <p className="mt-2 text-ink-secondary">
           Washington does not start with each school&apos;s actual payroll. Instead,
           it uses one statewide recipe - the prototypical school model - to
           estimate the staff and operating dollars a district should receive.
@@ -192,7 +192,7 @@ export default function HomeExplainer() {
         <h2 className="text-2xl md:text-3xl font-bold">
           How state money reaches <span data-no-translate>{selectedDistrict.name}</span>, in 7 steps
         </h2>
-        <p className="mt-2 max-w-2xl text-ink-secondary">
+        <p className="mt-2 text-ink-secondary">
           The prototypical model is a state formula, so this path ends at the
           state allocation - not the district&apos;s whole budget, which also
           includes local levy and federal money.

@@ -63,7 +63,7 @@ export function TopicPage({
         <h1 className="text-3xl md:text-4xl font-bold tracking-tight max-w-3xl">
           {h1 ?? title}
         </h1>
-        <div className="mt-4 max-w-3xl text-lg text-ink-secondary">{lede}</div>
+        <div className="mt-4 text-lg text-ink-secondary">{lede}</div>
         {children}
       </article>
 

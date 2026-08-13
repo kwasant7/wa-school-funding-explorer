@@ -1528,7 +1528,7 @@ export default function Simulator() {
       <h1 className="text-3xl md:text-4xl font-bold tracking-tight">
         Build a school funding policy
       </h1>
-      <p className="mt-3 max-w-3xl text-ink-secondary">
+      <p className="mt-3 text-ink-secondary">
         Choose which student needs Washington should fund more strongly. Each
         slider is a policy lawmakers could actually change.
       </p>
