@@ -779,7 +779,7 @@ const lowIncomeIssue: Builder = (m) => {
       correction - LAP is small next to what the need costs, and basic education
       itself is not adjusted for poverty at all.
     */
-    fact: `${fmtInt(m.record.demo.lowIncome)} students here are low income. That means more counselors, meals and family support. The state's Learning Assistance Program sends ${m.lapPerLowIncome == null ? 'only a few hundred dollars' : `about ${fmtMoneyFull(Math.round(m.lapPerLowIncome))}`} per low-income student; the basic education formula behind everything else is not adjusted for poverty at all.`,
+    fact: `${fmtInt(m.record.demo.lowIncome)} students here are low income, which means more counselors, meals and family support. The state sends ${m.lapPerLowIncome == null ? 'only a few hundred dollars' : `about ${fmtMoneyFull(Math.round(m.lapPerLowIncome))}`} per low-income student for that, and the basic education formula behind everything else is not adjusted for poverty at all.`,
     visual: {
       kind: 'dots',
       filled: perHundred(m.lowIncomeRate),
@@ -803,7 +803,7 @@ const enrollmentIssue: Builder = (m) => {
   return {
     id: 'enrollmentDecline',
     title: 'Fewer students every year',
-    fact: `About ${fmtInt(Math.round(lost))} fewer students than in ${BASE_YEAR}. Money follows students, but buildings and bus routes cost the same.`,
+    fact: `The district has about ${fmtInt(Math.round(lost))} fewer students than in ${BASE_YEAR}. Money follows students, but buildings and bus routes cost the same.`,
     visual: {
       kind: 'trend',
       fromLabel: BASE_YEAR,
@@ -878,7 +878,16 @@ const EMAIL_PHRASES: Record<IssueId, string> = {
   smallScale: 'assumes a school much larger than ours',
 };
 
-/** Phrased to complete the sentence "I'm asking you to ...". */
+/**
+ * Phrased to complete the sentence "I'm asking you to ...".
+ *
+ * Each names a mechanism - a bill, a statute, a rate - and then says what it
+ * would buy, because a legislator's office sorts mail by what is being asked
+ * for. "Increase special education funding" is a sentiment and gets tallied;
+ * "raise the multipliers so special education stops being paid for out of
+ * every other student's classroom" is a request with a reason attached, and
+ * the reason is the part a staffer can repeat to the member.
+ */
 const EMAIL_ASKS: Record<IssueId, string> = {
   oversight:
     'address the funding gaps that pushed our district into state financial oversight, rather than treating the oversight itself as the fix',
@@ -887,18 +896,18 @@ const EMAIL_ASKS: Record<IssueId, string> = {
   levyCap:
     'raise the per-student enrichment levy cap in RCW 84.52.0531, so our district can collect the levy our own voters already approved',
   leaDependence:
-    'raise the Local Effort Assistance threshold and protect levy equalization in the operating budget',
-  sped: 'raise the special education funding multipliers and fully fund the high-cost safety net',
-  msoc: 'increase the MSOC allocation and revive the per-student operating-cost increase that died in SSB 5918',
+    'raise the Local Effort Assistance threshold and protect levy equalization in the operating budget, so a district’s property wealth stops deciding what its students get',
+  sped: 'raise the special education funding multipliers and fully fund the high-cost safety net, so special education stops being paid for out of every other student’s classroom',
+  msoc: 'increase the MSOC allocation and revive the per-student operating-cost increase that died in SSB 5918, so heat and power stop competing with staffing',
   transportation:
-    'enact the transportation safety net from SB 5858 and revisit the bus depreciation schedule',
-  ell: 'extend the years a student generates bilingual funding and raise the per-student rate',
+    'bring back the transportation safety net proposed in SB 5858 and address the outdated bus depreciation schedule, so districts like ours are not forced to cover these gaps locally',
+  ell: 'extend the years a student generates bilingual funding and raise the per-student rate, so the money follows students for as long as they are actually learning English',
   lowIncome:
-    'increase Learning Assistance Program funding and weight the basic education formula by student poverty',
+    'increase Learning Assistance Program funding and weight the basic education formula by student poverty, so the schools serving the most students in poverty are funded for it',
   enrollmentDecline:
-    'revive the enrollment stabilization funding that died in SB 6125',
+    'revive the enrollment stabilization funding that died in SB 6125, so a district losing students is not cutting teachers faster than it can close buildings',
   smallScale:
-    'review the small-district and remote-and-necessary funding enhancements, which have not kept pace with costs',
+    'review the small-district and remote-and-necessary funding enhancements, which have not kept pace with costs, so a small district is not funded as though it were the size the formula imagines',
 };
 
 function summaryFor(m: Metrics, issues: Issue[]): string {
