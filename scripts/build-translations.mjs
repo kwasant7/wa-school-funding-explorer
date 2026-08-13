@@ -234,7 +234,19 @@ const existing = await fs
 const output = {};
 
 for (const [language, target] of Object.entries(LANGUAGES)) {
-  output[language] = { ...(existing[language] ?? {}) };
+  /*
+    Seed only from strings the source still contains. Copy that has been
+    reworded - or that moved into a runtime expression, the way the levy cap
+    figures did when they started reading from levy.json - leaves behind a key
+    the browser can never produce and so can never match. Carrying those
+    forever would grow a file every visitor downloads.
+  */
+  const previous = existing[language] ?? {};
+  output[language] = Object.fromEntries(
+    sourceStrings
+      .filter((text) => previous[text])
+      .map((text) => [text, previous[text]])
+  );
   const missing = sourceStrings.filter((text) => !output[language][text]);
   let cursor = 0;
 
