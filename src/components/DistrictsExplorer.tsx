@@ -15,7 +15,7 @@ import ChartErrorBoundary from '@/components/ChartErrorBoundary';
 import { oversightFor, OVERSIGHT_SOURCE, OVERSIGHT_CHECKED_ON } from '@/data/oversight';
 import { fmtInt, fmtMoney, fmtMoneyFull, fmtSignedMoney, pct } from '@/lib/format';
 import { useAssistantDistrict, useAssistantYear } from '@/lib/assistant/store';
-import { writeSelectedDistrict } from '@/lib/selected-district';
+import { readSelectedDistrict, writeSelectedDistrict } from '@/lib/selected-district';
 
 export default function DistrictsExplorer() {
   const router = useRouter();
@@ -87,6 +87,33 @@ export default function DistrictsExplorer() {
         : 'smooth',
     });
   }, [selectedCode]);
+
+  /*
+    Arriving at a bare /districts, open on the district the visitor already
+    picked elsewhere - the home page's quick-find, or Take Action - instead of
+    the empty state. Picking Bellevue on one page and finding nothing selected
+    on the next reads as the choice not having registered.
+
+    Only on the first render: clearing the selection pushes the bare URL, and
+    restoring from storage on every bare URL would immediately undo that. The
+    URL still wins whenever it carries a code, so shared and crawled links are
+    unaffected. `replace`, not `push`, so Back leaves the page rather than
+    bouncing between the bare URL and the restored one. And scrolledFor is
+    marked first: this selection was not made by a click here, so the profile
+    should unfold in place rather than scrolling the visitor down to it.
+  */
+  const restoredSelection = useRef(false);
+  useEffect(() => {
+    if (restoredSelection.current) return;
+    restoredSelection.current = true;
+    if (selectedCode) return;
+    const saved = readSelectedDistrict();
+    if (!saved || !yearData(LATEST).districts.some((d) => d.code === saved)) {
+      return;
+    }
+    scrolledFor.current = saved;
+    router.replace(`/districts?d=${encodeURIComponent(saved)}`);
+  }, [router, selectedCode]);
 
   return (
     <>
