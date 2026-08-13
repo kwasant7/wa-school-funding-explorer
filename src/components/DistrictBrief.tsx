@@ -24,7 +24,7 @@ import {
 
 const BASE_PATH = process.env.NEXT_PUBLIC_BASE_PATH ?? '';
 
-function DownloadIcon() {
+function OpenIcon() {
   return (
     <svg
       aria-hidden
@@ -36,13 +36,15 @@ function DownloadIcon() {
       strokeLinecap="round"
       strokeLinejoin="round"
     >
-      <path d="M8 2.5v7.5M4.75 7.25 8 10.5l3.25-3.25M2.5 12.5h11" />
+      <path d="M6.5 3H3v10h10V9.5M8.5 2.5h5v5M13.2 2.8 7.5 8.5" />
     </svg>
   );
 }
 
 /**
- * Download the brief as a PDF.
+ * Open the brief as a PDF in a new tab, so it lands where a link would - a
+ * page the reader can read, print, or save on their own terms - rather than
+ * an unannounced file dropping into their downloads folder.
  *
  * The generator is imported on click rather than with the page. It is only
  * needed by the fraction of visitors who actually want the file, and this page
@@ -52,16 +54,32 @@ function DownloadIcon() {
 function DownloadBriefButton({ brief }: { brief: Brief }) {
   const [state, setState] = useState<'idle' | 'working' | 'error'>('idle');
 
-  const download = useCallback(async () => {
+  const openBrief = useCallback(async () => {
     setState('working');
+    /*
+      Opened synchronously, before the PDF exists or the generator module has
+      even loaded - see the comment on openBriefPdf(). By the time the
+      dynamic import below resolves, this click is no longer "live" as far as
+      a popup blocker is concerned, so the tab has to already exist.
+    */
+    const tab = window.open('', '_blank');
     try {
-      const { downloadBriefPdf } = await import('@/lib/brief-pdf');
-      downloadBriefPdf(brief, {
+      const meta = {
         year: DIAGNOSIS_YEAR,
         siteUrl: `${window.location.origin}${BASE_PATH}`,
-      });
+      };
+      if (tab) {
+        const { openBriefPdf } = await import('@/lib/brief-pdf');
+        openBriefPdf(brief, meta, tab);
+      } else {
+        // Popup blocked - fall back to a direct download so the reader still
+        // gets the file instead of nothing.
+        const { downloadBriefPdf } = await import('@/lib/brief-pdf');
+        downloadBriefPdf(brief, meta);
+      }
       setState('idle');
     } catch {
+      tab?.close();
       setState('error');
     }
   }, [brief]);
@@ -70,12 +88,12 @@ function DownloadBriefButton({ brief }: { brief: Brief }) {
     <div className="shrink-0">
       <button
         type="button"
-        onClick={() => void download()}
+        onClick={() => void openBrief()}
         disabled={state === 'working'}
         className="inline-flex items-center gap-2 rounded-xl border border-accent-soft bg-accent-wash px-3.5 py-2 text-sm font-semibold text-accent-deep transition-colors hover:border-accent disabled:cursor-not-allowed disabled:opacity-70"
       >
-        <DownloadIcon />
-        {state === 'working' ? 'Preparing…' : 'Download this brief'}
+        <OpenIcon />
+        {state === 'working' ? 'Preparing…' : 'Open this brief'}
         <span className="font-normal text-ink-muted">PDF</span>
       </button>
       {/* Announced rather than only coloured, so the failure is not silent. */}
@@ -84,7 +102,7 @@ function DownloadBriefButton({ brief }: { brief: Brief }) {
       </p>
       {state === 'error' && (
         <p className="mt-1.5 text-xs text-critical">
-          Could not build the PDF. Try again, or print this page instead.
+          Could not open the PDF. Try again, or print this page instead.
         </p>
       )}
     </div>
@@ -115,6 +133,18 @@ function IssueCard({ issue, index }: { issue: Issue; index: number }) {
       <p className="mt-2.5 text-ink-secondary">{issue.fact}</p>
 
       <IssueVisual visual={issue.visual} />
+
+      {issue.response && (
+        <div className="mt-4 rounded-xl border border-good/40 bg-green-50 p-3.5">
+          <p className="text-xs font-semibold uppercase tracking-wide text-good">
+            What the district has already done
+          </p>
+          <p className="mt-1 text-ink-secondary">{issue.response}</p>
+          <p className="mt-1.5 text-xs text-ink-muted">
+            Reported locally - not yet reflected on OSPI&apos;s oversight page.
+          </p>
+        </div>
+      )}
 
       <div className="mt-4 rounded-xl border border-accent-soft bg-accent-wash p-3.5">
         <p className="text-xs font-semibold uppercase tracking-wide text-accent-deep">

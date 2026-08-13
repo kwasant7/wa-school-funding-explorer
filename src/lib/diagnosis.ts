@@ -194,6 +194,14 @@ export type Issue = {
   fact: string;
   /** The comparison, drawn rather than described. */
   visual: IssueVisual;
+  /**
+   * What the district itself has already done about this problem, when that
+   * is known - so a reader doesn't come away thinking a district on
+   * oversight is sitting still. Set only on the `oversightIssue` builder
+   * today, from `Oversight.response`; most issues have no such record and
+   * leave this unset rather than guessing.
+   */
+  response?: string;
   /** One sentence: what to ask a lawmaker for. */
   ask: string;
   /** Real bills or statutes attached to that ask. */
@@ -543,6 +551,7 @@ const oversightIssue: Builder = (m) => {
       steps: ['Healthy', 'Warning', 'State steps in', 'State takes over'],
       current: enhanced ? 3 : 2,
     },
+    response: m.oversight.response,
     ask: 'Ask lawmakers to fix what caused this. Watching a shortfall does not pay for it.',
     refs: [BILLS.budget, BILLS.review],
     severity: enhanced ? 100 : 94,

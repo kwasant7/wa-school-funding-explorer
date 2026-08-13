@@ -31,6 +31,17 @@ export type Oversight = {
   since: string;
   /** One line on what state involvement looks like here. */
   detail: string;
+  /**
+   * What the district itself has done since oversight began - cuts, sales,
+   * a recovering reserve. Optional and, unlike `detail`, not transcribed from
+   * OSPI: a district's own corrective steps rarely show up on that page at
+   * all, let alone promptly, so this is filled in by hand from local
+   * reporting or firsthand knowledge of the district as it comes in. Only
+   * write this when it can be said plainly and without inventing a figure
+   * nobody actually gave you - "cut central-office staff" is fine even
+   * without a headcount, a made-up headcount is not.
+   */
+  response?: string;
 };
 
 export const OVERSIGHT: Record<string, Oversight> = {
@@ -67,6 +78,8 @@ export const OVERSIGHT: Record<string, Oversight> = {
     level: 'binding',
     since: 'July 2025',
     detail: 'Binding conditions letter issued July 2025.',
+    response:
+      'Since then Bellevue has concentrated its cuts in the central office rather than the classroom, reducing central-office staff while keeping most student-facing programs running, and is preparing to sell a piece of district-owned land to help rebuild its reserves. Its financial position has reportedly improved since.',
   },
   '03052': {
     level: 'binding',

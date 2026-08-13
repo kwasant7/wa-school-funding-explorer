@@ -197,6 +197,8 @@ const ACCENT_DEEP = [0.063, 0.259, 0.506] as const;
 const LINE = [0.882, 0.878, 0.851] as const;
 const WASH = [0.933, 0.957, 0.984] as const;
 const ACCENT_SOFT = [0.804, 0.886, 0.984] as const;
+const GOOD = [0, 0.388, 0] as const;
+const GOOD_WASH = [0.941, 0.992, 0.957] as const;
 const PAPER = [0.976, 0.976, 0.969] as const;
 const CRITICAL = [0.816, 0.231, 0.231] as const;
 const BASELINE = [0.765, 0.761, 0.718] as const;
@@ -682,6 +684,40 @@ function issueSection(pdf: Pdf, issue: DistrictBrief['issues'][number], index: n
   drawVisual(pdf, issue.visual, indent, bodyWidth);
   pdf.gap(4);
 
+  // "What the district has already done" panel - same shape as the ask panel
+  // below, in green rather than blue, so the two read as distinct claims:
+  // this already happened, the ask has not.
+  if (issue.response) {
+    const responseWidth = CONTENT_W - (indent - MARGIN) - 20;
+    const responseLines = wrap(issue.response, 'regular', 9.5, responseWidth).length;
+    const responseH = 22 + responseLines * 13;
+
+    pdf.gap(4);
+    pdf.ensure(responseH + 6);
+    const top = pdf.y;
+    pdf.rect(indent, top - responseH, CONTENT_W - (indent - MARGIN), responseH, GOOD_WASH);
+    pdf.rect(indent, top - responseH, 2.5, responseH, GOOD);
+
+    pdf.y = top - 9;
+    pdf.text('WHAT THE DISTRICT HAS ALREADY DONE', {
+      x: indent + 10,
+      size: 7.5,
+      font: 'bold',
+      colour: GOOD,
+      width: responseWidth,
+      leading: 11,
+    });
+    pdf.text(issue.response, {
+      x: indent + 10,
+      size: 9.5,
+      colour: INK_SECONDARY,
+      width: responseWidth,
+      leading: 13,
+    });
+
+    pdf.y = top - responseH - 12;
+  }
+
   // "The ask" panel. Measured before drawing so the wash sits behind the text.
   const askWidth = CONTENT_W - (indent - MARGIN) - 20;
   const askLines = wrap(issue.ask, 'regular', 9.5, askWidth).length;
@@ -804,7 +840,31 @@ export function briefFileName(brief: DistrictBrief, year: string): string {
 }
 
 /**
- * Trigger the download.
+ * Open the brief as a PDF in an already-open tab, rather than forcing it
+ * straight to the downloads folder. `target` has to come from a
+ * `window.open('', '_blank')` called synchronously inside the click handler,
+ * before the PDF is built or this module is even imported - a blob URL
+ * assigned after an `await` no longer counts as a direct response to the
+ * click, and Safari in particular blocks it as an unrequested popup. Building
+ * the PDF first and only then opening the tab looked like the natural order
+ * and was exactly backwards.
+ *
+ * The object URL is revoked well after the assignment rather than
+ * immediately: the new tab still has to fetch and render it, and revoking
+ * while that is in flight hands the reader a broken tab.
+ */
+export function openBriefPdf(brief: DistrictBrief, meta: BriefPdfMeta, target: Window) {
+  const blob = buildBriefPdf(brief, meta);
+  const url = URL.createObjectURL(blob);
+  target.location.href = url;
+  window.setTimeout(() => URL.revokeObjectURL(url), 60_000);
+}
+
+/**
+ * Trigger a direct download instead. Kept as the fallback for when the tab in
+ * `openBriefPdf` above could not be opened (a strict popup blocker, most
+ * often) - a reader who wanted the brief should still get the file rather
+ * than nothing.
  *
  * The object URL is revoked on the next tick rather than immediately: Safari
  * reads the blob asynchronously after the synthetic click, and revoking too
