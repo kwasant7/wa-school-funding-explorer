@@ -14,6 +14,7 @@ import WaMap from '@/components/charts/WaMap';
 import ChartErrorBoundary from '@/components/ChartErrorBoundary';
 import { oversightFor, OVERSIGHT_SOURCE, OVERSIGHT_CHECKED_ON } from '@/data/oversight';
 import allocationJson from '@/data/allocation.json';
+import districtsJson from '@/data/districts.json';
 import spendingJson from '@/data/spending.json';
 import { alignPair, fmtInt, fmtMoney, fmtMoneyFull, fmtMoneyOnGrid, fmtSignedMoney, pct } from '@/lib/format';
 import { useAssistantDistrict, useAssistantYear } from '@/lib/assistant/store';
@@ -25,6 +26,18 @@ import { readSelectedDistrict, writeSelectedDistrict } from '@/lib/selected-dist
   publishes F-196 actuals for a single closed year, 2024-25, and that is the
   year the card names regardless of which year the charts above show.
 */
+/*
+  Charter schools, identified by their authorizer standing in for an ESD.
+  Their tiny enrollments put them at the extremes of any per-student chart,
+  so the scatter offers to set them aside - identified by data, not by a
+  hand-kept list that would silently miss the next charter to open.
+*/
+const CHARTER_CODES = new Set(
+  districtsJson.districts
+    .filter((x) => x.esd.includes('Charter'))
+    .map((x) => x.code)
+);
+
 const BIG3_YEAR = spendingJson.schoolYear;
 const BIG3_ALLOCATION = allocationJson.districts as Record<
   string,
@@ -764,10 +777,25 @@ function DistrictDetail({
   // Every district in the selected year, for the need-vs-funding scatter.
   // State revenue only: local levy capacity is what the formula is supposed to
   // be correcting for, so mixing it in would hide the pattern.
+  //
+  // Charters and very small districts can be set aside because their tiny
+  // enrollments dominate the chart's extremes - the 400-student line is the
+  // prototypical model's own reference school, the same cutoff the district
+  // brief uses for "too small for the state formula". The district being
+  // viewed always keeps its dot, or opening its own profile would show a
+  // chart it is missing from.
+  const [hideCharters, setHideCharters] = useState(false);
+  const [hideSmall, setHideSmall] = useState(false);
   const needPoints = useMemo<NeedPoint[]>(
     () =>
       data.districts
         .filter((x) => x.fundingEnrollment > 0 && x.enrollment > 0)
+        .filter(
+          (x) =>
+            x.code === d.code ||
+            ((!hideCharters || !CHARTER_CODES.has(x.code)) &&
+              (!hideSmall || x.fundingEnrollment >= 400))
+        )
         .map((x) => ({
           code: x.code,
           name: x.name,
@@ -777,7 +805,7 @@ function DistrictDetail({
           sped: x.demo.sped / x.enrollment,
           enrollment: x.enrollment,
         })),
-    [data]
+    [data, hideCharters, hideSmall, d.code]
   );
 
   return (
@@ -838,6 +866,14 @@ function DistrictDetail({
         </div>
       </div>
 
+      <p className="mt-3 text-xs text-ink-muted">
+        <strong>Why the numbers differ:</strong> the student total above and
+        the per-student figure both use annual-average funding FTE, which
+        counts part-time participation such as Running Start proportionally.
+        The enrollment chart instead tracks the Report Card&apos;s October
+        headcount, so it will not match the total above exactly.
+      </p>
+
       <TrendAnalysis district={d} />
 
       <div className="mt-4 card p-5">
@@ -860,9 +896,34 @@ function DistrictDetail({
         <h2 className="font-semibold mb-1">
           Does student need change what a district gets?
         </h2>
-        <p className="text-xs text-ink-muted mb-4">
-          Every Washington district in {year} · <span data-no-translate>{d.name}</span> highlighted
-        </p>
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
+          <p className="text-xs text-ink-muted">
+            Every Washington district in {year} · <span data-no-translate>{d.name}</span> highlighted
+          </p>
+          <span className="flex flex-wrap items-center gap-x-4 gap-y-1.5">
+            <label className="flex cursor-pointer items-center gap-1.5 text-xs text-ink-secondary">
+              <input
+                type="checkbox"
+                checked={hideCharters}
+                onChange={(e) => setHideCharters(e.target.checked)}
+                className="h-3.5 w-3.5 accent-accent"
+              />
+              Exclude charter schools ({CHARTER_CODES.size})
+            </label>
+            <label
+              className="flex cursor-pointer items-center gap-1.5 text-xs text-ink-secondary"
+              title="400 students is the prototypical model's reference school - the size the state formula funds as one whole school."
+            >
+              <input
+                type="checkbox"
+                checked={hideSmall}
+                onChange={(e) => setHideSmall(e.target.checked)}
+                className="h-3.5 w-3.5 accent-accent"
+              />
+              Exclude districts under 400 students
+            </label>
+          </span>
+        </div>
         <ChartErrorBoundary label="This chart">
           <NeedVsFundingChart points={needPoints} highlight={d.code} />
         </ChartErrorBoundary>
@@ -916,21 +977,17 @@ function DistrictDetail({
       </div>
 
       <p className="mt-4 text-xs text-ink-muted">
-        <strong>Why the numbers differ:</strong> the student total above and
-        the per-student figure both use annual-average funding FTE, which
-        counts part-time participation such as Running Start proportionally.
-        The enrollment chart below instead tracks the Report Card&apos;s
-        October headcount, so it will not match the total above exactly.
-      </p>
-
-      <p className="mt-3 text-xs text-ink-muted">
-        Higher-need districts generally receive more per student - targeted
-        programs (special education, the Learning Assistance Program for students
-        who are behind, bilingual education) and federal Title dollars follow
-        need. Small rural districts also cost more per student to run.
-        That&apos;s why per-student funding ranges from{' '}
-        {fmtMoneyFull(s.minPerPupil)} to {fmtMoneyFull(s.maxPerPupil)} across the
-        state in {year}.
+        Per-student funding ranges from {fmtMoneyFull(s.minPerPupil)} to{' '}
+        {fmtMoneyFull(s.maxPerPupil)} across the state in {year}. Three things
+        pull it apart: targeted programs (special education, the Learning
+        Assistance Program for students who are behind, bilingual education)
+        and federal Title dollars follow need; fixed costs spread over few
+        students make small districts expensive to run; and the extremes are
+        structural cases - the low end is a district enrolling mostly
+        part-time online (ALE) students, which the formula funds at lower
+        rates, and the high end is a charter school with a few dozen students.
+        In practice, as the need-versus-funding chart above shows, state
+        dollars track student need only weakly.
       </p>
 
       <Big3Card district={d} />

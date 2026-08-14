@@ -263,12 +263,37 @@ export default function NeedVsFundingChart({
         )}
       </p>
 
+      {/*
+        The reading has to follow the number: with the small-district filters
+        on, the R² here moves from ~0.01 to ~0.18, and a caption hard-wired to
+        say "almost none" would then be contradicting its own figure.
+      */}
       <figcaption className="mt-2 text-sm text-ink-secondary">
-        The dashed line barely tilts. An R² of{' '}
-        <strong className="text-ink">{fit ? fit.r2.toFixed(3) : '—'}</strong> means
-        the share of {active.noun} explains almost none of the difference in
-        state funding per student — a district where most students are
-        high-need receives close to what a district with very few receives.
+        {!fit || fit.r2 < 0.02 ? (
+          <>
+            The dashed line barely tilts. An R² of{' '}
+            <strong className="text-ink">{fit ? fit.r2.toFixed(3) : '—'}</strong>{' '}
+            means the share of {active.noun} explains almost none of the
+            difference in state funding per student — a district where most
+            students are high-need receives close to what a district with very
+            few receives.
+          </>
+        ) : fit.r2 < 0.3 ? (
+          <>
+            The dashed line tilts, but only gently. An R² of{' '}
+            <strong className="text-ink">{fit.r2.toFixed(3)}</strong> means the
+            share of {active.noun} explains only a small part of the difference
+            in state funding per student — most of the spread comes from other
+            things, like district size and scale funding.
+          </>
+        ) : (
+          <>
+            The dashed line tilts. An R² of{' '}
+            <strong className="text-ink">{fit.r2.toFixed(3)}</strong> means the
+            share of {active.noun} explains a meaningful part of the difference
+            in state funding per student.
+          </>
+        )}
         {offScale > 0 && (
           <>
             {' '}
