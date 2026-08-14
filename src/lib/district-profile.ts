@@ -135,8 +135,10 @@ function gaps(m: Metrics): GapRow[] {
     {
       key: 'msoc' as const,
       label: 'Materials, supplies & operating costs (MSOC)',
-      allocated: m.alloc.msoc,
-      spent: m.spend.msoc,
+      // Big-3 scope, matching msocGap above - the GenEd-only pair would not
+      // subtract to the gap printed next to it.
+      allocated: m.alloc.msocBig3,
+      spent: m.spend.msocBig3,
       gap: m.msocGap,
       gapPerPupil: m.msocGapPerPupil,
     },

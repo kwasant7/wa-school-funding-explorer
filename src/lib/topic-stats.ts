@@ -25,10 +25,20 @@ const SPEND = spendingJson.districts as Record<
   (typeof spendingJson.districts)[keyof typeof spendingJson.districts]
 >;
 
-/** Which allocation line pairs with which spending line, program by program. */
-const ALLOC_LINE: Record<ProgramKey, 'specialEd' | 'msoc' | 'transportation'> = {
+/**
+ * Which allocation line pairs with which spending line, program by program.
+ * MSOC pairs the Big-3 fields (OSPI's 2026 budget-request scope, the one
+ * AESD's dashboard publishes); the GenEd-only `msoc` fields stay reserved for
+ * the 3100-apportionment split.
+ */
+const ALLOC_LINE: Record<ProgramKey, 'specialEd' | 'msocBig3' | 'transportation'> = {
   sped: 'specialEd',
-  msoc: 'msoc',
+  msoc: 'msocBig3',
+  transportation: 'transportation',
+};
+const SPEND_LINE: Record<ProgramKey, 'sped' | 'msocBig3' | 'transportation'> = {
+  sped: 'sped',
+  msoc: 'msocBig3',
   transportation: 'transportation',
 };
 
@@ -79,6 +89,7 @@ export type ProgramGap = {
 
 export function programGap(program: ProgramKey): ProgramGap {
   const line = ALLOC_LINE[program];
+  const spendLine = SPEND_LINE[program];
   let allocated = 0;
   let spent = 0;
   let districtsAbove = 0;
@@ -90,8 +101,8 @@ export function programGap(program: ProgramKey): ProgramGap {
     if (!a || !s) continue;
     districtsCompared += 1;
     allocated += a[line];
-    spent += s[program];
-    if (s[program] > a[line]) districtsAbove += 1;
+    spent += s[spendLine];
+    if (s[spendLine] > a[line]) districtsAbove += 1;
   }
 
   return { allocated, spent, gap: spent - allocated, districtsAbove, districtsCompared };
@@ -120,6 +131,7 @@ export function rankedByGap(
   { limit = 8, minFte = 0 }: { limit?: number; minFte?: number } = {}
 ): RankedDistrict[] {
   const line = ALLOC_LINE[program];
+  const spendLine = SPEND_LINE[program];
   const rows: RankedDistrict[] = [];
 
   for (const d of districtsJson.districts) {
@@ -128,7 +140,7 @@ export function rankedByGap(
     if (!a || !s) continue;
     const fte = d.fundingEnrollment || d.enrollment || 0;
     if (fte < minFte) continue;
-    const gap = s[program] - a[line];
+    const gap = s[spendLine] - a[line];
     rows.push({
       code: d.code,
       name: d.name,

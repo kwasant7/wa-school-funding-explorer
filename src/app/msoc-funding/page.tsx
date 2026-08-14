@@ -115,11 +115,11 @@ export default function MsocFundingPage() {
         <p>
           Statewide, actual MSOC spending works out to{' '}
           <strong className="text-ink">
-            {fmtMoneyFull(SPENDING_TOTALS.msocPerStudent)}
+            {fmtMoneyFull(SPENDING_TOTALS.msocBig3PerStudent)}
           </strong>{' '}
-          per funded student, against the{' '}
-          {fmtMoneyFull(MSOC_FORMULA_RATE)} the formula pays. This is the most
-          widely shared gap on the site:{' '}
+          per funded student, against a formula built on the{' '}
+          {fmtMoneyFull(MSOC_FORMULA_RATE)} general-education rate. This is the
+          most widely shared gap on the site:{' '}
           <strong className="text-ink">{gap.districtsAbove}</strong> of{' '}
           {gap.districtsCompared} districts spent more than they were allocated,
           totalling {fmtMoney(gap.gap)}.
@@ -152,12 +152,24 @@ export default function MsocFundingPage() {
 
       <TopicSection id="caveats" title="How to read these numbers">
         <p>
-          The spending side is deliberately scoped: objects 5, 7 and 8 within
-          basic education programs 01, 02 and 03, plus objects 7 and 8 in
-          districtwide support (program 97). Counting every non-salary object
-          across every program would pull in capital outlay and the non-salary
-          share of special education, transportation and food service -
-          double-counting money already compared on those pages.
+          Both sides follow the MSOC definition in the Superintendent of Public
+          Instruction&apos;s 2026 budget request - the same scope behind{' '}
+          <a
+            href="https://www.waschoolfunding.org/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-accent hover:underline"
+          >
+            AESD&apos;s Big 3 dashboard
+          </a>
+          : the funding side counts general-education, career-and-technical and
+          alternative-learning MSOC, and the spending side takes non-staff
+          objects across those programs while excluding items that are not
+          operating costs (contracted student transportation, tuition, debt,
+          land and building improvements). Counting every non-salary object
+          across every program instead would pull in capital outlay and the
+          non-salary share of special education, transportation and food
+          service - double-counting money already compared on those pages.
         </p>
         <p>
           The formula rate and the spending actuals are also drawn from

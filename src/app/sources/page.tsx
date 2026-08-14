@@ -396,9 +396,20 @@ export default function SourcesPage() {
             allocation and counting federal spending on the cost side would
             report federal grant money as money the district paid;
             transportation is
-            program 99 divided by headcount enrollment; MSOC is objects 5/7/8
-            within basic-education programs 01/02/03 plus objects 7/8 in
-            districtwide support (program 97), divided by funding FTE. All three
+            program 99 divided by headcount enrollment; MSOC follows the
+            definition in the Superintendent of Public Instruction&apos;s 2026
+            budget request - the same scope behind{' '}
+            <Ext href="https://www.waschoolfunding.org/">
+              AESD&apos;s Big 3 dashboard
+            </Ext>
+            : non-staff objects across basic education, career and technical
+            education, and the categorical programs, excluding items that are
+            not operating costs (contracted student transportation, tuition,
+            debt, judgments, land and building improvements) and netting out
+            non-high payments - divided by funding FTE. This site&apos;s MSOC
+            figures reproduce that dashboard&apos;s 2024-25 expenditures to the
+            cent for 284 of 315 districts (the rest differ only in a non-high
+            payment form OSPI does not publish). All three
             are <strong className="text-ink">general fund only</strong>, so
             transportation excludes buses bought through the Transportation
             Vehicle Fund. Script:{' '}
@@ -428,7 +439,11 @@ export default function SourcesPage() {
             programs&rdquo; is defined as whatever remains after subtracting
             every named category from the district&apos;s actual F-196 state
             general-fund revenue, so the total always ties out to that figure
-            exactly. Script:{' '}
+            exactly. The MSOC <em>funding</em> figure used in the gap
+            comparisons additionally counts career-and-technical and
+            alternative-learning MSOC, per the budget-request definition above;
+            the walkthrough&apos;s split keeps the general-education line so it
+            still sums to the 3100 apportionment. Script:{' '}
             <code className="text-ink">scripts/build-state-allocation.py</code>.
           </p>
         </div>

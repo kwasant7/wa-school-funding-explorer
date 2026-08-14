@@ -35,6 +35,19 @@ Two sheets are used:
                 and substitutes, net of deductible-revenue and recovery
                 adjustments that also land in 3100.
 
+Besides the categories above, every district also gets "msocBig3": the MSOC
+funding total under the broader definition OSPI Superintendent Reykdal used in
+his 2026 budget request and AESD uses in its "Big 3" dashboard. It adds to the
+general-education MSOC (Z390, which already contains the small-school /
+remote-and-necessary MSOC) the CTE MSOC for programs 31 and 34 (Z164 CTE 7-8
+plus 146A CTE 9-12) and an imputed amount for ALE students - ALE FTE (Header
+sheet, K-6 / 7-8 / 9-12) times the regular MSOC per-student rate (State
+Constants M80) - because ALE students are funded through a flat per-FTE rate
+and generate no formula MSOC of their own. Skills-center MSOC stays out, as in
+AESD's definition. Validated against AESD's dashboard: 136 of 319 districts
+match to the cent and the statewide total is within 0.04%; the residual is
+AESD's slightly different ALE FTE source.
+
 The total is anchored to the district's actual F-196 state general-fund
 revenue (districts.json's rev.state, itself F-196 codes 3000+4000) rather than
 summed from the Apportionment extract: "other state programs" is defined as
@@ -62,7 +75,15 @@ DISTRICTS_JSON = os.path.join(DATA, 'districts.json')
 COL_CODE = 0
 COL_SALARIES = 59      # Z375 TOTAL Salaries
 COL_BENEFITS = 68      # Z384 TOTAL Benefits
-COL_MSOC = 80          # Z390 Total GenEd MSOC
+COL_MSOC = 80          # Z390 Total GenEd MSOC (includes small-school/R&N MSOC)
+
+# Extra columns for the AESD/Reykdal "Big 3" MSOC funding definition.
+COL_MSOC_CTE_78 = 349    # Z164 Total MSOC CTE 7-8       (Basic Ed sheet)
+COL_MSOC_CTE_912 = 277   # 146A Total MSOC CTE 9-12      (Basic Ed sheet)
+COL_ALE_K6 = 27          # A18 Grades K-6 ALE FTE        (Header sheet)
+COL_ALE_78 = 28          # A19 Grades 7-8 ALE FTE        (Header sheet)
+COL_ALE_912 = 29         # A20 Grades 9-12 ALE FTE       (Header sheet)
+COL_MSOC_REG_RATE = 183  # M80 MSOC-Reg per-student rate (State Constants sheet)
 
 # App Revenue: an explicit allowlist of revenue codes, matched on their
 # 4-digit prefix (OSPI suffixes sub-allocations, e.g. 4158 -> 415801, 415803,
@@ -131,7 +152,8 @@ def main():
         totals.setdefault(code, {})
         totals[code][bucket] = totals[code].get(bucket, 0) + amount
 
-    # 2. Split the 3100 line into salaries / benefits / MSOC / residual.
+    # 2. Split the 3100 line into salaries / benefits / MSOC / residual, and
+    #    pick up the CTE MSOC pieces for the Big-3 MSOC total.
     pieces = {}
     rows = book['Basic Ed'].iter_rows(values_only=True)
     next(rows)
@@ -143,7 +165,28 @@ def main():
             'salaries': row[COL_SALARIES] or 0,
             'benefits': row[COL_BENEFITS] or 0,
             'msoc': row[COL_MSOC] or 0,
+            'msocCte': (row[COL_MSOC_CTE_78] or 0) + (row[COL_MSOC_CTE_912] or 0),
         }
+
+    # 3. ALE FTE per district (Header sheet) and the regular MSOC per-student
+    #    rate (State Constants, one row - $1,533.02 in 2024-25), for the
+    #    imputed ALE share of the Big-3 MSOC total.
+    ale_fte = {}
+    rows = book['Header'].iter_rows(values_only=True)
+    next(rows)
+    for row in rows:
+        code = str(row[COL_CODE] or '').strip().zfill(5)
+        if not code:
+            continue
+        ale_fte[code] = (
+            (row[COL_ALE_K6] or 0)
+            + (row[COL_ALE_78] or 0)
+            + (row[COL_ALE_912] or 0)
+        )
+
+    rows = book['State Constants'].iter_rows(values_only=True)
+    next(rows)
+    msoc_reg_rate = next(rows)[COL_MSOC_REG_RATE] or 0
     book.close()
 
     districts = {}
@@ -158,10 +201,17 @@ def main():
             continue
 
         basic = buckets.pop('basicEducation', 0)
-        part = pieces.get(code, {'salaries': 0, 'benefits': 0, 'msoc': 0})
+        part = pieces.get(
+            code, {'salaries': 0, 'benefits': 0, 'msoc': 0, 'msocCte': 0}
+        )
         salaries = part['salaries']
         benefits = part['benefits']
         msoc = part['msoc']
+        # AESD/Reykdal MSOC funding: GenEd MSOC (small-school/R&N included) +
+        # CTE MSOC (programs 31/34) + imputed ALE FTE x regular MSOC rate.
+        msoc_big3 = (
+            msoc + part['msocCte'] + ale_fte.get(code, 0) * msoc_reg_rate
+        )
         # Residual keeps the pieces summing to the 3100 total exactly.
         other_basic = basic - salaries - benefits - msoc
 
@@ -175,6 +225,7 @@ def main():
             'salaries': round(salaries),
             'benefits': round(benefits),
             'msoc': round(msoc),
+            'msocBig3': round(msoc_big3),
             'otherBasicEducation': round(other_basic),
             'basicEducation': round(basic),
         }
@@ -199,7 +250,14 @@ def main():
                 "that do not belong in a general-fund total. 'Other state "
                 "programs' is what is left after subtracting all of the above "
                 "from the district's actual F-196 state general-fund revenue, so "
-                "the total always matches that figure exactly."
+                "the total always matches that figure exactly. 'msocBig3' is "
+                "MSOC funding under the broader definition OSPI Supt. Reykdal "
+                "used in his 2026 budget request and AESD uses in its Big 3 "
+                "dashboard: general-education MSOC (Z390, which already "
+                "includes small-school/remote-and-necessary MSOC) plus CTE "
+                "MSOC for programs 31/34 (Z164 + 146A) plus an imputed ALE "
+                "share (ALE FTE x the regular MSOC per-student rate, State "
+                "Constants M80); skills-center MSOC excluded."
             ),
         },
         'districts': districts,

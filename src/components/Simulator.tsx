@@ -112,7 +112,10 @@ function actualSpendPerUnit(leverId: LeverId, code: string): number | null {
         ? spend.spedPerStudent / BASELINE_SPED_ALLOCATION
         : null;
     case 'msoc':
-      return spend.msocPerStudent > 0 ? spend.msocPerStudent : null;
+      // Big-3 scope (OSPI's 2026 budget-request definition), so the spending
+      // line here is the same number the district brief and the Big 3 card
+      // quote - one MSOC figure per district across the whole site.
+      return spend.msocBig3PerStudent > 0 ? spend.msocBig3PerStudent : null;
     case 'transportation':
       return spend.transportationPerStudent > 0
         ? spend.transportationPerStudent
@@ -1748,16 +1751,20 @@ export default function Simulator() {
               actuals: special education is the state programs 21, 22 and 26
               (program 24, federally funded IDEA supplemental, is excluded so
               the figure lines up with the state allocation it is compared
-              against), MSOC is
-              supplies, purchased services and travel (objects 5, 7 and 8){' '}
-              <strong className="text-ink">within basic education</strong>{' '}
-              (programs 01, 02 and 03) plus purchased services and travel
-              (objects 7 and 8) in district-wide support (program 97), and
-              transportation is program 99. Scoping MSOC that way matters:
-              counting every non-salary object across every program would pull
-              in capital outlay and the non-salary share of special education,
-              transportation, and food service, double-counting the other two
-              lines. Because these are{' '}
+              against), MSOC follows{' '}
+              <strong className="text-ink">
+                the Superintendent of Public Instruction&apos;s 2026
+                budget-request definition
+              </strong>{' '}
+              - the same scope behind AESD&apos;s Big 3 dashboard: non-staff
+              objects across basic education, career and technical education,
+              and the categorical programs, less items that are not operating
+              costs (student transportation purchases, tuition, debt, land and
+              buildings) - and transportation is program 99. Scoping MSOC
+              matters: counting every non-salary object across every program
+              would pull in capital outlay and the non-salary share of special
+              education, transportation, and food service, double-counting the
+              other two lines. Because these are{' '}
               <strong className="text-ink">General Fund only</strong>,
               transportation excludes buses bought through the Transportation
               Vehicle Fund and so understates the true cost - for most districts

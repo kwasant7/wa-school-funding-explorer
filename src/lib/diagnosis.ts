@@ -285,7 +285,11 @@ function buildMetrics(): Metrics[] {
     const headcount = record.enrollment || 0;
 
     const spedGap = alloc && spend ? spend.sped - alloc.specialEd : 0;
-    const msocGap = alloc && spend ? spend.msoc - alloc.msoc : 0;
+    // MSOC uses the Big-3 scope (OSPI's 2026 budget-request definition, the
+    // same one AESD's dashboard publishes) rather than the GenEd-only pair,
+    // so the gap quoted to a legislator matches the number their staff can
+    // look up. The GenEd-only fields still exist for the formula walkthrough.
+    const msocGap = alloc && spend ? spend.msocBig3 - alloc.msocBig3 : 0;
     const transGap = alloc && spend ? spend.transportation - alloc.transportation : 0;
 
     /*
@@ -700,9 +704,9 @@ const msocIssue: Builder = (m) => {
 
   const fig = shortfall(
     'What it really costs',
-    m.spend.msoc,
+    m.spend.msocBig3,
     'What the state pays',
-    m.alloc.msoc,
+    m.alloc.msocBig3,
     (gap) => `${gap} short`,
   );
 
