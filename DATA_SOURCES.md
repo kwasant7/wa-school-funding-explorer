@@ -224,12 +224,26 @@ Washington State Geospatial Open Data Portal:
 
 The script [`scripts/fetch-boundaries.mjs`](scripts/fetch-boundaries.mjs)
 requests the layer as GeoJSON with ~200 m simplification
-(`maxAllowableOffset=0.002`), projects it to Web Mercator, and writes
-`public/wa-districts-map.json` as SVG paths keyed by the layer's `LEACode_1`
-field - the same 5-digit OSPI district code used by the enrollment and F-196
-data, so the map joins to funding data exactly. Per OSPI, boundaries are their
-best interpretation of legal descriptions; confirm edge cases with the
-district.
+(`maxAllowableOffset=0.002`), clips each district to land, projects it to Web
+Mercator, and writes `public/wa-districts-map.json` as SVG paths keyed by the
+layer's `LEACode_1` field - the same 5-digit OSPI district code used by the
+enrollment and F-196 data, so the map joins to funding data exactly. Per OSPI,
+boundaries are their best interpretation of legal descriptions; confirm edge
+cases with the district.
+
+District legal boundaries extend into adjacent water (an island district's
+polygon is mostly Puget Sound), so the script intersects every district with
+a land polygon before drawing: the Census Bureau's 1:500k cartographic state
+boundary (TIGERweb `Generalized_ACS2023/State_County`, "States 500K") minus
+major lakes from WDFW's NHD hydrography service
+(https://geodataservices.wdfw.wa.gov/arcgis/rest/services/FP_Projects/NHDwithLLID/MapServer/0).
+Rendered outlines therefore follow the shoreline; multi-island districts
+become multipolygons with each island traced separately. Sub-pixel slivers
+left over from coastline mismatch between the datasets are dropped. The lake
+layer is trimmed to the same state polygon before it is drawn, because it
+covers a wider area than Washington - without that, Idaho's and British
+Columbia's lakes render in the empty space around the state. Neither the
+shoreline nor the lake layer is joined to any funding data.
 
 ## 4. The prototypical school model (explainer & School Builder)
 

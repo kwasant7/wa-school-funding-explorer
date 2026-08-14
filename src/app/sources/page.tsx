@@ -542,15 +542,19 @@ export default function SourcesPage() {
             - confirm edge cases with the district itself.
           </p>
           <p>
-            Water bodies come from{' '}
+            District boundaries are legal descriptions that run miles into
+            Puget Sound and the large lakes, so the script clips every
+            district to land before drawing - the shapes you see follow the
+            shoreline, not the underwater legal boundary. The shoreline comes
+            from the{' '}
+            <Ext href="https://tigerweb.geo.census.gov/arcgis/rest/services/Generalized_ACS2023/State_County/MapServer">
+              Census Bureau&apos;s cartographic state boundary
+            </Ext>{' '}
+            and the lakes from{' '}
             <Ext href="https://geodataservices.wdfw.wa.gov/arcgis/rest/services/FP_Projects/NHDwithLLID/MapServer/0">
               WDFW&apos;s NHD hydrography service
-            </Ext>{' '}
-            and the surrounding state outlines from{' '}
-            <Ext href="https://github.com/nvkelso/natural-earth-vector">
-              Natural Earth
             </Ext>
-            , both for context only - no data is joined to them.
+            ; no funding data is joined to either.
           </p>
         </div>
       </section>

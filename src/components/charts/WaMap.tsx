@@ -8,7 +8,6 @@ import { fmtInt, fmtMoneyFull } from '@/lib/format';
 type MapFile = {
   w: number;
   h: number;
-  land?: string;
   districts: { code: string; name: string; d: string }[];
   water?: { name?: string; d: string }[];
 };
@@ -423,26 +422,17 @@ export default function WaMap({
           onPointerCancel={(e) => pointers.current.delete(e.pointerId)}
           onDoubleClick={(e) => zoomAt(e.clientX, e.clientY, 2.5)}
         >
-          <defs>
-            <clipPath id="wa-land-extent">
-              {map.land ? (
-                <path d={map.land} />
-              ) : (
-                map.districts.map((district) => (
-                  <path key={`clip-${district.code}`} d={district.d} />
-                ))
-              )}
-            </clipPath>
-          </defs>
           {/*
-            Fills are clipped to the coastline, and must stay that way: OSPI
-            district boundaries are jurisdictional, so a shoreline district's
-            polygon covers open water - Vashon Island's is roughly half Puget
-            Sound, Bainbridge's more. Unclipped, those polygons paint over the
-            Sound and the San Juan channels and the state renders as one solid
-            landmass with no water anywhere.
+            District geometry arrives already clipped to land:
+            fetch-boundaries.mjs intersects each jurisdictional OSPI polygon
+            (which runs miles into Puget Sound and Lake Washington) with the
+            state shoreline at build time. That is what keeps the Sound and
+            the San Juan channels water-colored here, and it is why the
+            stroked outlines below follow the coast - no render-time clipPath
+            could do that, because clipping a stroke deletes it wherever the
+            boundary crosses water instead of bending it along the shore.
           */}
-          <g clipPath="url(#wa-land-extent)">
+          <g>
             {map.districts.map((d) => (
               <path
                 key={d.code}
@@ -475,7 +465,7 @@ export default function WaMap({
               />
             ))}
           </g>
-          <g pointerEvents="none" aria-hidden="true" clipPath="url(#wa-land-extent)">
+          <g pointerEvents="none" aria-hidden="true">
             {(map.water ?? []).map((water, index) => (
               <path key={index} d={water.d} fill="#9fd4ef" />
             ))}
@@ -489,25 +479,14 @@ export default function WaMap({
             shared border it was on. A single overlay painted last is never
             interrupted by paint order.
 
-            Deliberately NOT clipped to wa-land-extent, unlike the fills above.
-            Clipping a fill trims a shape; clipping a stroke deletes the parts
-            of the line that fall outside the clip. A shoreline district's
-            boundary runs mostly through open water, so the clipped stroke
-            survived only where the boundary happened to cross land - Peninsula
-            and South Kitsap drew a highlight along their northern edge and
-            nothing else, and Vashon Island, whose boundary is almost entirely
-            in Puget Sound, drew no highlight at all.
-
-            So this traces the district's real jurisdictional boundary, water
-            included. It reads slightly wider than the painted land for island
-            districts, which is accurate - that is where the district's
-            authority actually ends - and it is always a complete, closed
-            outline.
+            Because the geometry itself is clipped to land, this outline hugs
+            the shoreline: Vashon Island's traces the island's coast rather
+            than a loop of open water, and a multi-island district draws one
+            closed ring per island.
           */}
           {/*
-            The selected district's standing outline. Same
-            not-clipped-to-the-coastline reasoning as the hover highlight
-            below. Hovering the selected district keeps this outline and skips
+            The selected district's standing outline.
+            Hovering the selected district keeps this outline and skips
             the hover one rather than stacking two lines of different weights
             on the same border - this is the heavier of the two, so dropping
             back to the hover line would read as the selection being lost.
