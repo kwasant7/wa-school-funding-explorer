@@ -291,7 +291,7 @@ function DistrictOverview({
         </ChartErrorBoundary>
       </div>
       {!selectedCode && (
-        <p className="mt-3 text-xs text-ink-muted max-w-2xl">
+        <p className="mt-3 text-xs text-ink-muted">
           Per-student figures divide general fund revenues by OSPI&apos;s final
           annual-average funding FTE, including Running Start college FTE. The
           student total above is that same funding FTE, not the Report
@@ -436,7 +436,7 @@ function FundBalanceCard({ district: d, year }: { district: District; year: stri
         )}
         .
       </p>
-      <p className="mt-2 text-xs text-ink-muted max-w-2xl">
+      <p className="mt-2 text-xs text-ink-muted">
         Revenues and expenditures are OSPI F-196 actuals; the ending fund balance
         and reserve ratio come from fiscal.wa.gov&apos;s statewide school-finance
         workbook. Bars show each year&apos;s change (money in minus money out).
@@ -915,7 +915,7 @@ function DistrictDetail({
         </div>
       </div>
 
-      <p className="mt-4 text-xs text-ink-muted max-w-2xl">
+      <p className="mt-4 text-xs text-ink-muted">
         <strong>Why the numbers differ:</strong> the student total above and
         the per-student figure both use annual-average funding FTE, which
         counts part-time participation such as Running Start proportionally.
@@ -923,7 +923,7 @@ function DistrictDetail({
         October headcount, so it will not match the total above exactly.
       </p>
 
-      <p className="mt-3 text-xs text-ink-muted max-w-2xl">
+      <p className="mt-3 text-xs text-ink-muted">
         Higher-need districts generally receive more per student - targeted
         programs (special education, the Learning Assistance Program for students
         who are behind, bilingual education) and federal Title dollars follow

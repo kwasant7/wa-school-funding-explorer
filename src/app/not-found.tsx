@@ -33,7 +33,7 @@ export default function NotFound() {
       <h1 className="mt-2 text-3xl md:text-4xl font-bold tracking-tight">
         That page does not exist
       </h1>
-      <p className="mt-4 max-w-2xl text-lg text-ink-secondary">
+      <p className="mt-4 text-lg text-ink-secondary">
         The link may be out of date, or the address may have a typo. Everything
         on the site is one click from here.
       </p>

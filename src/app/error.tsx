@@ -26,7 +26,7 @@ export default function RouteError({
       <h1 className="mt-2 text-3xl md:text-4xl font-bold tracking-tight">
         This page hit a snag
       </h1>
-      <p className="mt-4 max-w-2xl text-lg text-ink-secondary">
+      <p className="mt-4 text-lg text-ink-secondary">
         That&apos;s a bug on this page, not something wrong with your data or
         your district. Try again, or head somewhere else on the site.
       </p>

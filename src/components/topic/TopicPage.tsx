@@ -101,7 +101,7 @@ export function TopicSection({
   return (
     <section id={id} className="pt-10">
       <h2 className="text-xl md:text-2xl font-bold tracking-tight">{title}</h2>
-      <div className="mt-4 max-w-3xl space-y-4 text-ink-secondary">{children}</div>
+      <div className="mt-4 space-y-4 text-ink-secondary">{children}</div>
     </section>
   );
 }

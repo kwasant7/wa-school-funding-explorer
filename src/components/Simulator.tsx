@@ -1793,7 +1793,7 @@ export default function Simulator() {
             <h2 className="text-lg md:text-xl font-bold">
               Start by choosing a district
             </h2>
-            <p className="mt-1 text-sm text-ink-secondary max-w-2xl">
+            <p className="mt-1 text-sm text-ink-secondary">
               Every policy below will show what it would mean for that district:
               its own numbers, and the money the change would add.
             </p>

@@ -383,7 +383,7 @@ export default function TakeAction() {
             <h2 className="text-xl md:text-2xl font-bold">
               Your Olympia delegation
             </h2>
-            <p className="mt-1 text-sm text-ink-secondary max-w-2xl">
+            <p className="mt-1 text-sm text-ink-secondary">
               Choose a school district. If you selected one elsewhere on this
               site, it will already be filled in.
             </p>

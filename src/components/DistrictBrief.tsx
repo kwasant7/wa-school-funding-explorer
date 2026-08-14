@@ -198,7 +198,7 @@ export default function DistrictBrief({ code }: { code: string }) {
         <DownloadBriefButton brief={brief} />
       </div>
 
-      <p className="mt-2 max-w-2xl text-ink-secondary">{brief.summary}</p>
+      <p className="mt-2 text-ink-secondary">{brief.summary}</p>
 
       <div className="mt-5 grid grid-cols-2 gap-3 lg:grid-cols-4">
         {brief.stats.map((stat) => (
@@ -240,7 +240,7 @@ export default function DistrictBrief({ code }: { code: string }) {
         <summary className="cursor-pointer text-xs font-semibold text-accent hover:underline">
           How these problems are picked
         </summary>
-        <div className="mt-2 max-w-2xl text-xs text-ink-secondary space-y-1.5">
+        <div className="mt-2 text-xs text-ink-secondary space-y-1.5">
           <p>
             A problem only appears here if this district&apos;s number is both
             large in dollar terms and unusual next to the rest of the state -
