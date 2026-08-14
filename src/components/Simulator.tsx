@@ -1279,6 +1279,24 @@ function LeverCard({
       ? currentCapFor(district.record.code)
       : null;
   const shownValue = districtCap != null ? Math.max(value, districtCap) : value;
+  /*
+    Transportation's slider sets a statewide average, but every other figure on
+    the card is this district's own - so the readouts disagreed: "$787 per
+    student" sat above a bar reading $385 + $79 = $464, two different answers
+    to the same question. The slider is a top-up, so shifting its readouts by
+    the distance between this district's allotment and the statewide average
+    states them in the district's terms, and the whole card agrees again. The
+    slider's underlying value is untouched; only what it reads out changes.
+  */
+  const districtShift =
+    lever.id === 'transportation' && district
+      ? (stateTransportationPerStudent(
+          district.record.code,
+          district.record.enrollment
+        ) ?? BASELINE_TRANSPORTATION_PER_STUDENT) -
+        BASELINE_TRANSPORTATION_PER_STUDENT
+      : 0;
+  const forDistrict = (v: number) => v + districtShift;
   const impact = district ? leverImpactFor(lever.id, values, district) : null;
   const current = district?.record.rev.total ?? 0;
   const newMoney = impact?.newMoney ?? 0;
@@ -1343,7 +1361,7 @@ function LeverCard({
               className="text-lg font-bold tabular-nums"
               style={{ color: lever.color }}
             >
-              {lever.effect(shownValue)}
+              {lever.effect(forDistrict(shownValue))}
             </span>
           )}
         </div>
@@ -1415,17 +1433,21 @@ function LeverCard({
         <div className="flex justify-between text-xs text-ink-muted mt-4">
           <span>
             Today (
-            {'todayLabel' in lever && lever.todayLabel
-              ? lever.todayLabel
-              : // Seattle's levy cap is higher than every other district's, so
-                // "today" for this lever depends on who is selected.
-                lever.effect(districtCap ?? lever.baseline)}
+            {districtShift !== 0
+              ? // This district's own allotment, not the statewide average the
+                // lever's static label names.
+                `${lever.effect(forDistrict(lever.baseline))} for ${district!.record.name.replace(/ School District.*/, '')}`
+              : 'todayLabel' in lever && lever.todayLabel
+                ? lever.todayLabel
+                : // Seattle's levy cap is higher than every other district's, so
+                  // "today" for this lever depends on who is selected.
+                  lever.effect(districtCap ?? lever.baseline)}
             )
           </span>
           <span>
             {disqualifiedAtMax
               ? 'Still does not qualify'
-              : lever.effect(lever.max)}
+              : lever.effect(forDistrict(lever.max))}
           </span>
         </div>
       </div>
