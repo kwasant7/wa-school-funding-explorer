@@ -107,7 +107,7 @@ export default function DistrictCombobox({
           onBlur={() => setQuery(selectedName ?? '')}
           placeholder={placeholder}
           aria-label={placeholder}
-          className="w-full px-4 py-2.5 pr-12 card rounded-lg text-base placeholder:text-ink-muted"
+          className="w-full px-4 py-2.5 pr-12 card rounded-lg text-base bg-accent-wash border-accent-soft placeholder:text-ink-muted"
         />
         <button
           type="button"
@@ -117,9 +117,26 @@ export default function DistrictCombobox({
             setOpen((v) => !v);
             setActiveIndex(0);
           }}
-          className="absolute inset-y-0 right-0 flex w-12 items-center justify-center text-ink-secondary"
+          className="absolute inset-y-0 right-0 flex w-12 items-center justify-center text-accent"
         >
-          <span aria-hidden="true">{open ? '▴' : '▾'}</span>
+          {/*
+            A drawn chevron rather than the ▾ character. The glyph rendered at
+            whatever size and weight the system font happened to give it -
+            small and thin on macOS, and not resizable without scaling the
+            font. This is sized in the markup and reads as a control.
+          */}
+          <svg
+            aria-hidden="true"
+            viewBox="0 0 20 20"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2.25"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            className={`h-5 w-5 transition-transform ${open ? 'rotate-180' : ''}`}
+          >
+            <path d="M5 7.5 10 12.5 15 7.5" />
+          </svg>
         </button>
       </div>
       {open && (

@@ -333,7 +333,17 @@ export default function WaMap({
     <div className="relative select-none">
       {/* Searchable picker: jump straight to a district's page */}
       <div className="mb-3">
-        <DistrictCombobox districts={comboDistricts} onPick={onSelect} />
+        {/*
+          selectedName is passed so the field names the district that is
+          outlined on the map. Without it the picker sat on its placeholder
+          while a district was plainly selected below, which reads as the
+          selection not having taken.
+        */}
+        <DistrictCombobox
+          districts={comboDistricts}
+          onPick={onSelect}
+          selectedName={selectedName ?? undefined}
+        />
         <span className="mt-1 block text-sm text-ink-muted">
           …or click your district on the map.
         </span>
