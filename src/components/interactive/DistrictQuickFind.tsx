@@ -77,8 +77,14 @@ export default function DistrictQuickFind({
     onPick?.(district);
   };
 
+  /*
+    The panel stays plain and the tint goes on the picker inside it. Washing
+    the whole card blue made the one control the section exists for the least
+    distinct thing in it - the field read as a white gap in a blue box rather
+    than as the thing to click.
+  */
   return (
-    <div className="card p-5 md:p-6 bg-accent-wash border-accent-soft">
+    <div className="card p-5 md:p-6">
       <h2 className="text-lg md:text-xl font-bold">
         Start with your own school district
       </h2>
@@ -131,7 +137,7 @@ export default function DistrictQuickFind({
               }
             }}
             placeholder="Choose or search for a district"
-            className="w-full px-4 py-3 pr-12 card rounded-lg text-base placeholder:text-ink-muted"
+            className="w-full px-4 py-3 pr-12 card rounded-lg text-base bg-accent-wash border-accent-soft placeholder:text-ink-muted"
             aria-label="Choose or search for your school district"
           />
           <button
@@ -142,9 +148,22 @@ export default function DistrictQuickFind({
               setOpen((value) => !value);
               setActiveIndex(0);
             }}
-            className="absolute inset-y-0 right-0 flex w-12 items-center justify-center text-ink-secondary"
+            className="absolute inset-y-0 right-0 flex w-12 items-center justify-center text-accent"
           >
-            <span aria-hidden="true">{open ? '▴' : '▾'}</span>
+            {/* Same drawn chevron as DistrictCombobox - this picker predates
+                that component and carries its own copy of the markup. */}
+            <svg
+              aria-hidden="true"
+              viewBox="0 0 20 20"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.25"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              className={`h-5 w-5 transition-transform ${open ? 'rotate-180' : ''}`}
+            >
+              <path d="M5 7.5 10 12.5 15 7.5" />
+            </svg>
           </button>
         </div>
         {open && (
