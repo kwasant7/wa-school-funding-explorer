@@ -31,6 +31,15 @@ body {
   }
 }
 
+/* The district picker draws its own clear button so it is visible at rest.
+   WebKit's native one only paints on hover, sits underneath the chevron, and
+   cannot be styled or positioned, so it is removed rather than left to
+   double up with the drawn control. */
+.district-search::-webkit-search-cancel-button {
+  -webkit-appearance: none;
+  appearance: none;
+}
+
 /* Custom range slider. --fill is a 0-1 fraction, not a percentage: the fill
    edge is placed at the thumb's CENTER, which travels between half a thumb in
    from each end, so the colored track meets the handle exactly at every

@@ -29,6 +29,7 @@ export default function DistrictQuickFind({
   const [open, setOpen] = useState(false);
   const [activeIndex, setActiveIndex] = useState(0);
   const selectorRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
   const data = yearData(year);
 
   const matches = useMemo(() => {
@@ -97,6 +98,7 @@ export default function DistrictQuickFind({
       <div ref={selectorRef} className="relative mt-3 max-w-md">
         <div className="relative">
           <input
+            ref={inputRef}
             type="search"
             role="combobox"
             aria-expanded={open}
@@ -137,9 +139,39 @@ export default function DistrictQuickFind({
               }
             }}
             placeholder="Choose or search for a district"
-            className="w-full px-4 py-3 pr-12 card rounded-lg text-base bg-accent-wash border-accent-soft placeholder:text-ink-muted"
+            className="district-search w-full px-4 py-3 pr-20 card rounded-lg text-base bg-accent-wash border-accent-soft placeholder:text-ink-muted"
             aria-label="Choose or search for your school district"
           />
+          {query !== '' && (
+            <button
+              type="button"
+              aria-label="Clear the district search"
+              onMouseDown={(e) => e.preventDefault()}
+              onClick={() => {
+                setQuery('');
+                setPicked(null);
+                onPick?.(null);
+                setOpen(true);
+                setActiveIndex(0);
+                inputRef.current?.focus();
+              }}
+              className="absolute inset-y-0 right-12 flex w-8 items-center justify-center text-ink-muted hover:text-ink"
+            >
+              {/* Same drawn X as DistrictCombobox, for the same reason as the
+                  chevron below: this picker carries its own copy of the markup. */}
+              <svg
+                aria-hidden="true"
+                viewBox="0 0 20 20"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.25"
+                strokeLinecap="round"
+                className="h-4 w-4"
+              >
+                <path d="M5.5 5.5 14.5 14.5M14.5 5.5 5.5 14.5" />
+              </svg>
+            </button>
+          )}
           <button
             type="button"
             aria-label={open ? 'Close district list' : 'Open district list'}

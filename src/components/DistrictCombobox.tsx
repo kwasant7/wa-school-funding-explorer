@@ -27,6 +27,7 @@ export default function DistrictCombobox({
   const [open, setOpen] = useState(false);
   const [activeIndex, setActiveIndex] = useState(0);
   const ref = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
 
   // Keep the field in sync when the selection changes from outside (e.g. a
   // saved district loads after mount, or the parent clears the selection).
@@ -71,6 +72,7 @@ export default function DistrictCombobox({
     <div ref={ref} className="relative max-w-md">
       <div className="relative">
         <input
+          ref={inputRef}
           type="search"
           role="combobox"
           aria-expanded={open}
@@ -107,8 +109,40 @@ export default function DistrictCombobox({
           onBlur={() => setQuery(selectedName ?? '')}
           placeholder={placeholder}
           aria-label={placeholder}
-          className="w-full px-4 py-2.5 pr-12 card rounded-lg text-base bg-accent-wash border-accent-soft placeholder:text-ink-muted"
+          className="district-search w-full px-4 py-2.5 pr-20 card rounded-lg text-base bg-accent-wash border-accent-soft placeholder:text-ink-muted"
         />
+        {query !== '' && (
+          <button
+            type="button"
+            aria-label="Clear the district search"
+            /*
+              preventDefault keeps focus in the field: the input's onBlur
+              restores the selected district's name, so letting this button
+              take focus would put the name straight back and the clear would
+              look like it did nothing.
+            */
+            onMouseDown={(e) => e.preventDefault()}
+            onClick={() => {
+              setQuery('');
+              setOpen(true);
+              setActiveIndex(0);
+              inputRef.current?.focus();
+            }}
+            className="absolute inset-y-0 right-12 flex w-8 items-center justify-center text-ink-muted hover:text-ink"
+          >
+            <svg
+              aria-hidden="true"
+              viewBox="0 0 20 20"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.25"
+              strokeLinecap="round"
+              className="h-4 w-4"
+            >
+              <path d="M5.5 5.5 14.5 14.5M14.5 5.5 5.5 14.5" />
+            </svg>
+          </button>
+        )}
         <button
           type="button"
           aria-label={open ? 'Close district list' : 'Open district list'}
