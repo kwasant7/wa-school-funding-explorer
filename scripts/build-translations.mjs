@@ -4,6 +4,25 @@ import ts from 'typescript';
 
 const ROOT = process.cwd();
 const SOURCE_DIRS = ['src/app', 'src/components'];
+
+/*
+  Individual files outside those directories that still render prose onto the
+  page. src/lib is deliberately not scanned wholesale: it also holds the PDF
+  writer, whose string literals are PDF syntax rather than English (`<< /Type
+  /Catalog /Pages 2 0 R >>`, `) Tj ET`), and the assistant's i18n table, whose
+  strings are already Spanish, Chinese and the rest - running those back
+  through a translator would be nonsense. Scanning all of src/lib collected
+  383 strings; this one file contributes 83 with none of that junk.
+
+  Note what this can and cannot reach. The runtime looks up whole DOM text
+  nodes, so only diagnosis.ts's static strings - issue titles, the card asks,
+  the chart labels - can ever match. Its facts are template literals whose
+  numbers are interpolated at render time, so the DOM carries one string with
+  the district's own figures in it and the dictionary's fragments cannot match
+  by construction. Those stay English until the runtime learns to match around
+  a placeholder, which is a different mechanism than this file.
+*/
+const SOURCE_FILES = ['src/lib/diagnosis.ts'];
 const OUTPUT = path.join(ROOT, 'src/data/translations.json');
 const LANGUAGES = {
   es: 'es',
@@ -213,9 +232,12 @@ async function translate(text, target) {
   throw new Error(`Could not translate: ${text}`);
 }
 
-const files = (
-  await Promise.all(SOURCE_DIRS.map((directory) => sourceFiles(directory)))
-).flat();
+const files = [
+  ...(
+    await Promise.all(SOURCE_DIRS.map((directory) => sourceFiles(directory)))
+  ).flat(),
+  ...SOURCE_FILES,
+];
 const strings = new Set();
 
 for (const filename of files) {
