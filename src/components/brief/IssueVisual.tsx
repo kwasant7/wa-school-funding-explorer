@@ -27,11 +27,14 @@ function value(n: number, visual: Extract<Visual, { kind: 'versus' }>): string {
 }
 
 /**
- * Two bars, longer one first.
+ * Two bars, cost above funding.
  *
- * Cost is drawn above funding rather than below because the story is "this is
- * what it costs, and here is the shortfall" - putting the smaller bar second
- * makes the missing length the last thing the eye travels over.
+ * In the briefs the cost bar is always the longer one - an issue is by
+ * definition a shortfall - and putting the smaller funding bar second makes
+ * the missing length the last thing the eye travels over. The Big 3 card
+ * reuses this figure for programs where funding won, keeping the same order
+ * so the story stays "here is the bill, here is the cheque"; those figures
+ * set `covered` and get a green caption instead of the red one.
  */
 function Versus({ visual }: { visual: Extract<Visual, { kind: 'versus' }> }) {
   const max = Math.max(visual.a, visual.b, 1);
@@ -66,7 +69,9 @@ function Versus({ visual }: { visual: Extract<Visual, { kind: 'versus' }> }) {
           </div>
         ))}
       </div>
-      <figcaption className="mt-2 text-sm font-bold text-critical">
+      <figcaption
+        className={`mt-2 text-sm font-bold ${visual.covered ? 'text-good' : 'text-critical'}`}
+      >
         {visual.gapLabel}
       </figcaption>
     </figure>

@@ -37,11 +37,13 @@ export function fmtSignedMoney(n: number): string {
  * the real shortfall while the bar labels stay short.
  */
 export type AlignedPair = {
-  /** Larger amount, as displayed. */
+  /** First amount, as displayed. In every brief this is the larger (the
+      cost); the Big 3 card keeps cost first even when funding won, so `a`
+      can be the smaller of the two there. */
   a: number;
-  /** Smaller amount, as displayed. */
+  /** Second amount, as displayed. */
   b: number;
-  /** Exactly `a - b`. */
+  /** Exactly `a - b` - negative when `b` is the larger. */
   gap: number;
   /** Rounding step all three share. */
   step: number;

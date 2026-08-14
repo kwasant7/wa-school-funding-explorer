@@ -156,6 +156,14 @@ export type IssueVisual =
        * print bars that did not subtract to their own caption.
        */
       step?: number;
+      /**
+       * The gap is good news - funding met or beat the cost - so the caption
+       * renders green rather than critical red. Briefs never set it: an issue
+       * is by definition a shortfall. It exists for a funding-vs-cost card,
+       * where a district can come out ahead on any one program, and nothing
+       * sets it today.
+       */
+      covered?: boolean;
     }
   /** 100 figures, some filled: a share, read by counting rather than parsing. */
   | {
@@ -367,7 +375,10 @@ function buildMetrics(): Metrics[] {
 const METRICS = buildMetrics();
 const BY_CODE = new Map(METRICS.map((m) => [m.code, m]));
 
-/** Exported for tests only, to inspect a district's computed Metrics directly. */
+/**
+ * A district's computed Metrics. Called by district-profile.ts for the static
+ * district pages, not just by tests, so its shape is load-bearing.
+ */
 export function metricsFor(code: string): Metrics | null {
   return BY_CODE.get(code) ?? null;
 }
