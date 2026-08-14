@@ -13,9 +13,27 @@ import NeedVsFundingChart, { NeedPoint } from '@/components/charts/NeedVsFunding
 import WaMap from '@/components/charts/WaMap';
 import ChartErrorBoundary from '@/components/ChartErrorBoundary';
 import { oversightFor, OVERSIGHT_SOURCE, OVERSIGHT_CHECKED_ON } from '@/data/oversight';
-import { fmtInt, fmtMoney, fmtMoneyFull, fmtSignedMoney, pct } from '@/lib/format';
+import allocationJson from '@/data/allocation.json';
+import spendingJson from '@/data/spending.json';
+import { alignPair, fmtInt, fmtMoney, fmtMoneyFull, fmtMoneyOnGrid, fmtSignedMoney, pct } from '@/lib/format';
 import { useAssistantDistrict, useAssistantYear } from '@/lib/assistant/store';
 import { readSelectedDistrict, writeSelectedDistrict } from '@/lib/selected-district';
+
+/*
+  The Big 3 card compares one year of allocation and spending, so it reads the
+  two files directly rather than going through the year-switched series: OSPI
+  publishes F-196 actuals for a single closed year, 2024-25, and that is the
+  year the card names regardless of which year the charts above show.
+*/
+const BIG3_YEAR = spendingJson.schoolYear;
+const BIG3_ALLOCATION = allocationJson.districts as Record<
+  string,
+  { specialEd: number; transportation: number; msocBig3: number }
+>;
+const BIG3_SPENDING = spendingJson.districts as Record<
+  string,
+  { sped: number; transportation: number; msocBig3: number }
+>;
 
 export default function DistrictsExplorer() {
   const router = useRouter();
@@ -428,6 +446,163 @@ function FundBalanceCard({ district: d, year }: { district: District; year: stri
 }
 
 /**
+ * The "Big 3" - special education, transportation, and MSOC - as one card:
+ * what the state allocated against what this district actually spent, in the
+ * framing Washington's school-leader associations use when they lobby for
+ * the same three lines. The name gives a reader language that works outside
+ * this site: a school board, a legislator's office, and AESD's own dashboard
+ * all call these three gaps the Big 3.
+ *
+ * Amounts and gaps go through alignPair so each pair of printed bars subtracts
+ * to its own printed gap - same convention as the district brief.
+ */
+function Big3Gap({
+  title,
+  detail,
+  spend,
+  alloc,
+}: {
+  title: string;
+  detail: string;
+  spend: number;
+  alloc: number;
+}) {
+  const covered = spend <= alloc;
+  const pair = alignPair(Math.max(spend, alloc), Math.min(spend, alloc));
+  const money = (n: number) => fmtMoneyOnGrid(n, pair.step);
+  const rows = covered
+    ? [
+        { label: 'What the state pays', amount: pair.a, tone: 'full' as const },
+        { label: 'What it really costs', amount: pair.b, tone: 'short' as const },
+      ]
+    : [
+        { label: 'What it really costs', amount: pair.a, tone: 'full' as const },
+        { label: 'What the state pays', amount: pair.b, tone: 'short' as const },
+      ];
+
+  return (
+    <figure
+      role="img"
+      aria-label={`${title}. ${rows[0].label}: ${money(rows[0].amount)}. ${rows[1].label}: ${money(rows[1].amount)}. ${
+        covered
+          ? 'The state allocation covered it.'
+          : `${money(pair.gap)} short.`
+      }`}
+    >
+      <figcaption>
+        <p className="font-semibold text-ink">{title}</p>
+        <p className="text-xs text-ink-muted">{detail}</p>
+      </figcaption>
+      <div className="mt-3 space-y-2.5">
+        {rows.map((row) => (
+          <div key={row.label}>
+            <div className="flex items-baseline justify-between gap-3 text-xs text-ink-secondary">
+              <span>{row.label}</span>
+              <span className="font-bold tabular-nums text-ink">{money(row.amount)}</span>
+            </div>
+            <div className="mt-1 h-5 w-full rounded-md bg-paper">
+              <div
+                className={`h-full rounded-md ${row.tone === 'full' ? 'bg-accent' : 'bg-accent-soft'}`}
+                style={{ width: `${Math.max(2, (100 * row.amount) / (pair.a || 1))}%` }}
+              />
+            </div>
+          </div>
+        ))}
+      </div>
+      <p
+        aria-hidden
+        className={`mt-2 text-sm font-bold ${covered ? 'text-good' : 'text-critical'}`}
+      >
+        {covered ? 'Covered by the state formula' : `${money(pair.gap)} short`}
+      </p>
+    </figure>
+  );
+}
+
+function Big3Card({ district: d }: { district: District }) {
+  const alloc = BIG3_ALLOCATION[d.code];
+  const spend = BIG3_SPENDING[d.code];
+  if (!alloc || !spend) return null;
+
+  const gaps = [
+    spend.sped - alloc.specialEd,
+    spend.transportation - alloc.transportation,
+    spend.msocBig3 - alloc.msocBig3,
+  ];
+  const totalGap = gaps.filter((g) => g > 0).reduce((sum, g) => sum + g, 0);
+  const perStudent = d.fundingEnrollment > 0 ? totalGap / d.fundingEnrollment : 0;
+
+  return (
+    <div data-assistant-section="big-3" className="mt-4 card p-5">
+      <h2 className="font-semibold">The &ldquo;Big 3&rdquo; funding gaps ({BIG3_YEAR})</h2>
+      <p className="mt-0.5 text-sm text-ink-secondary">
+        Washington&apos;s school leaders call special education, student
+        transportation, and everyday operating costs <strong>the Big 3</strong>:
+        the three places the state formula falls furthest short of what running
+        a district actually costs. Here is each one for{' '}
+        <span data-no-translate>{d.name}</span>, from OSPI&apos;s own records.
+      </p>
+
+      <div className="mt-5 grid gap-6 sm:grid-cols-3 sm:gap-4">
+        <Big3Gap
+          title="Special education"
+          detail="Services for students with disabilities"
+          spend={spend.sped}
+          alloc={alloc.specialEd}
+        />
+        <Big3Gap
+          title="Transportation"
+          detail="Buses, drivers, fuel, and required routes"
+          spend={spend.transportation}
+          alloc={alloc.transportation}
+        />
+        <Big3Gap
+          title="Operating costs (MSOC)"
+          detail="Curriculum, technology, utilities, and insurance"
+          spend={spend.msocBig3}
+          alloc={alloc.msocBig3}
+        />
+      </div>
+
+      {totalGap > 0 && (
+        <p className="mt-5 rounded-xl border border-accent-soft bg-accent-wash p-3.5 text-sm text-ink-secondary">
+          All three together left{' '}
+          <strong className="text-ink">{fmtMoney(totalGap)}</strong> for{' '}
+          <span data-no-translate>{d.name.replace(/ School District.*$/, '')}</span>{' '}
+          to cover out of levies and other local money in {BIG3_YEAR} - about{' '}
+          <strong className="text-ink">
+            ${fmtInt(Math.round(perStudent))} per funded student
+          </strong>
+          .
+        </p>
+      )}
+
+      <p className="mt-3 text-xs text-ink-muted">
+        Spending is this district&apos;s F-196 general-fund actuals and the
+        state share is OSPI&apos;s apportionment for the same year; MSOC here
+        follows the definition in the Superintendent of Public
+        Instruction&apos;s 2026 budget request, and special education excludes
+        federally funded services on both sides. Washington&apos;s nine
+        educational service districts publish the same three gaps for every
+        district on{' '}
+        <a
+          href="https://www.waschoolfunding.org/"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="font-semibold text-accent hover:underline"
+        >
+          AESD&apos;s Big 3 dashboard ↗
+        </a>
+        , and these figures are built to match it: transportation to the
+        dollar, MSOC within a fraction of a percent, and special education
+        with the same gap (its bars sit higher only because it counts federal
+        dollars on both sides).
+      </p>
+    </div>
+  );
+}
+
+/**
  * Data-driven read of a district's trends. Everything here is computed from the
  * district's own series (per-student, enrollment, surplus) so it works for any
  * district - no hand-written per-district claims.
@@ -757,6 +932,8 @@ function DistrictDetail({
         {fmtMoneyFull(s.minPerPupil)} to {fmtMoneyFull(s.maxPerPupil)} across the
         state in {year}.
       </p>
+
+      <Big3Card district={d} />
 
       {/*
         The page used to end on two grey caveats. Someone who has just read that
