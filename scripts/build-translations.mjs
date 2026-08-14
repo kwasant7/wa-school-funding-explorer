@@ -61,6 +61,12 @@ const TEXT_PROPERTIES = new Set([
   'noun',
   'significance',
   'status',
+  // The versus figures' bar labels ("Actual cost (expenditures)" / "State
+  // funding (revenue)"), which render as whole text nodes the runtime can
+  // look up - without these every chart's axis labels stayed English on
+  // translated pages while the prose around them translated.
+  'aLabel',
+  'bLabel',
 ]);
 
 /*
