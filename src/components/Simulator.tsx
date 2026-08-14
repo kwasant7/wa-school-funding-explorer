@@ -1709,8 +1709,10 @@ export default function Simulator() {
         </details>
       </section>
 
-      {/* Pick a district first: every card below is then shown for it. */}
-      <section className="mt-8 card p-5 md:p-6 bg-accent-wash border-accent-soft">
+      {/* Pick a district first: every card below is then shown for it. The
+          panel stays plain so the picker inside it is what carries the tint -
+          same reasoning as the home page's quick-find. */}
+      <section className="mt-8 card p-5 md:p-6">
         <div className="flex items-start justify-between gap-4 flex-wrap">
           <div>
             <h2 className="text-lg md:text-xl font-bold">
