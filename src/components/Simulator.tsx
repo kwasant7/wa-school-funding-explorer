@@ -78,6 +78,25 @@ const LEVY_DISTRICTS = levyData.districts as Record<string, LevyDistrict>;
 type DistrictSpending = (typeof spendingData.districts)[keyof typeof spendingData.districts];
 const SPENDING = spendingData.districts as Record<string, DistrictSpending>;
 
+/** 2024-25 state allotments, per district, for levers with a per-district split. */
+type DistrictAllocation = (typeof allocationData.districts)[keyof typeof allocationData.districts];
+const ALLOCATION = allocationData.districts as Record<string, DistrictAllocation>;
+
+/**
+ * This district's own state transportation allotment (revenue code 4199) per
+ * enrolled student - the real "today" for the transportation lever, since the
+ * formula pays on ridership and distance rather than a per-pupil rate. Same
+ * denominator as the F-196 spending it is charted against.
+ */
+function stateTransportationPerStudent(
+  code: string,
+  enrollment: number
+): number | null {
+  const alloc = ALLOCATION[code];
+  if (!alloc || enrollment <= 0) return null;
+  return alloc.transportation / enrollment;
+}
+
 /**
  * What a district actually spent per unit on a lever's program, so the chart
  * can show the real cost next to what the state formula pays. Returns null for
@@ -263,8 +282,16 @@ function leverImpactFor(
           r.fundingEnrollment * (values.msoc - simulatorControl('msoc')!.baseline),
       };
     case 'transportation':
-      // No public per-district split here, so scale the statewide program by
-      // this district's own enrollment.
+      /*
+        The slider is a top-up, not a replacement rate: it raises the statewide
+        program by (slider - $708) per student on top of whatever the STARS
+        formula already pays each district. Modeling it as a flat replacement
+        rate instead would strip money from every district above the average -
+        Seattle gets $861 - which is not the policy the slider describes, and
+        the min = baseline bound could not express it anyway. The per-district
+        allotment does exist (allocation.json, revenue code 4199); it is the
+        chart's "today", not the add-on's base.
+      */
       return {
         newMoney:
           (values.transportation - BASELINE_TRANSPORTATION_PER_STUDENT) *
@@ -560,9 +587,13 @@ const LEVERS = [
         <StatuteLink href="https://app.leg.wa.gov/rcw/default.aspx?cite=28A.160.192">
           RCW 28A.160.192
         </StatuteLink>
-        ) based on the students a district actually carries and how far. Rural
-        districts with long routes and districts running required special
-        education routes feel changes here most.{' '}
+        ) based on the students a district actually carries and how far, so what
+        each district gets varies enormously - from nothing to over{' '}
+        <strong className="text-ink">$9,000</strong> per student. This slider
+        raises the statewide average, and every district&apos;s allotment rises
+        by the same amount per student, so a district starting below the average
+        stays below it. Rural districts with long routes and districts running
+        required special education routes feel changes here most.{' '}
         <strong className="text-ink">
           Both figures here are per enrolled student, not per bus rider
         </strong>{' '}
@@ -575,6 +606,10 @@ const LEVERS = [
     impactKey: 'transportation',
     ...bounds('transportation'),
     effect: (value: number) => `$${fmtInt(Math.round(value))} per student`,
+    // Says "statewide average" because the chart below shows the selected
+    // district's own allotment, which is usually nowhere near $708 - without
+    // the qualifier the two numbers read as contradicting each other.
+    todayLabel: `${fmtMoneyFull(Math.round(BASELINE_TRANSPORTATION_PER_STUDENT))} per student, statewide average`,
     unit: 'per student',
     markers: [],
   },
@@ -1053,6 +1088,19 @@ function LeverBar({
     }
   }
 
+  /*
+    Transportation is the one lever whose "today" is genuinely per-district:
+    the STARS formula pays on riders and route miles, so the statewide average
+    ($708) describes no actual district - Bellevue gets $385, Creston $9,455.
+    Using the slider's statewide baseline here told every district it already
+    received the average, which reversed the gap for the many that do not.
+    The slider itself is a top-up over that baseline, so the plan adds the
+    same per-student amount on top of whatever this district actually gets.
+  */
+  const transportBase =
+    stateTransportationPerStudent(district.record.code, district.record.enrollment) ??
+    BASELINE_TRANSPORTATION_PER_STUDENT;
+
   // Everything else: a simple today-vs-plan per-student comparison.
   const counts: Partial<Record<LeverId, { base: number; now: number; who: string }>> = {
     povertyBonus: {
@@ -1071,8 +1119,10 @@ function LeverBar({
       who: `${fmtInt(Math.round(district.record.fundingEnrollment))} funding FTE`,
     },
     transportation: {
-      base: BASELINE_TRANSPORTATION_PER_STUDENT,
-      now: values.transportation,
+      base: transportBase,
+      now:
+        transportBase +
+        (values.transportation - BASELINE_TRANSPORTATION_PER_STUDENT),
       who: `${fmtInt(district.record.enrollment)} students`,
     },
   };
@@ -1087,6 +1137,21 @@ function LeverBar({
   const pct = (v: number) => `${Math.max(0, Math.min(100, (100 * v) / scale))}%`;
   const added = Math.max(0, c.now - c.base);
   const covered = spent != null && c.now >= spent;
+  /*
+    Transportation only: allotment and spending are both whole-dollar lines in
+    the source data, so the district-wide gap can be stated without a
+    per-student denominator at all - and it reconciles exactly with AESD's Big
+    3 dashboard embedded further down the site. The other levers mix
+    denominators (MSOC is allotted per funding FTE but spent per headcount) or
+    are not dollars at all (sped is charted as a multiplier), so they keep the
+    per-student sentence alone.
+  */
+  const transportAlloc = ALLOCATION[district.record.code];
+  const transportSpend = SPENDING[district.record.code];
+  const gapDollars =
+    lever.id === 'transportation' && transportAlloc && transportSpend
+      ? transportAlloc.transportation - transportSpend.transportation
+      : null;
 
   return (
     <figure>
@@ -1173,7 +1238,10 @@ function LeverBar({
           <strong className="text-ink">{fmtMoneyFull(Math.round(spent))}</strong>{' '}
           per student here, against{' '}
           <strong className="text-ink">{fmtMoneyFull(Math.round(c.base))}</strong>{' '}
-          from the formula.{' '}
+          from the formula
+          {gapDollars != null &&
+            `, a gap of ${fmtMoney(Math.abs(gapDollars))} across the district`}
+          .{' '}
           {covered
             ? 'Your plan covers that in full.'
             : `Closing the gap takes ${fmtMoneyFull(Math.round(spent - c.base))} more per student.`}
