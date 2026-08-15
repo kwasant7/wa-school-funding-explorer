@@ -797,8 +797,15 @@ function DistrictDetail({
   // brief uses for "too small for the state formula". The district being
   // viewed always keeps its dot, or opening its own profile would show a
   // chart it is missing from.
-  const [hideCharters, setHideCharters] = useState(false);
-  const [hideSmall, setHideSmall] = useState(false);
+  /*
+    Both filters start on. Charters and sub-400-student districts are the dots
+    pinned to the top of the chart - tiny enrollments make their per-student
+    figures swing hundreds of percent - so the default view opens on the
+    districts the question is actually about, and unchecking either puts the
+    outliers back.
+  */
+  const [hideCharters, setHideCharters] = useState(true);
+  const [hideSmall, setHideSmall] = useState(true);
   const needPoints = useMemo<NeedPoint[]>(
     () =>
       data.districts

@@ -20,16 +20,27 @@ const SERIES: { key: 'state' | 'local' | 'federal' | 'other'; label: string; col
 ];
 
 const W = 680;
-const H = 190;
-const PAD = { top: 10, right: 12, bottom: 26, left: 12 };
+const H = 240;
+const PAD = { top: 10, right: 12, bottom: 26, left: 34 };
+/** Share of a band the bar fills; the rest is the gap between columns. */
+const BAR_FILL = 0.62;
+/*
+  A segment shorter than this cannot hold a 10px number without the text
+  crowding the band above it, so those shares are left to the axis and the
+  hover card rather than stamped on and overlapping.
+*/
+const MIN_LABEL_SHARE = 7;
+
+const TICKS = [0, 25, 50, 75, 100];
 
 /**
- * Where a district's money came from, as a smooth stacked-share ribbon rather
- * than a row of separate bars. A stacked area reads the shift in composition
- * (federal aid arriving for COVID, then receding as ESSER expired) as a
- * single continuous shape instead of four disconnected columns the eye has to
- * compare bar-by-bar - and it does that without needing a number stamped on
- * every band, which is what made the bar version feel busy.
+ * Where a district's money came from, as one stacked column per year.
+ *
+ * Each column is a full 100%, so the columns compare composition rather than
+ * size, and the percentage is written on any band tall enough to hold it -
+ * the shift the chart exists to show (federal aid arriving for COVID, then
+ * receding as ESSER expired) can be read off the bars themselves instead of
+ * being estimated against an axis or uncovered by hovering.
  */
 export default function RevenueTrendChart({ years }: { years: YearSlice[] }) {
   const [hover, setHover] = useState<number | null>(null);
@@ -40,11 +51,14 @@ export default function RevenueTrendChart({ years }: { years: YearSlice[] }) {
 
   const innerW = W - PAD.left - PAD.right;
   const innerH = H - PAD.top - PAD.bottom;
-  const x = (i: number) => PAD.left + (i / (points.length - 1)) * innerW;
+  const bandW = innerW / points.length;
+  const barW = bandW * BAR_FILL;
+  const bandX = (i: number) => PAD.left + i * bandW;
+  const barX = (i: number) => bandX(i) + (bandW - barW) / 2;
   const y = (share: number) => PAD.top + (1 - share / 100) * innerH;
 
-  // Cumulative lower/upper share bounds for each series, per year - the
-  // stack order is the same as the legend: state at the bottom, other on top.
+  // Cumulative lower/upper share bounds per series, per year - stacked in the
+  // legend's order, state at the bottom and other on top.
   const stacks = points.map((p) => {
     let run = 0;
     return SERIES.map((s) => {
@@ -53,14 +67,6 @@ export default function RevenueTrendChart({ years }: { years: YearSlice[] }) {
       run += share;
       return { key: s.key, share, lower, upper: run };
     });
-  });
-
-  const bands = SERIES.map((s, si) => {
-    const top = points.map((_, i) => `${x(i)},${y(stacks[i][si].upper)}`);
-    const bottom = points
-      .map((_, i) => `${x(i)},${y(stacks[i][si].lower)}`)
-      .reverse();
-    return { ...s, path: `M${top.join('L')}L${bottom.join('L')}Z` };
   });
 
   const active = hover != null ? points[hover] : null;
@@ -80,48 +86,80 @@ export default function RevenueTrendChart({ years }: { years: YearSlice[] }) {
             )
             .join('; ')}`}
         >
-          {bands.map((b) => (
-            <path
-              key={b.key}
-              d={b.path}
-              fill={b.color}
-              opacity={hover != null && activeStack ? 0.9 : 0.82}
-              style={{ transition: 'opacity 120ms' }}
-            />
+          {/* Percentage axis, behind the bars */}
+          {TICKS.map((t) => (
+            <g key={t}>
+              <line
+                x1={PAD.left}
+                x2={PAD.left + innerW}
+                y1={y(t)}
+                y2={y(t)}
+                stroke="#e7e5e0"
+                strokeWidth="1"
+              />
+              <text
+                x={PAD.left - 6}
+                y={y(t) + 3.5}
+                fontSize="10"
+                fill="#898781"
+                textAnchor="end"
+              >
+                {t}%
+              </text>
+            </g>
           ))}
-          {/* Guideline + year ticks */}
+
           {points.map((p, i) => (
             <g key={p.label}>
-              {hover === i && (
-                <line
-                  x1={x(i)}
-                  x2={x(i)}
-                  y1={PAD.top}
-                  y2={PAD.top + innerH}
-                  stroke="#fcfcfb"
-                  strokeWidth="1.5"
-                  strokeDasharray="3 3"
-                  opacity={0.8}
-                />
-              )}
+              {stacks[i].map((seg, si) => {
+                const h = (seg.share / 100) * innerH;
+                if (h <= 0) return null;
+                return (
+                  <g key={seg.key}>
+                    <rect
+                      x={barX(i)}
+                      y={y(seg.upper)}
+                      width={barW}
+                      height={h}
+                      fill={SERIES[si].color}
+                      opacity={hover == null || hover === i ? 1 : 0.55}
+                      style={{ transition: 'opacity 120ms' }}
+                    />
+                    {seg.share >= MIN_LABEL_SHARE && (
+                      <text
+                        x={barX(i) + barW / 2}
+                        y={y(seg.lower + seg.share / 2) + 3.5}
+                        fontSize="10"
+                        fontWeight="600"
+                        fill="#ffffff"
+                        textAnchor="middle"
+                        pointerEvents="none"
+                      >
+                        {Math.round(seg.share)}%
+                      </text>
+                    )}
+                  </g>
+                );
+              })}
               <text
-                x={x(i)}
+                x={barX(i) + barW / 2}
                 y={H - 8}
                 fontSize="10"
                 fill="#898781"
-                textAnchor={i === 0 ? 'start' : i === points.length - 1 ? 'end' : 'middle'}
+                textAnchor="middle"
               >
                 {p.label.slice(2)}
               </text>
             </g>
           ))}
+
           {/* Generous hover targets, one per year */}
-          {points.map((_, i) => (
+          {points.map((p, i) => (
             <rect
-              key={i}
-              x={x(i) - innerW / (points.length - 1) / 2}
+              key={`hit-${p.label}`}
+              x={bandX(i)}
               y={0}
-              width={innerW / (points.length - 1)}
+              width={bandW}
               height={H}
               fill="transparent"
               onMouseEnter={() => setHover(i)}
@@ -134,7 +172,7 @@ export default function RevenueTrendChart({ years }: { years: YearSlice[] }) {
           <div
             className="pointer-events-none absolute top-1 card px-2.5 py-2 text-xs shadow-md"
             style={{
-              left: `${(100 * x(hover!)) / W}%`,
+              left: `${(100 * (barX(hover!) + barW / 2)) / W}%`,
               transform: `translateX(${hover! > points.length / 2 ? '-100%' : '0'})`,
             }}
           >
