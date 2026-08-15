@@ -348,21 +348,20 @@ const LEVERS = [
         <StatuteLink href="https://app.leg.wa.gov/rcw/default.aspx?cite=84.52.0531">
           RCW 84.52.0531
         </StatuteLink>
-        : it reaches{' '}
+        , the cap will be set at{' '}
         <strong className="text-ink">
           {fmtMoneyFull(LEA.maxLevyPerPupil)} in {levyData.calendarYear}
         </strong>{' '}
         (today&apos;s slider default), then a flat{' '}
         <strong className="text-ink">$5,035 in 2031</strong>, when the statute
         drops the district-size split and the same limit applies everywhere.
-        Until then districts of 40,000 or more students - Seattle is the only
-        one - get a higher cap,{' '}
+        Until then districts of 40,000 or more students (only Seattle) get a
+        higher cap,{' '}
         <strong className="text-ink">
           {fmtMoneyFull(LEA.maxLevyPerPupilLarge)}
         </strong>{' '}
-        in {levyData.calendarYear}, and the cards below use it. Raising the cap releases money
-        a district&apos;s voters have already approved but the cap holds back;
-        past that point, collecting more would take a new levy vote.
+        in {levyData.calendarYear}. Raising the cap only increases funding if
+        the voters in the district have already approved it.
       </>
     ),
     impactKey: null,
@@ -396,15 +395,31 @@ const LEVERS = [
     ),
     note: (
       <>
-        This is a wealth test, not the district&apos;s actual levy. Washington
-        checks what its property could raise at{' '}
-        <strong className="text-ink">$1.50 per $1,000</strong>; where that
-        falls below the goal, the state provides Local Effort Assistance. The
-        2026 goal is{' '}
+        Local Effort Assistance, also known as LEA for short, is the
+        state&apos;s program for providing additional funding to school
+        districts with lower property values that have less ability to raise
+        money through local levies. Based on the total property value in each
+        school district, Washington calculates how much the district could
+        raise through a levy of{' '}
+        <strong className="text-ink">$1.50</strong> per{' '}
+        <strong className="text-ink">$1,000</strong> of assessed property
+        value. Every year, the state sets a per-student funding target. In{' '}
+        {levyData.calendarYear}, that target is{' '}
         <strong className="text-ink">
           {fmtMoneyFull(Math.round(LEA.leaThresholdPerPupil))} per student
         </strong>
-        , and this slider raises it.
+        , so if a district&apos;s possible revenue at the{' '}
+        <strong className="text-ink">$1.50</strong> per{' '}
+        <strong className="text-ink">$1,000</strong> rate is below that, it
+        qualifies for LEA. The state then helps fill that gap, with the amount
+        depending on the district&apos;s actual levy tax rate. Districts taxing
+        at <strong className="text-ink">$1.50</strong> per{' '}
+        <strong className="text-ink">$1,000</strong> or more receive their full
+        calculated LEA amount. However, districts taking in only{' '}
+        <strong className="text-ink">$0.75</strong> per{' '}
+        <strong className="text-ink">$1,000</strong> would get{' '}
+        <strong className="text-ink">50%</strong>. The slider below raises the
+        target value.
         {/*
           A destination, not a sentence. This used to be the last clause of the
           paragraph above, which meant the only route to /lea on the whole site
@@ -458,12 +473,20 @@ const LEVERS = [
     note: (
       <>
         The{' '}
+        <strong className="text-ink">
+          Transitional Bilingual Instruction Program (TBIP)
+        </strong>{' '}
+        from{' '}
         <StatuteLink href="https://app.leg.wa.gov/rcw/default.aspx?cite=28A.180">
-          Transitional Bilingual Instruction Program
+          RCW 28A.180
         </StatuteLink>{' '}
-        (RCW 28A.180) funds language support until a student tests out.
-        Districts with recent immigration or refugee resettlement carry most of
-        this cost.
+        funds language support until a student can test out. Districts with
+        recent immigration and refugee resettlement carry most of this cost.
+        Each student is funded at an additional{' '}
+        <strong className="text-ink">
+          {fmtMoneyFull(BASELINE_ELL_PER_STUDENT)}
+        </strong>{' '}
+        and the slider below adjusts that level.
       </>
     ),
     impactKey: 'ell',
@@ -505,12 +528,21 @@ const LEVERS = [
         <StatuteLink href="https://app.leg.wa.gov/rcw/default.aspx?cite=28A.150.390">
           RCW 28A.150.390
         </StatuteLink>
-        . Districts have long reported spending more than the formula provides;
-        2025&apos;s{' '}
+        , and is considered one of the state&apos;s{' '}
+        <strong className="text-ink">&ldquo;Big 3&rdquo;</strong> K-12 funding
+        issues. Districts have long reported spending more than the formula
+        provides.{' '}
         <StatuteLink href="https://app.leg.wa.gov/billsummary?BillNumber=5263&Year=2025">
-          E2SSB 5263
+          E2SSB 5263 (2025)
         </StatuteLink>{' '}
-        raised it and removed the enrollment cap, but the gap is still debated.
+        raised the multiplier and removed the enrollment cap, but the gap is
+        still debated. The multiplier currently sits at{' '}
+        <strong className="text-ink">1.16x</strong>, meaning the state provides
+        additional funding equal to{' '}
+        <strong className="text-ink">1.16 times</strong> the basic education
+        allocation for each eligible special education student. However, many
+        districts&apos; actual special education costs exceed that amount,
+        forcing them to cover the remaining costs with local funds.
       </>
     ),
     impactKey: 'sped',
@@ -546,9 +578,16 @@ const LEVERS = [
     ),
     note: (
       <>
-        MSOC covers everything that is not staff pay: curriculum, technology,
-        utilities, and insurance. Because it is a flat per-student amount, it is
-        the lever that reaches every district equally.
+        Materials, Supplies, &amp; Operating Costs, also known as{' '}
+        <strong className="text-ink">MSOC</strong>, covers many of the non-staff
+        costs required to operate a school district. MSOC is considered one of
+        the <strong className="text-ink">&ldquo;Big 3&rdquo;</strong>, a term
+        commonly used for three major areas of K-12 funding that districts argue
+        are underfunded across the state. It includes costs such as curriculum,
+        technology, utilities, insurance, and more. Because MSOC is largely
+        funded at a set rate per student, increasing it provides additional
+        funding to districts across the state. The slider below increases the
+        amount of MSOC funding provided per student.
       </>
     ),
     impactKey: 'msoc',
@@ -590,20 +629,22 @@ const LEVERS = [
         <StatuteLink href="https://app.leg.wa.gov/rcw/default.aspx?cite=28A.160.192">
           RCW 28A.160.192
         </StatuteLink>
-        ) based on the students a district actually carries and how far, so what
-        each district gets varies enormously - from nothing to over{' '}
-        <strong className="text-ink">$9,000</strong> per student. This slider
-        raises the statewide average, and every district&apos;s allotment rises
-        by the same amount per student, so a district starting below the average
-        stays below it. Rural districts with long routes and districts running
-        required special education routes feel changes here most.{' '}
+        ) based on the students a district actually carries and how far, and is
+        considered one of the state&apos;s{' '}
+        <strong className="text-ink">&ldquo;Big 3&rdquo;</strong> K-12 funding
+        issues. What each district receives varies enormously, ranging from $0
+        to over <strong className="text-ink">$9,000</strong> per student. This
+        slider raises the statewide average, and every district&apos;s allotment
+        rises by the same amount per student, so a district starting below the
+        average stays below it. Rural districts with long routes and districts
+        running required special education routes feel changes here most.{' '}
         <strong className="text-ink">
           Both figures here are per enrolled student, not per bus rider
         </strong>{' '}
         - most students never board a bus, so the cost of actually carrying one
-        is far higher than these numbers suggest. Bus purchases are excluded
-        too: those run through the Transportation Vehicle Fund rather than the
-        general fund.
+        is far higher than these numbers suggest. Bus purchases are excluded in
+        these calculations. Those run through the Transportation Vehicle Fund
+        rather than the general fund.
       </>
     ),
     impactKey: 'transportation',
@@ -637,14 +678,22 @@ const LEVERS = [
     ),
     note: (
       <>
-        California&apos;s LCFF pays a{' '}
-        <strong className="text-ink">concentration grant</strong> to districts
-        where more than 55% of students are low-income, English learners, or in
-        foster care - on the theory that concentrated poverty costs more to
-        address than the same students spread thinly. This slider models the
-        same idea for Washington at a{' '}
-        <strong className="text-ink">60% low-income</strong> threshold. It is an
-        all-or-nothing cliff: a district just under the line receives nothing.
+        California&apos;s{' '}
+        <StatuteLink href="https://www.cde.ca.gov/fg/aa/lc/lcffoverview.asp">
+          Local Control Funding Formula (LCFF)
+        </StatuteLink>{' '}
+        provides additional concentration grant funding to districts where more
+        than <strong className="text-ink">55%</strong> of students are{' '}
+        <strong className="text-ink">low-income</strong>,{' '}
+        <strong className="text-ink">English learners</strong>, or{' '}
+        <strong className="text-ink">in foster care</strong>, recognizing that
+        serving high concentrations of students with additional needs can
+        require greater resources. This slider models a similar policy for
+        Washington using a{' '}
+        <strong className="text-ink">60%</strong> low-income threshold. It is an
+        all-or-nothing cutoff where a district at or above the threshold
+        receives additional funding, while a district just below it receives
+        nothing.
       </>
     ),
     impactKey: 'poverty',
