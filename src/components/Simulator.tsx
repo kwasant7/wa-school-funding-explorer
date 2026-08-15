@@ -120,11 +120,19 @@ function actualSpendPerUnit(leverId: LeverId, code: string): number | null {
   const spend = SPENDING[code];
   if (!spend) return null;
   switch (leverId) {
-    case 'spedMultiplier':
-      // Expressed as the multiplier that would fully fund actual spending.
-      return spend.spedPerStudent > 0
-        ? spend.spedPerStudent / BASELINE_SPED_ALLOCATION
-        : null;
+    case 'spedMultiplier': {
+      /*
+        The multiplier that would fully fund actual spending, measured against
+        this district's own allocation rather than a flat statewide rate. The
+        allocation already equals its basic-education base times today's
+        multiplier, so dividing it back out gives the base the multiplier acts
+        on - no assumed dollar figure, and the answer reconciles with the Big 3
+        card, which subtracts these same two totals.
+      */
+      const alloc = ALLOCATION[code];
+      if (!alloc || alloc.specialEd <= 0 || spend.sped <= 0) return null;
+      return (spend.sped * SPED_BASELINE_MULTIPLIER) / alloc.specialEd;
+    }
     case 'msoc':
       // Big-3 scope (OSPI's 2026 budget-request definition), so the spending
       // line here is the same number the district brief and the Big 3 card
@@ -286,13 +294,24 @@ function leverImpactFor(
       every district would report phantom new money on page load with every
       slider left untouched.
     */
-    case 'spedMultiplier':
+    case 'spedMultiplier': {
+      /*
+        Scale this district's actual special education allocation by how far
+        the multiplier moves, rather than rebuilding the allocation from a flat
+        $12,000 base. The flat rate understated Bellevue's base by a quarter,
+        so the card credited $40.2M for raising the multiplier to what the
+        district already spends while the Big 3 card, subtracting the real
+        allocation from the real spending, put the whole gap at $31.1M. Two
+        numbers for one shortfall, and the bigger one came from the constant.
+      */
+      const alloc = ALLOCATION[r.code];
+      if (!alloc || alloc.specialEd <= 0) return { newMoney: 0 };
       return {
         newMoney:
-          r.demo.sped *
-          BASELINE_SPED_ALLOCATION *
-          (values.spedMultiplier - simulatorControl('spedMultiplier')!.baseline),
+          alloc.specialEd *
+          (values.spedMultiplier / SPED_BASELINE_MULTIPLIER - 1),
       };
+    }
     case 'msoc':
       return {
         newMoney:
@@ -320,13 +339,17 @@ function leverImpactFor(
 }
 
 /*
-  Flat statewide rates used only to convert between formula units and dollars
-  for the two multiplier sliders. Both are disclosed in the assumptions list
-  below, because a district's real rates differ with staff mix, experience and
-  regionalization.
+  The English-learner rate is a flat statewide figure used to convert the
+  multilingual weight between formula units and dollars, and is disclosed in
+  the assumptions list below. Special education used to have a companion
+  constant, a flat $12,000 of basic education per eligible student; it is gone
+  because each district's real base is recoverable from its own allocation,
+  and the assumed one disagreed with the rest of the site.
 */
 const BASELINE_ELL_PER_STUDENT = 1_800;
-const BASELINE_SPED_ALLOCATION = 12_000;
+
+/** Today's excess-cost multiplier, the figure a district's allocation embeds. */
+const SPED_BASELINE_MULTIPLIER = simulatorControl('spedMultiplier')!.baseline;
 
 const LEVERS = [
   {
@@ -1807,15 +1830,20 @@ export default function Simulator() {
               limit.
             </li>
             <li>
-              Two sliders convert between formula units and dollars using flat
-              statewide constants: special education multipliers are priced at{' '}
-              <strong className="text-ink">$12,000</strong> of basic education
-              per student, and the multilingual weight at{' '}
-              <strong className="text-ink">$1,800</strong> per student. Real
-              rates differ by district with staff mix, experience and
-              regionalization, so &ldquo;what they actually spend&rdquo;
-              expressed as a multiplier is an approximation, not the
-              district&apos;s own excess-cost ratio.
+              The special education multiplier is priced off each
+              district&apos;s own{' '}
+              <strong className="text-ink">2024-25 state allocation</strong>,
+              which already embeds today&apos;s{' '}
+              <strong className="text-ink">
+                {SPED_BASELINE_MULTIPLIER.toFixed(2)}×
+              </strong>{' '}
+              multiplier: dividing that back out recovers the basic-education
+              base the multiplier acts on, so moving the slider scales the
+              money the district actually receives, and closing the gap to what
+              it spends matches the Big 3 figures elsewhere on the site
+              exactly. The multilingual weight still converts at a flat{' '}
+              <strong className="text-ink">$1,800</strong> per student, a
+              statewide figure rather than any one district&apos;s rate.
             </li>
             <li>
               Transportation is the sum of every district&apos;s actual 2024-25
