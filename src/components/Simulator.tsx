@@ -1521,7 +1521,9 @@ export default function Simulator() {
     // A policy plan belongs to the district it was built for. Starting a new
     // district with the old sliders would make its summary look pre-filled.
     setValues(BASELINE);
-    if (next) writeSelectedDistrict(next);
+    // Clearing has to reach the shared selection too, or the district the
+    // visitor just dismissed returns on the next page or the next reload.
+    writeSelectedDistrict(next || null);
   }, []);
 
   /**
@@ -1824,6 +1826,7 @@ export default function Simulator() {
             <DistrictCombobox
               districts={pickerDistricts}
               onPick={chooseDistrict}
+              onClear={() => chooseDistrict('')}
               selectedName={district?.record.name}
               placeholder="Choose or search for a district"
             />

@@ -396,6 +396,10 @@ export default function TakeAction() {
               <DistrictCombobox
                 districts={districts}
                 onPick={chooseDistrict}
+                onClear={clearDistrict}
+                /* The panel around this one is already washed blue, so the
+                   field stays white to remain the thing that stands out. */
+                tone="plain"
                 selectedName={selectedDistrict?.name}
                 placeholder="Choose or search for a district"
               />

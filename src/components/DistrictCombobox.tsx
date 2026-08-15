@@ -12,16 +12,32 @@ export type ComboDistrict = { code: string; name: string; county: string };
 export default function DistrictCombobox({
   districts,
   onPick,
+  onClear,
   selectedName,
   placeholder = 'Choose or search for a district',
+  tone = 'tint',
 }: {
   districts: ComboDistrict[];
   onPick: (code: string) => void;
+  /**
+   * Drop the selection entirely, returning the page to its no-district state.
+   * Without it the clear button only empties the text, and the page keeps
+   * showing everything it had already worked out for the old district - which
+   * reads as the X not having done anything.
+   */
+  onClear?: () => void;
   /** Name of the currently-selected district, shown in the field at rest
    * (e.g. after loading a prior selection from storage). Omit for
    * fire-and-forget pickers that navigate away on selection. */
   selectedName?: string;
   placeholder?: string;
+  /**
+   * 'tint' is the default: the field carries the accent wash so it stands out
+   * as the control on an otherwise plain panel. Pass 'plain' when the panel
+   * itself is already tinted, where a tinted field on a tinted panel loses
+   * the very contrast the wash exists to create.
+   */
+  tone?: 'tint' | 'plain';
 }) {
   const [query, setQuery] = useState(selectedName ?? '');
   const [open, setOpen] = useState(false);
@@ -109,7 +125,9 @@ export default function DistrictCombobox({
           onBlur={() => setQuery(selectedName ?? '')}
           placeholder={placeholder}
           aria-label={placeholder}
-          className="district-search w-full px-4 py-2.5 pr-20 card rounded-lg text-base bg-accent-wash border-accent-soft placeholder:text-ink-muted"
+          className={`district-search w-full px-4 py-2.5 pr-20 card rounded-lg text-base placeholder:text-ink-muted ${
+            tone === 'plain' ? 'bg-surface' : 'bg-accent-wash border-accent-soft'
+          }`}
         />
         {query !== '' && (
           <button
@@ -124,6 +142,10 @@ export default function DistrictCombobox({
             onMouseDown={(e) => e.preventDefault()}
             onClick={() => {
               setQuery('');
+              // Drop the selection itself, not just the text. Otherwise the
+              // field empties while the page below still shows the old
+              // district, and blur puts the name straight back.
+              onClear?.();
               setOpen(true);
               setActiveIndex(0);
               inputRef.current?.focus();

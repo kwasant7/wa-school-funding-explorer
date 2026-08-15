@@ -74,7 +74,12 @@ export default function DistrictsExplorer() {
     (code: string) => router.push(`/districts?d=${encodeURIComponent(code)}`),
     [router]
   );
-  const clearDistrict = useCallback(() => router.push('/districts'), [router]);
+  const clearDistrict = useCallback(() => {
+    // Also forget the shared selection, so clearing here means "no district"
+    // on the next page and the next reload, not just on this render.
+    writeSelectedDistrict(null);
+    router.push('/districts');
+  }, [router]);
   useAssistantYear(year, setYear);
   useAssistantDistrict(selectedCode, {
     select: selectDistrict,
@@ -151,6 +156,7 @@ export default function DistrictsExplorer() {
       <DistrictOverview
         year={year}
         onSelect={selectDistrict}
+        onClear={clearDistrict}
         selectedCode={selectedCode}
       />
       {selectedCode && (
@@ -229,10 +235,12 @@ function ClearSelectionLink() {
 function DistrictOverview({
   year,
   onSelect,
+  onClear,
   selectedCode,
 }: {
   year: string;
   onSelect: (code: string) => void;
+  onClear: () => void;
   selectedCode: string | null;
 }) {
   const data = yearData(year);
@@ -300,7 +308,12 @@ function DistrictOverview({
             : 'Pick from the dropdown or click your district to open its profile.'}
         </p>
         <ChartErrorBoundary label="The map">
-          <WaMap year={year} onSelect={onSelect} selected={selectedCode} />
+          <WaMap
+            year={year}
+            onSelect={onSelect}
+            onClear={onClear}
+            selected={selectedCode}
+          />
         </ChartErrorBoundary>
       </div>
       {!selectedCode && (

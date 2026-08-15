@@ -101,10 +101,13 @@ let mapCache: MapFile | null = null;
 export default function WaMap({
   year,
   onSelect,
+  onClear,
   selected = null,
 }: {
   year: string;
   onSelect: (code: string) => void;
+  /** Drop the selection, so the picker's clear button empties the page too. */
+  onClear?: () => void;
   /**
    * The district whose profile is open below the map. It keeps a standing
    * outline so a reader scrolling through the profile can look back up and see
@@ -341,6 +344,7 @@ export default function WaMap({
         <DistrictCombobox
           districts={comboDistricts}
           onPick={onSelect}
+          onClear={onClear}
           selectedName={selectedName ?? undefined}
         />
         <span className="mt-1 block text-sm text-ink-muted">
