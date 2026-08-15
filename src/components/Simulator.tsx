@@ -71,6 +71,20 @@ function StatuteLink({ href, children }: { href: string; children: React.ReactNo
 }
 
 const LEA = levyData.assumptions;
+
+/*
+  Levy caps and the LEA target are set per calendar year of collections, but
+  readers think in school years, and "2027" next to a page that is otherwise
+  about 2026-27 reads as a typo rather than a different unit. Districts budget
+  a collection year into the school year that opened the previous fall, so
+  CY2027 is stated as 2026-27. The assumptions list below still says "calendar
+  2027" where it contrasts that period with the 2024-25 F-196 actuals - that
+  bullet exists to draw exactly this distinction.
+*/
+function schoolYearOf(calendarYear: number): string {
+  return `${calendarYear - 1}-${String(calendarYear).slice(-2)}`;
+}
+const LEVY_SCHOOL_YEAR = schoolYearOf(levyData.calendarYear);
 type LevyDistrict = (typeof levyData.districts)[keyof typeof levyData.districts];
 const LEVY_DISTRICTS = levyData.districts as Record<string, LevyDistrict>;
 
@@ -350,17 +364,19 @@ const LEVERS = [
         </StatuteLink>
         , the cap will be set at{' '}
         <strong className="text-ink">
-          {fmtMoneyFull(LEA.maxLevyPerPupil)} in {levyData.calendarYear}
+          {fmtMoneyFull(LEA.maxLevyPerPupil)} for the {LEVY_SCHOOL_YEAR} school
+          year
         </strong>{' '}
         (today&apos;s slider default), then a flat{' '}
-        <strong className="text-ink">$5,035 in 2031</strong>, when the statute
+        <strong className="text-ink">$5,035 in {schoolYearOf(2031)}</strong>,
+        when the statute
         drops the district-size split and the same limit applies everywhere.
         Until then districts of 40,000 or more students (only Seattle) get a
         higher cap,{' '}
         <strong className="text-ink">
           {fmtMoneyFull(LEA.maxLevyPerPupilLarge)}
         </strong>{' '}
-        in {levyData.calendarYear}. Raising the cap only increases funding if
+        in {LEVY_SCHOOL_YEAR}. Raising the cap only increases funding if
         the voters in the district have already approved it.
       </>
     ),
@@ -368,7 +384,7 @@ const LEVERS = [
     ...bounds('levyPerPupil'),
     effect: (value: number) => `$${fmtInt(Math.round(value))} per student`,
     unit: 'local only',
-    markers: [{ value: 5_035, label: '$5,035 · 2031 cap' }],
+    markers: [{ value: 5_035, label: `$5,035 · ${schoolYearOf(2031)} cap` }],
   },
   {
     id: 'leaThreshold',
@@ -404,7 +420,7 @@ const LEVERS = [
         <strong className="text-ink">$1.50</strong> per{' '}
         <strong className="text-ink">$1,000</strong> of assessed property
         value. Every year, the state sets a per-student funding target. In{' '}
-        {levyData.calendarYear}, that target is{' '}
+        the {LEVY_SCHOOL_YEAR} school year, that target is{' '}
         <strong className="text-ink">
           {fmtMoneyFull(Math.round(LEA.leaThresholdPerPupil))} per student
         </strong>
