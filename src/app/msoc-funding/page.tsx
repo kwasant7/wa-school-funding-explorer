@@ -10,6 +10,7 @@ import { pageMetadata } from '@/lib/site-metadata';
 import { programGap, rankedByGap, SPENDING_TOTALS } from '@/lib/topic-stats';
 import { fmtMoney, fmtMoneyFull } from '@/lib/format';
 import { LATEST } from '@/lib/years';
+import { MSOC } from '@/lib/prototypical-model';
 
 const TITLE = 'MSOC Funding in Washington Schools | K12Funding.org';
 const H1 = 'MSOC: materials, supplies and operating costs';
@@ -24,11 +25,16 @@ export const metadata: Metadata = pageMetadata({
 });
 
 /*
-  The per-student formula rate. Read from the simulator's baseline rather than
-  restated as a literal so the two cannot drift; see simulator-config.ts, which
-  documents it as the 2024-25 statutory MSOC allocation.
+  The per-student formula rate, read from the statutory parameter file rather
+  than restated as a literal here - this page and the prototypical model page
+  previously carried the figure independently and disagreed about which school
+  year it described.
+
+  Note the vintage mismatch this page has to live with: the rate below is the
+  statutory floor set by 2025 c 334 for 2025-26, while the spending it is
+  compared against is 2024-25 actuals, the most recent year OSPI has published.
 */
-const MSOC_FORMULA_RATE = 1614;
+const MSOC_FORMULA_RATE = MSOC.perStudent;
 
 export default function MsocFundingPage() {
   const gap = programGap('msoc');
@@ -87,10 +93,15 @@ export default function MsocFundingPage() {
         <p>
           The state pays a flat allocation per student -{' '}
           <strong className="text-ink">{fmtMoneyFull(MSOC_FORMULA_RATE)}</strong>{' '}
-          per student in {LATEST}, with a further per-student add-on for grades
-          9-12. Unlike staffing allocations, it does not vary with a
-          district&apos;s size, its regional labour costs, or the mix of students
-          it serves.
+          per student under current law, with a further{' '}
+          {fmtMoneyFull(MSOC.highSchoolAddOn)} per student in grades 9-12.
+          Unlike staffing allocations, it does not vary with a district&apos;s
+          size, its regional labour costs, or the mix of students it serves.
+          Both figures are statutory floors that the Legislature indexed to
+          inflation beginning in {MSOC.inflationIndexedFrom}, so from that year
+          the operative rate is set in the budget rather than the statute. The
+          spending they are compared against below is {LATEST} actuals, the most
+          recent year OSPI has published.
         </p>
         <p>
           That flatness is the design: it is the simplest lever in the formula,

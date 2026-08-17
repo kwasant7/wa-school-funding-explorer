@@ -44,6 +44,8 @@ const SPEND_LINE: Record<ProgramKey, 'sped' | 'msocBig3' | 'transportation'> = {
 
 export const STATEWIDE = districtsJson.statewide;
 export const LEA_ASSUMPTIONS = levyJson.assumptions;
+/** The school year the allocation figures describe, read from the data itself. */
+export const ALLOCATION_YEAR = allocationJson.schoolYear;
 /** The calendar year the levy worksheet figures describe (levies run on CY, not SY). */
 export const LEVY_CALENDAR_YEAR = levyJson.calendarYear;
 

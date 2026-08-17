@@ -33,6 +33,7 @@ import levyJson from '@/data/levy.json';
 import baselineJson from '@/data/enrollment-baseline.json';
 import { oversightFor, type Oversight } from '@/data/oversight';
 import { fmtMoney, fmtMoneyFull, fmtInt, alignPair } from '@/lib/format';
+import { PROTOTYPES } from '@/lib/prototypical-model';
 
 type DistrictRecord = (typeof districtsJson.districts)[number];
 type Allocation = (typeof allocationJson.districts)[keyof typeof allocationJson.districts];
@@ -834,7 +835,7 @@ const enrollmentIssue: Builder = (m) => {
 };
 
 const smallScaleIssue: Builder = (m) => {
-  if (m.fte >= 400) return null;
+  if (m.fte >= PROTOTYPES.elementary.proto) return null;
   const pctile = percentileOf(DISTRIBUTIONS.perPupil, m.perPupil);
 
   return {
@@ -844,7 +845,7 @@ const smallScaleIssue: Builder = (m) => {
     visual: {
       kind: 'versus',
       aLabel: 'Students in the state model school',
-      a: 400,
+      a: PROTOTYPES.elementary.proto,
       bLabel: 'Students in this whole district',
       b: Math.round(m.fte),
       gapLabel: 'One nurse costs the same either way',

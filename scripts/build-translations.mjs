@@ -21,8 +21,16 @@ const SOURCE_DIRS = ['src/app', 'src/components'];
   the district's own figures in it and the dictionary's fragments cannot match
   by construction. Those stay English until the runtime learns to match around
   a placeholder, which is a different mechanism than this file.
+
+  prototypical-model.ts is here for the same reason: it holds the statutory
+  staff role names the School Builder and the explainer page both render. They
+  used to live as object keys inside the component - `{ 'Office staff':
+  2.088/400 }` - where the string is the property *name* and not its value, so
+  the collector below never saw them, and half the School Builder's row labels
+  sat in English on every translated page. Naming them `label` and
+  `description` puts them in TEXT_PROPERTIES and fixes that.
 */
-const SOURCE_FILES = ['src/lib/diagnosis.ts'];
+const SOURCE_FILES = ['src/lib/diagnosis.ts', 'src/lib/prototypical-model.ts'];
 const OUTPUT = path.join(ROOT, 'src/data/translations.json');
 const LANGUAGES = {
   es: 'es',

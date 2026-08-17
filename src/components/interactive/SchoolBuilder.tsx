@@ -2,39 +2,16 @@
 
 import type { District } from '@/lib/data';
 import SourceShareBar from '@/components/charts/SourceShareBar';
-import { fmtInt, fmtMoney, fmtMoneyFull } from '@/lib/format';
-
-type SchoolType = 'elementary' | 'middle' | 'high';
-
-/**
- * Base staffing allocations per prototypical school, RCW 28A.150.260(5)(a) as
- * currently in effect - i.e. including the counselor, nurse and office-support
- * increases from 2SHB 1664 (2022), which finished phasing in for 2024-25, the
- * school year this site's district data covers.
- */
-const MODELS: Record<SchoolType, {
-  label: string;
-  grades: string;
-  proto: number;
-  teachersPerStudent: number;
-  perStudent: Record<string, number>;
-}> = {
-  elementary: {
-    label: 'Elementary', grades: 'K-6 · state prototype: 400 students', proto: 400,
-    teachersPerStudent: (4 / 7) / 17 + (3 / 7) / 27,
-    perStudent: { Principals: 1.253 / 400, Counselors: 0.993 / 400, 'Teacher-librarians': 0.663 / 400, 'Office staff': 2.088 / 400, Custodians: 1.657 / 400, Nurses: 0.585 / 400 },
-  },
-  middle: {
-    label: 'Middle', grades: '7-8 · state prototype: 432 students', proto: 432,
-    teachersPerStudent: 1 / 28.53,
-    perStudent: { Principals: 1.353 / 432, Counselors: 1.716 / 432, 'Teacher-librarians': 0.519 / 432, 'Office staff': 2.401 / 432, Custodians: 1.942 / 432, Nurses: 0.888 / 432 },
-  },
-  high: {
-    label: 'High school', grades: '9-12 · state prototype: 600 students', proto: 600,
-    teachersPerStudent: 1 / 28.74,
-    perStudent: { Principals: 1.88 / 600, Counselors: 3.039 / 600, 'Teacher-librarians': 0.523 / 600, 'Office staff': 3.345 / 600, Custodians: 2.965 / 600, Nurses: 0.824 / 600 },
-  },
-};
+import { fmtMoney, fmtMoneyFull } from '@/lib/format';
+import { LATEST } from '@/lib/years';
+import {
+  CLASS_SIZE,
+  ELEMENTARY_BAND_SPLIT,
+  PROTOTYPES,
+  STAFF_ROLES,
+  teacherUnits,
+  type SchoolType,
+} from '@/lib/prototypical-model';
 
 function Person({ ghost = false }: { ghost?: boolean }) {
   return <svg viewBox="0 0 24 24" className="w-[15px] h-[15px]" fill={ghost ? '#c3c2b7' : '#2a78d6'} opacity={ghost ? 0.35 : 1} aria-hidden><circle cx="12" cy="6.5" r="4.5" /><path d="M3.5 22c0-4.7 3.8-8.5 8.5-8.5s8.5 3.8 8.5 8.5z" /></svg>;
@@ -59,6 +36,29 @@ function fmtFteLong(n: number) {
   return n.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
 }
 
+/**
+ * Funded teachers for one prototype.
+ *
+ * Elementary spans two class-size bands, so it is summed from the district's
+ * own K-3 and grades 4-6 funding FTE; with no district selected it falls back
+ * to the statutory four-of-seven grade split. Every level is then grossed up
+ * for planning time, which is the half of RCW 28A.150.260(4)(a)(i) that a bare
+ * enrollment-over-class-size division leaves out.
+ */
+function fundedTeachers(type: SchoolType, fte: number, district?: District | null) {
+  const { planningTime } = PROTOTYPES[type];
+  if (type === 'elementary') {
+    const k3 = district ? district.fundingFte.k3 : fte * ELEMENTARY_BAND_SPLIT.k3;
+    const grades46 = district ? district.fundingFte.grades46 : fte * ELEMENTARY_BAND_SPLIT.grades46;
+    return (
+      teacherUnits(k3, CLASS_SIZE.k3, planningTime) +
+      teacherUnits(grades46, CLASS_SIZE.grades46, planningTime)
+    );
+  }
+  const classSize = type === 'middle' ? CLASS_SIZE.grades78 : CLASS_SIZE.grades912;
+  return teacherUnits(fte, classSize, planningTime);
+}
+
 function ModelCard({
   type,
   district,
@@ -66,29 +66,27 @@ function ModelCard({
   type: SchoolType;
   district?: District | null;
 }) {
-  const model = MODELS[type];
+  const model = PROTOTYPES[type];
   const fundingFte = district ? district.fundingFte[type] : model.proto;
-  const teachers =
-    district && type === 'elementary'
-      ? district.fundingFte.k3 / 17 + district.fundingFte.grades46 / 27
-      : fundingFte * model.teachersPerStudent;
-  const staff = Object.entries(model.perStudent).map(([role, rate]) => ({
-    role,
-    fte: fundingFte * rate,
+  const teachers = fundedTeachers(type, fundingFte, district);
+  const staff = STAFF_ROLES.map((row) => ({
+    role: row.label,
+    statutory: row.statutory,
+    conditional: 'conditional' in row && row.conditional === true,
+    fte: (fundingFte * row[type]) / model.proto,
   }));
   const totalStaff = teachers + staff.reduce((total, item) => total + item.fte, 0);
   const modelSchools = fundingFte / model.proto;
   const modelSchoolLabel =
     type === 'high' ? 'high schools' : `${model.label.toLowerCase()} schools`;
+  const nurseRate = STAFF_ROLES.find((r) => r.label === 'Nurses')![type] / model.proto;
 
   return <article className="border border-line rounded-xl p-4 md:p-5">
     <div className="flex items-baseline justify-between gap-3 flex-wrap">
       <div>
         <h4 className="text-lg font-bold">{model.label}</h4>
         <p className="mt-0.5 text-xs text-ink-muted">
-          {district
-            ? `${model.grades.split(' · ')[0]} · ${model.proto}-FTE state prototype`
-            : model.grades}
+          {model.grades} · {model.proto}-FTE state prototype
         </p>
       </div>
       <p className="text-sm text-ink-secondary">
@@ -103,24 +101,33 @@ function ModelCard({
     )}
     <div className="mt-5 space-y-4">
       <div>
-        <div className="flex items-baseline gap-2 flex-wrap"><span className="w-36 shrink-0 text-sm font-semibold">Teachers</span><span className="text-sm tabular-nums font-bold text-accent-deep w-12">{fmtFte(teachers)}</span><span className="text-xs text-ink-muted">≈ {Math.round(fundingFte / teachers)} students per funded teacher</span></div>
+        {/*
+          Two ratios live here and they are not the same number. The funded
+          class size is students in a room; students per funded teacher is
+          lower, because the formula also pays for the teachers covering
+          everyone else's planning period. Showing the class size in this slot
+          - which this card did until the planning-time factor was added -
+          told readers the state funds 29 students per high school teacher
+          when it funds about 24.
+        */}
+        <div className="flex items-baseline gap-2 flex-wrap"><span className="w-36 shrink-0 text-sm font-semibold">Teachers</span><span className="text-sm tabular-nums font-bold text-accent-deep w-12">{fmtFte(teachers)}</span><span className="text-xs text-ink-muted">≈ {Math.round(fundingFte / teachers)} students per funded teacher, after planning time</span></div>
         <div className="mt-1.5 pl-0 md:pl-36"><StaffIcons count={teachers} /></div>
       </div>
-      {staff.map(({ role, fte }) => <div key={role}>
-        <div className="flex items-baseline gap-2 flex-wrap"><span className="w-36 shrink-0 text-sm font-semibold">{role}</span><span className="text-sm tabular-nums font-bold text-accent-deep w-12">{fmtFte(fte)}</span>
-          {role === 'Counselors' && <span className="text-xs text-ink-muted">1 for every {Math.round(fundingFte / fte).toLocaleString()} students · the American School Counselor Association recommends 1 per 250</span>}
+      {staff.map(({ role, fte, conditional, statutory }) => <div key={role}>
+        <div className="flex items-baseline gap-2 flex-wrap"><span className="w-36 shrink-0 text-sm font-semibold" title={statutory}>{role}{conditional && <span className="text-accent-deep" title="Funded only in proportion to the staff the district actually employs - RCW 28A.150.260(5)(b)">*</span>}</span><span className="text-sm tabular-nums font-bold text-accent-deep w-12">{fmtFte(fte)}</span>
+          {role === 'Counselors' && fte > 0 && <span className="text-xs text-ink-muted">1 for every {Math.round(fundingFte / fte).toLocaleString()} students · the American School Counselor Association recommends 1 per 250</span>}
           {/*
             Stated per prototypical school, not per district: the district-wide
             total ("1,574 hours a week" for Seattle) is a true number that tells
             a reader nothing. The rate below is the same at any district size.
           */}
-          {role === 'Nurses' && <span className="text-xs text-ink-muted">≈ {Math.round(model.perStudent.Nurses * model.proto * 40)} hours of nurse time a week in a {model.proto}-student school</span>}
+          {role === 'Nurses' && <span className="text-xs text-ink-muted">≈ {Math.round(nurseRate * model.proto * 40)} hours of nurse time a week in a {model.proto}-student school</span>}
         </div>
         <div className="mt-1.5 pl-0 md:pl-36"><StaffIcons count={fte} /></div>
       </div>)}
     </div>
     <p className="mt-5 border-t border-line pt-3 text-sm text-ink-secondary">
-      <strong className="text-ink">{fmtFte(totalStaff)} base-formula staff FTE</strong>{' '}
+      <strong className="text-ink">{fmtFte(totalStaff)} school-level staff FTE</strong>{' '}
       for {fmtFteLong(fundingFte)} {district ? 'funding FTE' : 'students'}
     </p>
   </article>;
@@ -128,15 +135,15 @@ function ModelCard({
 
 export default function SchoolBuilder({
   district,
-  year = '2024-25',
+  year = LATEST,
 }: {
   district?: District | null;
   year?: string;
 }) {
   const modelSchoolTotal = district
-    ? district.fundingFte.elementary / MODELS.elementary.proto +
-      district.fundingFte.middle / MODELS.middle.proto +
-      district.fundingFte.high / MODELS.high.proto
+    ? district.fundingFte.elementary / PROTOTYPES.elementary.proto +
+      district.fundingFte.middle / PROTOTYPES.middle.proto +
+      district.fundingFte.high / PROTOTYPES.high.proto
     : 0;
 
   return <div className="card p-5 md:p-7">
@@ -148,7 +155,7 @@ export default function SchoolBuilder({
     <p className="mt-1 text-sm text-ink-secondary">
       {district
         ? `The state applies the same prototype recipe to ${district.name}'s actual ${year} funding FTE by grade span. The results below are formula equivalents - not the district's literal number of buildings or employees.`
-        : 'RCW 28A.150.260 defines a prototype for each grade span. These are the base staffing allocations for all three; faded figures are fractions of a full-time position.'}
+        : 'RCW 28A.150.260 defines a prototype for each grade span. These are the school-level staffing allocations for all three; faded figures are fractions of a full-time position.'}
     </p>
 
     {district && (
@@ -207,18 +214,21 @@ export default function SchoolBuilder({
     </p>
 
     <div className="mt-4 grid xl:grid-cols-3 gap-4">
-      {(Object.keys(MODELS) as SchoolType[]).map((type) => (
+      {(Object.keys(PROTOTYPES) as SchoolType[]).map((type) => (
         <ModelCard key={type} type={type} district={district} />
       ))}
     </div>
     <p className="mt-5 text-xs text-ink-muted">
-      Base prototypical-school formula only, using the allocations currently in
-      RCW 28A.150.260. The roles shown are a subset: the statute also funds
-      social workers, psychologists, student-safety staff, and (in elementary
-      schools) parent involvement coordinators, which are not counted here.
-      These estimates also exclude regionalization, benefits, special education,
-      LAP, bilingual education, transportation, and materials and operating
-      costs. Actual staffing can differ.
+      School-level staff only, using the allocations currently in RCW
+      28A.150.260(4) and (5). The formula also generates a district-wide tier
+      not shown here: technology, facilities and warehouse staff per 1,000
+      students, plus central administration at 5.30% of every staff unit above.
+      Teachers include the planning-time factor OSPI applies on top of the
+      funded class size. Roles marked * are funded only in proportion to the
+      staff a district can demonstrate it actually employs. These estimates
+      exclude regionalization, benefits, special education, LAP, bilingual
+      education, transportation, and materials and operating costs. Actual
+      staffing can differ.
     </p>
   </div>;
 }

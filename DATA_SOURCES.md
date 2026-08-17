@@ -248,10 +248,18 @@ shoreline nor the lake layer is joined to any funding data.
 ## 4. The prototypical school model (explainer & School Builder)
 
 - **RCW 28A.150.260** - the statute containing prototypical school sizes
-  (400 / 432 / 600), funded class sizes (K-3 ≈ 17, grade 4 ≈ 27, 5-6 ≈ 27,
-  7-8 ≈ 28.53, 9-12 ≈ 28.74, CTE ≈ 23), and per-school staffing allocations
-  (e.g. 0.076 nurse per prototypical elementary):
+  (400 / 432 / 600), funded class sizes (K-3 17.00, grade 4 27.00, 5-6 27.00,
+  7-8 28.53, 9-12 28.74, CTE 23.00, skill centers 19.00, laboratory science
+  19.98), and per-school staffing allocations (e.g. 0.585 nurse per
+  prototypical elementary):
   https://app.leg.wa.gov/rcw/default.aspx?cite=28A.150.260
+  Every one of these figures is read from `src/lib/prototypical-model.ts`,
+  which is the single place the site states them.
+- **OSPI, Organization and Financing of Washington's Public Schools** - the
+  source for the planning-time factor the statute requires but does not
+  quantify: teacher units are `(Enrollment / Class Size) * (1 + Planning Time
+  Factor)`, with the factor at 15.5% for K-6 and 20% for grades 7-12:
+  https://ospi.k12.wa.us/sites/default/files/2024-01/organizationandfinancingofwapublicschools.pdf
 - **Washington Constitution, Article IX, Section 1** ("paramount duty"):
   https://leg.wa.gov/CodeReviser/Pages/WAConstitution.aspx
 - **McCleary v. State of Washington** - the Supreme Court's case page with
@@ -260,8 +268,11 @@ shoreline nor the lake layer is joined to any funding data.
   https://www.courts.wa.gov/appellate_trial_courts/supremecourt/?fa=supremecourt.mccleary_education
 - **EHB 2242 (2017)** - the McCleary funding fix:
   https://app.leg.wa.gov/billsummary?BillNumber=2242&Year=2017
-- **HB 1664 (2022)** - increased counselor/nurse/social-worker allocations:
-  https://app.leg.wa.gov/billsummary?BillNumber=1664&Year=2021
+- **2SHB 1664 (2022)** - increased counselor/nurse/social-worker/psychologist
+  allocations; final sections effective September 1, 2024:
+  https://app.leg.wa.gov/billsummary?BillNumber=1664&Year=2022
+- **2SSB 5882 (2024)** - increased paraeducator and office-support allocations:
+  https://app.leg.wa.gov/billsummary?BillNumber=5882&Year=2024
 
 ## 5. Recent legislation (Take Action tab)
 
@@ -280,8 +291,19 @@ shoreline nor the lake layer is joined to any funding data.
 - **General fund only.** Capital projects, debt service, transportation
   vehicle, and ASB funds are excluded everywhere.
 - **Nominal dollars.** Trend charts are not inflation-adjusted (and say so).
-- **The Policy Simulator is illustrative**: statewide averages, a 4/13 K-3
-  enrollment share, $100k average teacher compensation, ~450 students per
-  school. It is labeled as an educational estimate, not a fiscal note.
-- **Staffing values** in the explainer are the base statutory values; the
-  Legislature has enriched some allocations since (e.g., HB 1664).
+- **The Policy Simulator is illustrative**: seven levers - levy cap, Local
+  Effort Assistance, English learner support, special education multiplier,
+  MSOC, transportation, and a hypothetical high-poverty bonus - run against
+  statewide totals. It is labeled as an educational estimate, not a fiscal
+  note. None of its levers move the prototypical model's class sizes or
+  staffing units.
+- **Staffing values** in the explainer are the allocations currently in effect,
+  including 2SHB 1664 (2022) and 2SSB 5882 (2024) - not the original 2009
+  values.
+- **Class size is not students per teacher.** The funded class size is students
+  in a room; students per funded teacher is lower, because the formula also
+  pays for the teachers covering everyone else's planning period.
+- **Not every parameter is in the RCW.** The statute sets prototype sizes,
+  class sizes and staffing units. Salary allocations, regionalization factors,
+  planning-time percentages, small-school minimums and the CTE amounts are set
+  in the biennial appropriations act.

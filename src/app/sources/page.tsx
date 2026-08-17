@@ -87,9 +87,14 @@ const LAW_LINKS: [string, string, string][] = [
     'https://app.leg.wa.gov/billsummary?BillNumber=2242&Year=2017',
   ],
   [
-    'HB 1664 (2022)',
-    'Increased counselor, nurse, and social worker allocations',
-    'https://app.leg.wa.gov/billsummary?BillNumber=1664&Year=2021',
+    '2SHB 1664 (2022)',
+    'Increased counselor, nurse, social worker and psychologist allocations',
+    'https://app.leg.wa.gov/billsummary?BillNumber=1664&Year=2022',
+  ],
+  [
+    '2SSB 5882 (2024)',
+    'Increased paraeducator and office support staffing allocations',
+    'https://app.leg.wa.gov/billsummary?BillNumber=5882&Year=2024',
   ],
   [
     'SB 5263 (2025)',
@@ -644,13 +649,17 @@ export default function SourcesPage() {
               averages (labeled as such on the page), not a fiscal model.
             </li>
             <li className="break-inside-avoid">
-              Staffing values in the explainer are the base allocations
-              currently in RCW 28A.150.260, including the counselor, nurse, and
-              office support increases from HB 1664 (2022) that finished phasing
-              in for 2024-25. The School Builder shows a subset of the roles the
-              statute funds - social workers, psychologists, student-safety
-              staff, and parent involvement coordinators are omitted - and
-              excludes regionalization, benefits, and every categorical program.
+              Staffing values in the explainer are the allocations currently in
+              RCW 28A.150.260, including the counselor, nurse, social worker and
+              psychologist increases from 2SHB 1664 (2022) that finished phasing
+              in for 2024-25, and the paraeducator and office support increases
+              from 2SSB 5882 (2024). Teacher counts apply the planning-time
+              factor OSPI adds on top of the funded class size - 15.5% in K-6
+              and 20% in grades 7-12 - so students per funded teacher is lower
+              than the class size. The School Builder shows all eleven staff
+              roles the statute funds at the school level, but not the
+              district-wide tier, and excludes regionalization, benefits, and
+              every categorical program.
             </li>
             <li className="break-inside-avoid">
               Translations of the interface are machine-generated. Data values

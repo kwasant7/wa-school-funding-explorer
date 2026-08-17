@@ -27,6 +27,13 @@ export const ASSISTANT_SOURCES: readonly AssistantSource[] = [
     description: "This site's explainer of the prototypical school funding model.",
   },
   {
+    id: 'site-prototypical-model',
+    label: 'The prototypical school funding model',
+    url: '/prototypical-school-funding-model/',
+    type: 'internal',
+    description: 'The full walkthrough: prototype sizes, class sizes, all eleven staff roles, the district-wide tier, and how positions become dollars.',
+  },
+  {
     id: 'site-districts',
     label: 'District Explorer',
     url: '/districts',
@@ -230,9 +237,9 @@ export const KNOWLEDGE: readonly Chunk[] = [
   {
     id: 'prototypical-model',
     title: 'The prototypical school funding model',
-    text: "Washington does not fund the schools that actually exist. It funds a theoretical 'prototypical school' and uses it as a recipe. The state counts students in funding FTE by grade span, converts that into shares of model elementary (400 students), middle (432), and high schools (600), assigns each model school teacher ratios and fractional positions for principals, counselors, librarians, office staff, custodians and nurses, then applies salary, benefit and regionalization assumptions plus materials and operating costs. These are funding allocations, not a required staffing plan: districts may organize schools differently, but must cover anything beyond the formula from other revenue.",
-    sourceIds: ['site-home', 'rcw-28a-150-260', 'eshb-2261'],
-    keywords: ['prototypical', 'model', 'formula', 'staffing', 'allocation', 'recipe', 'basic education'],
+    text: "Washington does not fund the schools that actually exist. It funds a theoretical 'prototypical school' and uses it as a recipe. The state counts students in funding FTE by grade span and divides each span by its prototype size - model elementary schools hold 400 students, middle schools 432, high schools 600 - so 600 elementary FTE is 1.5 model elementary schools and generates 1.5 times the elementary staffing. Each model school generates classroom teachers at a funded class size plus fractional positions for eleven other roles: principals, paraeducators, office staff, custodians, teacher-librarians, counselors, nurses, social workers, psychologists, student-safety staff and parent involvement coordinators. Teachers are not simply enrollment divided by class size; the statute also funds the teachers who cover everyone else's planning period, which OSPI adds as 15.5% in K-6 and 20% in grades 7-12, so students per funded teacher is lower than the class size. A second district-wide tier funds technology, facilities and warehouse staff per 1,000 students, plus central administration at 5.30% of every other staff unit. Positions are then priced at statewide salary allocations, multiplied by the district's regionalization factor, and benefits, materials and operating costs and the categorical programs are added. These are funding allocations, not a required staffing plan: districts may organize schools differently, but must cover anything beyond the formula from other revenue. Two exceptions do bind: K-3 class size money is paid only in proportion to the class sizes a district demonstrates it actually runs, and the money for nurses, counselors, social workers, psychologists, safety staff and parent involvement coordinators is paid only in proportion to the staff it actually employs.",
+    sourceIds: ['site-prototypical-model', 'rcw-28a-150-260', 'eshb-2261'],
+    keywords: ['prototypical', 'model', 'formula', 'staffing', 'allocation', 'recipe', 'basic education', 'class size', 'planning time', 'central administration'],
   },
   {
     id: 'funding-fte-vs-headcount',
@@ -363,8 +370,8 @@ export const KNOWLEDGE: readonly Chunk[] = [
   {
     id: 'site-navigation',
     title: 'How this website is organised',
-    text: 'The site has five sections. How It Works explains the prototypical school model and lets you personalise it to a district. District Explorer shows funding, enrollment, revenue mix, demographics and trends for every district and charter, in any year since 2019-20. Policy Simulator lets you raise each funding lever and see the estimated cost. Take Action gives your legislators, a generated district brief, 2026 funding bills, and message templates. Sources & Methodology lists every dataset and statute. A separate page walks through the Local Effort Assistance formula step by step.',
-    sourceIds: ['site-home', 'site-districts', 'site-simulator', 'site-take-action', 'site-sources', 'site-lea'],
+    text: 'The site has five main sections plus a set of topic explainers. How It Works explains the prototypical school model and lets you personalise it to a district. District Explorer shows funding, enrollment, revenue mix, demographics and trends for every district and charter, in any year since 2019-20. Policy Simulator lets you raise each funding lever and see the estimated cost. Take Action gives your legislators, a generated district brief, 2026 funding bills, and message templates. Sources & Methodology lists every dataset and statute. Alongside those, one explainer page each covers the prototypical school funding model, how Washington funds K-12 overall, MSOC, special education, levies and Local Effort Assistance, and student transportation.',
+    sourceIds: ['site-home', 'site-districts', 'site-simulator', 'site-take-action', 'site-sources', 'site-lea', 'site-prototypical-model'],
     keywords: ['navigate', 'navigation', 'pages', 'sections', 'menu', 'tabs', 'where', 'find', 'how to use', 'help'],
   },
   {

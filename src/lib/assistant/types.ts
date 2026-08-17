@@ -15,7 +15,14 @@ export function isAssistantLanguage(value: string): value is AssistantLanguage {
   return (ASSISTANT_LANGUAGES as readonly string[]).includes(value);
 }
 
-/** Internal routes the assistant is allowed to navigate to. */
+/**
+ * Internal routes the assistant is allowed to navigate to.
+ *
+ * The six topic explainers belong here as much as the five main tabs do: they
+ * are the pages written to answer the questions people actually ask the
+ * assistant, and leaving them out meant a reader asking how the prototypical
+ * model works could not be taken to the page about the prototypical model.
+ */
 export const ALLOWED_ROUTES = [
   '/',
   '/districts',
@@ -23,6 +30,12 @@ export const ALLOWED_ROUTES = [
   '/take-action',
   '/sources',
   '/lea',
+  '/washington-school-funding',
+  '/prototypical-school-funding-model',
+  '/msoc-funding',
+  '/special-education-funding',
+  '/school-levies-and-lea',
+  '/school-transportation-funding',
 ] as const;
 export type AllowedRoute = (typeof ALLOWED_ROUTES)[number];
 

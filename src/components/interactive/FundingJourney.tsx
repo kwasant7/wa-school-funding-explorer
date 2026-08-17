@@ -4,6 +4,7 @@ import { useState } from 'react';
 import type { District } from '@/lib/data';
 import allocationData from '@/data/allocation.json';
 import { fmtInt, fmtMoney, fmtMoneyFull, pctLabel } from '@/lib/format';
+import { MSOC, PROTOTYPES } from '@/lib/prototypical-model';
 
 type Allocation = (typeof allocationData.districts)[keyof typeof allocationData.districts];
 const ALLOCATION = allocationData.districts as Record<string, Allocation>;
@@ -205,7 +206,9 @@ const STEPS: Step[] = [
     blurb: 'Same yardstick everywhere.',
     visual: (d) => {
       const models =
-        d.fundingFte.elementary / 400 + d.fundingFte.middle / 432 + d.fundingFte.high / 600;
+        d.fundingFte.elementary / PROTOTYPES.elementary.proto +
+        d.fundingFte.middle / PROTOTYPES.middle.proto +
+        d.fundingFte.high / PROTOTYPES.high.proto;
       return <Stat big={models.toFixed(0)} cap="pretend model schools" />;
     },
   },
@@ -239,7 +242,7 @@ const STEPS: Step[] = [
       a ? (
         <Stat big={fmtMoney(a.msoc)} cap="materials & operating costs" />
       ) : (
-        <Stat big="$1,600+" cap="per student for supplies" />
+        <Stat big={`$${Math.round(MSOC.perStudent).toLocaleString()}`} cap="per student for supplies" />
       ),
   },
   {

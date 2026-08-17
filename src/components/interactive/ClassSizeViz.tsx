@@ -1,13 +1,16 @@
 'use client';
 
 import { useState } from 'react';
+import { CLASS_SIZE } from '@/lib/prototypical-model';
 
 const BANDS = [
-  { label: 'K-3', size: 17, note: 'Smallest - early grades benefit most from attention.' },
-  { label: 'Grades 4-6', size: 27, note: 'Ten more students per teacher than 3rd grade.' },
-  { label: 'Grades 7-8', size: 28.5, note: 'Rounded from the statutory 28.53.' },
-  { label: 'Grades 9-12', size: 28.7, note: 'Rounded from the statutory 28.74.' },
-  { label: 'Career & tech ed', size: 23, note: 'Lower because labs and shops need space.' },
+  { label: 'K-3', size: CLASS_SIZE.k3, note: 'Smallest - and the one band where running larger classes costs a district the funding.' },
+  { label: 'Grades 4-6', size: CLASS_SIZE.grades46, note: 'Ten more students per teacher than 3rd grade.' },
+  { label: 'Grades 7-8', size: CLASS_SIZE.grades78, note: 'The middle school general education rate.' },
+  { label: 'Grades 9-12', size: CLASS_SIZE.grades912, note: 'The largest funded general education class size.' },
+  { label: 'Career & tech ed', size: CLASS_SIZE.cte, note: 'Applies in middle and high school alike.' },
+  { label: 'Lab science', size: CLASS_SIZE.laboratoryScience, note: 'An enhancement for two laboratory science classes per high school student.' },
+  { label: 'Skill centers', size: CLASS_SIZE.skillCenter, note: 'The smallest funded class in the formula.' },
 ];
 
 export default function ClassSizeViz() {
@@ -19,8 +22,9 @@ export default function ClassSizeViz() {
     <div className="card p-5 md:p-6">
       <h3 className="font-bold text-lg">One teacher, how many students?</h3>
       <p className="mt-1 text-sm text-ink-secondary">
-        Tap a grade band - these are the class sizes the state pays for (not a
-        legal cap on real classes).
+        Tap a grade band - these are the class sizes the state pays for. They
+        are not a legal cap, with one exception: K-3 money is paid only in
+        proportion to the class sizes a district can show it actually runs.
       </p>
       <div className="mt-4 flex flex-wrap gap-2">
         {BANDS.map((b, i) => (
