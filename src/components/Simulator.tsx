@@ -1409,10 +1409,9 @@ function LeverCard({
 
   return (
     <section
-      className={`card border-l-4 p-5 md:p-6 ${
+      className={`card p-5 md:p-6 ${
         lever.id === 'leaThreshold' ? 'bg-[#f7f4ff]' : ''
       }`}
-      style={{ borderLeftColor: lever.color }}
     >
       <div className="flex items-start gap-3">
         <span
@@ -1935,7 +1934,7 @@ export default function Simulator() {
       </section>
 
       {district && (
-        <section className="mt-6 card p-5 border-l-4 border-l-accent">
+        <section className="mt-6 card p-5">
           <h2 className="text-sm text-ink-secondary">
             Your plan for{' '}
             <strong className="text-ink">

@@ -43,7 +43,7 @@ function Step({
   children: React.ReactNode;
 }) {
   return (
-    <li className="card p-5 md:p-6 border-l-4 border-l-[#8b5cf6]">
+    <li className="card p-5 md:p-6">
       <div className="flex items-start gap-3">
         <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#f3eeff] font-bold text-[#7c3aed]">
           {n}
