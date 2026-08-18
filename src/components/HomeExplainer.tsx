@@ -76,10 +76,7 @@ export default function HomeExplainer() {
       <section data-assistant-section="hero" className="pt-10 md:pt-14 pb-8">
         {/* The school-year control lives in the site header, beside the
             language control - see SchoolYearSwitcher. */}
-        <p className="text-sm font-semibold text-accent uppercase tracking-wide">
-          How it works · play with everything on this page
-        </p>
-        <h1 className="mt-2 text-3xl md:text-5xl font-bold tracking-tight max-w-3xl">
+        <h1 className="text-3xl md:text-5xl font-bold tracking-tight max-w-3xl">
           How K-12 schools are funded
         </h1>
         <p className="mt-4 text-lg text-ink-secondary">
@@ -150,16 +147,15 @@ export default function HomeExplainer() {
         </h2>
         <p className="mt-2 text-ink-secondary">
           Washington does not start with each school&apos;s actual payroll. Instead,
-          it uses one statewide recipe - the prototypical school model - to
-          estimate the staff and operating dollars a district should receive.{' '}
+          it uses one statewide recipe to estimate the staff and operating
+          dollars a district should receive.{' '}
           <Link
             href="/prototypical-school-funding-model"
             className="text-accent hover:underline"
           >
             Read the full explainer
           </Link>{' '}
-          for the statutory class sizes, all eleven staff roles, and where the
-          formula stops being optional.
+          for further information.
         </p>
         <div className="mt-5 grid gap-5">
           <div className="card p-5 md:p-6 bg-accent-wash border-accent-soft">
@@ -171,9 +167,8 @@ export default function HomeExplainer() {
                   The state counts students in{' '}
                   <strong className="text-ink">FTE (full-time equivalent)</strong>{' '}
                   - a measure of enrollment by how much school a student
-                  actually attends, not just how many bodies are counted. A
-                  student enrolled half-time counts as 0.5 FTE, not 1, and the
-                  count is an average across the year.
+                  actually attends. For example, a student enrolled half-time
+                  counts as 0.5 FTE.
                 </p>
               </div>
               <div>
@@ -187,9 +182,8 @@ export default function HomeExplainer() {
               <div>
                 <p className="font-semibold text-ink">3. Generate a staffing allocation</p>
                 <p className="mt-1">
-                  Each model school generates teachers at a funded class size -
-                  plus the teachers who cover everyone else&apos;s planning
-                  period - and fractional positions for eleven other roles, from
+                  Each model school generates teachers at a funded class size
+                  and fractional positions for eleven other roles, from
                   principals to nurses.
                 </p>
               </div>
@@ -206,9 +200,9 @@ export default function HomeExplainer() {
               </div>
             </div>
             <p className="mt-4 text-sm text-ink-secondary">
-              These are funding allocations, not a required staffing plan.
-              Districts can organize schools differently, but must cover
-              anything beyond the formula with other available revenue. Two
+              These are simple funding allocations so districts can organize
+              schools differently, but must cover anything beyond the formula
+              with other available revenue. Two
               exceptions: K-3 class-size money and the money for nurses,
               counselors, social workers, psychologists, safety and family
               engagement staff are each paid only in proportion to what a
