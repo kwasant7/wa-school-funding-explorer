@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import localFont from 'next/font/local';
 import Link from 'next/link';
 import './globals.css';
 import TabNav from '@/components/TabNav';
@@ -7,6 +8,31 @@ import SchoolYearSwitcher from '@/components/SchoolYearSwitcher';
 import AssistantLauncher from '@/components/assistant/AssistantLauncher';
 import GoogleAnalytics from '@/components/GoogleAnalytics';
 import { SITE_URL } from '@/lib/site-metadata';
+
+/*
+  Google Sans, self-hosted. Both files are the variable fonts subset to the
+  scripts this site actually renders - Latin, Latin Extended, Cyrillic, and
+  Vietnamese - which is every translation except Chinese and Korean, where the
+  system stack takes over anyway. The variable axes cover 400-700, so semibold
+  and bold headings interpolate out of the one file instead of loading four.
+*/
+const googleSans = localFont({
+  src: [
+    {
+      path: '../fonts/GoogleSans-Variable.woff2',
+      weight: '400 700',
+      style: 'normal',
+    },
+    {
+      path: '../fonts/GoogleSans-Italic-Variable.woff2',
+      weight: '400 700',
+      style: 'italic',
+    },
+  ],
+  display: 'swap',
+  variable: '--font-google-sans',
+  fallback: ['system-ui', '-apple-system', 'Segoe UI', 'sans-serif'],
+});
 
 const DESCRIPTION =
   'How Washington State pays for its public schools: the prototypical funding model explained, funding data for every district, a policy simulator, and ways to take action.';
@@ -50,7 +76,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en">
+    <html lang="en" className={googleSans.variable}>
       <body className="min-h-screen flex flex-col">
         <GoogleAnalytics />
         <a

@@ -32,7 +32,13 @@ module.exports = {
         critical: '#d03b3b',
       },
       fontFamily: {
-        sans: ['system-ui', '-apple-system', 'Segoe UI', 'sans-serif'],
+        sans: [
+          'var(--font-google-sans)',
+          'system-ui',
+          '-apple-system',
+          'Segoe UI',
+          'sans-serif',
+        ],
       },
       maxWidth: {
         site: '72rem',
