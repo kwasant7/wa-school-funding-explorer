@@ -318,10 +318,8 @@ function DistrictOverview({
       </div>
       {!selectedCode && (
         <p className="mt-3 text-xs text-ink-muted">
-          Per-student figures divide general fund revenues by OSPI&apos;s final
-          annual-average funding FTE, including Running Start college FTE. The
-          student total above is that same funding FTE, not the Report
-          Card&apos;s October headcount.
+          Per-student figures use OSPI&apos;s annual-average funding FTE, not
+          the Report Card&apos;s October headcount.
         </p>
       )}
     </div>
@@ -463,9 +461,8 @@ function FundBalanceCard({ district: d, year }: { district: District; year: stri
         .
       </p>
       <p className="mt-2 text-xs text-ink-muted">
-        Revenues and expenditures are OSPI F-196 actuals; the ending fund balance
-        and reserve ratio come from fiscal.wa.gov&apos;s statewide school-finance
-        workbook. Bars show each year&apos;s change (money in minus money out).
+        OSPI F-196 actuals; fund balance and reserve ratio from fiscal.wa.gov.
+        Bars show each year&apos;s change (money in minus money out).
       </p>
     </div>
   );
@@ -604,13 +601,8 @@ function Big3Card({ district: d }: { district: District }) {
       )}
 
       <p className="mt-3 text-xs text-ink-muted">
-        Spending is this district&apos;s F-196 general-fund actuals and the
-        state share is OSPI&apos;s apportionment for the same year; MSOC here
-        follows the definition in the Superintendent of Public
-        Instruction&apos;s 2026 budget request, and special education excludes
-        federally funded services on both sides. Washington&apos;s nine
-        educational service districts publish the same three gaps for every
-        district on{' '}
+        F-196 actuals against OSPI apportionment for the same year, built to
+        match the same three gaps on{' '}
         <a
           href="https://www.waschoolfunding.org/"
           target="_blank"
@@ -619,10 +611,7 @@ function Big3Card({ district: d }: { district: District }) {
         >
           AESD&apos;s Big 3 dashboard ↗
         </a>
-        , and these figures are built to match it: transportation to the
-        dollar, MSOC within a fraction of a percent, and special education
-        with the same gap (its bars sit higher only because it counts federal
-        dollars on both sides).
+        .
       </p>
     </div>
   );
@@ -887,11 +876,8 @@ function DistrictDetail({
       </div>
 
       <p className="mt-3 text-xs text-ink-muted">
-        <strong>Why the numbers differ:</strong> the student total above and
-        the per-student figure both use annual-average funding FTE, which
-        counts part-time participation such as Running Start proportionally.
-        The enrollment chart instead tracks the Report Card&apos;s October
-        headcount, so it will not match the total above exactly.
+        <strong>Why the numbers differ:</strong> the totals above use
+        annual-average funding FTE; this chart uses October headcount.
       </p>
 
       <TrendAnalysis district={d} />
@@ -998,16 +984,8 @@ function DistrictDetail({
 
       <p className="mt-4 text-xs text-ink-muted">
         Per-student funding ranges from {fmtMoneyFull(s.minPerPupil)} to{' '}
-        {fmtMoneyFull(s.maxPerPupil)} across the state in {year}. Three things
-        pull it apart: targeted programs (special education, the Learning
-        Assistance Program for students who are behind, bilingual education)
-        and federal Title dollars follow need; fixed costs spread over few
-        students make small districts expensive to run; and the extremes are
-        structural cases - the low end is a district enrolling mostly
-        part-time online (ALE) students, which the formula funds at lower
-        rates, and the high end is a charter school with a few dozen students.
-        In practice, as the need-versus-funding chart above shows, state
-        dollars track student need only weakly.
+        {fmtMoneyFull(s.maxPerPupil)} in {year}: targeted programs follow need,
+        and small districts cost more per student to run.
       </p>
 
       <Big3Card district={d} />

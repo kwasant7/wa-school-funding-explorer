@@ -427,14 +427,9 @@ function AllocationBar({
       </table>
 
       <p className="mt-3 text-xs text-ink-muted">
-        Salaries, benefits, MSOC, special education, transportation, and the
-        other named categories come from OSPI&apos;s Apportionment Final
-        Extract, {allocationData.schoolYear} - the data behind the 1191
-        Apportionment Summary. &ldquo;Other state programs&rdquo; is whatever
-        remains after subtracting those from the district&apos;s actual F-196
-        state general-fund revenue, so the total always matches the{' '}
-        {fmtMoney(district.rev.state)} reported there - including categorical
-        programs and grants this extract does not itemize by name.
+        Named categories come from OSPI&apos;s Apportionment Final Extract,{' '}
+        {allocationData.schoolYear}; &ldquo;other state programs&rdquo; is the
+        rest of the district&apos;s F-196 state revenue.
       </p>
     </div>
   );

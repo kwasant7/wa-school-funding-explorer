@@ -219,16 +219,8 @@ export default function SchoolBuilder({
       ))}
     </div>
     <p className="mt-5 text-xs text-ink-muted">
-      School-level staff only, using the allocations currently in RCW
-      28A.150.260(4) and (5). The formula also generates a district-wide tier
-      not shown here: technology, facilities and warehouse staff per 1,000
-      students, plus central administration at 5.30% of every staff unit above.
-      Teachers include the planning-time factor OSPI applies on top of the
-      funded class size. Roles marked * are funded only in proportion to the
-      staff a district can demonstrate it actually employs. These estimates
-      exclude regionalization, benefits, special education, LAP, bilingual
-      education, transportation, and materials and operating costs. Actual
-      staffing can differ.
+      School-level staff only, from RCW 28A.150.260(4) and (5). Roles marked *
+      are funded in proportion to the staff a district can show it employs.
     </p>
   </div>;
 }

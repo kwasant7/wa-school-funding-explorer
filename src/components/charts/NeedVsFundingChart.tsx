@@ -271,34 +271,31 @@ export default function NeedVsFundingChart({
       <figcaption className="mt-2 text-sm text-ink-secondary">
         {!fit || fit.r2 < 0.02 ? (
           <>
-            The dashed line barely tilts. An R² of{' '}
+            The dashed line barely tilts: an R² of{' '}
             <strong className="text-ink">{fit ? fit.r2.toFixed(3) : '—'}</strong>{' '}
-            means the share of {active.noun} explains almost none of the
-            difference in state funding per student — a district where most
-            students are high-need receives close to what a district with very
-            few receives.
+            means {active.noun} explain almost none of the difference in state
+            funding per student.
           </>
         ) : fit.r2 < 0.3 ? (
           <>
-            The dashed line tilts, but only gently. An R² of{' '}
-            <strong className="text-ink">{fit.r2.toFixed(3)}</strong> means the
-            share of {active.noun} explains only a small part of the difference
-            in state funding per student — most of the spread comes from other
-            things, like district size and scale funding.
+            The dashed line tilts, but only gently: an R² of{' '}
+            <strong className="text-ink">{fit.r2.toFixed(3)}</strong> means{' '}
+            {active.noun} explain only a small part of the difference in state
+            funding per student.
           </>
         ) : (
           <>
-            The dashed line tilts. An R² of{' '}
-            <strong className="text-ink">{fit.r2.toFixed(3)}</strong> means the
-            share of {active.noun} explains a meaningful part of the difference
-            in state funding per student.
+            The dashed line tilts: an R² of{' '}
+            <strong className="text-ink">{fit.r2.toFixed(3)}</strong> means{' '}
+            {active.noun} explain a meaningful part of the difference in state
+            funding per student.
           </>
         )}
         {offScale > 0 && (
           <>
             {' '}
-            {offScale} very small districts sit above the top of this view; they
-            are still counted in the trend line.
+            {offScale} very small districts sit above this view, still counted
+            in the trend line.
           </>
         )}
       </figcaption>
