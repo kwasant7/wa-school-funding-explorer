@@ -169,6 +169,11 @@ export default function WaMap({
     if (map && homeView && !view) setView(homeView);
   }, [map, homeView, view]);
 
+  /* Within a hair of the home view - a float comparison would miss by the
+     rounding a pinch leaves behind. */
+  const atHome =
+    !view || !homeView || Math.abs(view.w - homeView.w) < homeView.w * 0.01;
+
   const { fills, info } = useMemo(() => {
     const yd = yearData(year);
     const byCode = new Map(yd.districts.map((d) => [d.code, d]));
@@ -387,7 +392,19 @@ export default function WaMap({
           ref={svgRef}
           viewBox={`${view.x} ${view.y} ${view.w} ${view.h}`}
           className="w-full rounded-lg"
-          style={{ touchAction: 'pan-y', aspectRatio: `${map.w} / ${map.h}`, backgroundColor: WATER }}
+          /*
+            At the home view the whole state is on screen and there is nothing
+            to pan to, so the page keeps vertical scrolling and a swipe over
+            the map scrolls past it as any visitor expects. Zoomed in, the map
+            takes the gesture - otherwise a one-finger drag north or south is
+            swallowed by page scroll and the map cannot be moved at all. The
+            reset button returns both the view and the scrolling.
+          */
+          style={{
+            touchAction: atHome ? 'pan-y' : 'none',
+            aspectRatio: `${map.w} / ${map.h}`,
+            backgroundColor: WATER,
+          }}
           role="img"
           aria-label={`Map of Washington school districts, colored by ${
             metric === 'perPupil' ? 'funding per student' : 'reserve ratio'
@@ -413,10 +430,16 @@ export default function WaMap({
                 dragged.current = true;
                 zoomAt((a2.x + b2.x) / 2, (a2.y + b2.y) / 2, after / before);
               }
-            } else if (pts.size === 1 && e.pointerType === 'mouse') {
+            } else if (pts.size === 1) {
               const dx = e.clientX - prev.x;
               const dy = e.clientY - prev.y;
-              if (Math.abs(dx) + Math.abs(dy) > 2) dragged.current = true;
+              /*
+                A finger is shakier than a mouse, so a tap that wobbles a
+                couple of pixels must still count as a tap and open the
+                district - only a real drag suppresses the click.
+              */
+              const slop = e.pointerType === 'mouse' ? 2 : 8;
+              if (Math.abs(dx) + Math.abs(dy) > slop) dragged.current = true;
               const rect = svgRef.current!.getBoundingClientRect();
               setView((v) =>
                 v
