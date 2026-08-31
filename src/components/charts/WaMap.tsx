@@ -2,6 +2,8 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { yearData } from '@/lib/data';
+import { LATEST } from '@/lib/years';
+import regionalizationJson from '@/data/regionalization.json';
 import DistrictCombobox from '@/components/DistrictCombobox';
 import { fmtInt, fmtMoneyFull } from '@/lib/format';
 
@@ -91,7 +93,41 @@ function reserveColor(rr: number) {
   return stops[stops.length - 1][1];
 }
 
-type Metric = 'perPupil' | 'reserveRatio';
+/*
+  Regionalization runs dark purple (1.00, the statewide base - about half the
+  state) up to red (the +22% Puget Sound peak). Hue travels one way through
+  violet and magenta and lightness rises with it, so the ordering reads even
+  where red-green vision doesn't. The scale is absolute over the LEAP range,
+  not ranked: 1.00 means the same thing on every map.
+*/
+const REGION_RAMP = ['#3b0764', '#6b21a8', '#a21caf', '#db2777', '#dc2626'];
+const REGION_LOW_LABEL = '#3b0764';
+const REGION_HIGH_LABEL = '#dc2626';
+
+/*
+  Factors pinned to the site's model year: LEAP Document 3 is a forward
+  schedule starting 2023-24, so coloring the 2019-20 map by it would either
+  gray the whole state or claim data we don't have. The legend names the year.
+*/
+const REGION_YEAR = regionalizationJson.years.includes(LATEST)
+  ? LATEST
+  : regionalizationJson.years[0];
+const REGION_INDEX = regionalizationJson.years.indexOf(REGION_YEAR);
+const REGION_FACTORS = new Map(
+  Object.entries(
+    regionalizationJson.districts as Record<string, { cis: number[] }>
+  ).map(([code, d]) => [code, d.cis[REGION_INDEX]])
+);
+const REGION_MAX = Math.max(...Array.from(REGION_FACTORS.values()));
+
+function regionColor(factor: number) {
+  const t = (factor - 1) / (REGION_MAX - 1);
+  const scaled = Math.min(0.9999, Math.max(0, t)) * (REGION_RAMP.length - 1);
+  const i = Math.floor(scaled);
+  return lerpColor(REGION_RAMP[i], REGION_RAMP[i + 1], scaled - i);
+}
+
+type Metric = 'perPupil' | 'reserveRatio' | 'regionalization';
 
 /*
   Reserve ratio leads and is the default view. It is the measure with a fixed,
@@ -102,6 +138,7 @@ type Metric = 'perPupil' | 'reserveRatio';
 const METRICS: { id: Metric; label: string }[] = [
   { id: 'reserveRatio', label: 'Reserve ratio' },
   { id: 'perPupil', label: 'Funding per student' },
+  { id: 'regionalization', label: 'Regionalization' },
 ];
 
 let mapCache: MapFile | null = null;
@@ -188,6 +225,7 @@ export default function WaMap({
         perPupil: number;
         enrollment: number;
         reserveRatio: number | null;
+        regionalization: number | null;
       }
     >();
     if (map) {
@@ -204,6 +242,9 @@ export default function WaMap({
             d.code,
             data.reserveRatio == null ? NO_DATA : reserveColor(data.reserveRatio)
           );
+        } else if (metric === 'regionalization') {
+          const factor = REGION_FACTORS.get(d.code);
+          fills.set(d.code, factor == null ? NO_DATA : regionColor(factor));
         } else {
           fills.set(d.code, rampColor(rank.get(d.code) ?? 0));
         }
@@ -213,6 +254,7 @@ export default function WaMap({
           perPupil: data.perPupil,
           enrollment: data.enrollment,
           reserveRatio: data.reserveRatio,
+          regionalization: REGION_FACTORS.get(d.code) ?? null,
         });
       }
     }
@@ -407,8 +449,12 @@ export default function WaMap({
           }}
           role="img"
           aria-label={`Map of Washington school districts, colored by ${
-            metric === 'perPupil' ? 'funding per student' : 'reserve ratio'
-          } in ${year}.${
+            metric === 'perPupil'
+              ? `funding per student in ${year}`
+              : metric === 'regionalization'
+                ? `salary regionalization factor for ${REGION_YEAR}`
+                : `reserve ratio in ${year}`
+          }.${
             selectedName ? ` ${selectedName} is outlined.` : ''
           } Click a district to open its profile below the map.`}
           onPointerDown={(e) => {
@@ -603,11 +649,22 @@ export default function WaMap({
                   )}
                 </span>
               );
+              const region = (
+                <span key="region">
+                  {d.regionalization == null
+                    ? 'regionalization n/a'
+                    : `${d.regionalization.toFixed(2)}× regionalization`}
+                </span>
+              );
               // Whichever metric the map is currently colored by leads the
               // tooltip - a reader hovering the reserve-ratio view wants that
               // number first, not funding per student.
               const [first, second] =
-                metric === 'reserveRatio' ? [reserve, perFte] : [perFte, reserve];
+                metric === 'reserveRatio'
+                  ? [reserve, perFte]
+                  : metric === 'regionalization'
+                    ? [region, perFte]
+                    : [perFte, reserve];
               return (
                 <p className="mt-0.5 text-[11px] leading-tight text-ink-secondary tabular-nums">
                   {first} · {second}
@@ -666,6 +723,28 @@ export default function WaMap({
             </span>
             <span className="text-ink-muted">
               | ranked against every district, not an absolute scale
+            </span>
+          </>
+        ) : metric === 'regionalization' ? (
+          <>
+            <span className="font-medium text-ink">
+              Regionalization ({REGION_YEAR}):
+            </span>
+            <span className="flex items-center gap-2">
+              <span className="font-medium" style={{ color: REGION_LOW_LABEL }}>
+                1.00× base
+              </span>
+              <span
+                className="inline-block h-3 w-40 md:w-56 rounded-sm"
+                style={{ background: `linear-gradient(to right, ${REGION_RAMP.join(', ')})` }}
+                aria-hidden
+              />
+              <span className="font-medium" style={{ color: REGION_HIGH_LABEL }}>
+                {REGION_MAX.toFixed(2)}×
+              </span>
+            </span>
+            <span className="text-ink-muted">
+              | certificated salary allocations, scaled for local hiring costs
             </span>
           </>
         ) : (
