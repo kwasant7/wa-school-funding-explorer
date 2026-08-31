@@ -14,18 +14,6 @@ import {
   type SimulatorControlId,
 } from '@/lib/simulator-config';
 import { useAssistantDistrict, useAssistantSimulator } from '@/lib/assistant/store';
-import {
-  HIGH_POVERTY_THRESHOLD,
-  LAP_ANNUAL_HOURS,
-  LAP_GROUP_SIZE,
-  LAP_HOURS_PER_WEEK,
-  HIGH_POVERTY_HOURS_PER_WEEK,
-  LAP_MODEL_YEAR,
-  LAP_PRIOR_YEAR,
-  LAP_WEEKS,
-  LAP_COMP,
-  lapFor,
-} from '@/lib/lap';
 import { readSelectedDistrict, writeSelectedDistrict } from '@/lib/selected-district';
 
 /**
@@ -66,16 +54,6 @@ function valueAtPosition(position: number, min: number, max: number) {
  */
 function markerPct(value: number, scale: number) {
   return `${Math.max(8, Math.min(92, (100 * value) / scale))}%`;
-}
-
-/**
- * Hours with only the decimals they need: 4.8 stays "4.8", the statutory
- * 2.3975 keeps all four places. toFixed(2) alone showed "2.40" at the
- * slider's untouched baseline while the label beneath said "Today (2.3975
- * hours)" - two spellings of the same number reading as a moved slider.
- */
-function fmtHours(value: number) {
-  return String(Number(value.toFixed(4)));
 }
 
 /** Inline citation link, styled to read as emphasis rather than decoration. */
@@ -355,31 +333,6 @@ function leverImpactFor(
           (values.transportation - BASELINE_TRANSPORTATION_PER_STUDENT) *
           r.enrollment,
       };
-    case 'lapHours': {
-      /*
-        Priced off the district's actual LAP apportionment, not the modeled
-        dollars: the real allocation already embeds regionalization and the
-        school-level poverty mix the model cannot see, and hours scale it
-        linearly. Only the base share moves - High-Poverty LAP's 1.1 hours
-        are a separate subsection this slider does not touch - and that share
-        is estimated from the district-level model in lib/lap.ts, which is as
-        close as this dataset gets to the school-level split.
-      */
-      const alloc = ALLOCATION[r.code];
-      const lap = lapFor(r.code);
-      if (!alloc || !lap || alloc.learningAssistance <= 0)
-        return { newMoney: 0 };
-      const baseShare =
-        lap.totalTeacherFte > 0
-          ? lap.baseTeacherFte / lap.totalTeacherFte
-          : 1;
-      return {
-        newMoney:
-          alloc.learningAssistance *
-          baseShare *
-          (values.lapHours / LAP_HOURS_PER_WEEK - 1),
-      };
-    }
     default:
       return null;
   }
@@ -754,10 +707,8 @@ const LEVERS = [
       'Extra money for schools where most students are low-income.',
     bill: (
       <>
-        This is a modeled policy proposal, not current law: Washington&apos;s
-        existing high-poverty money is the school-level High-Poverty LAP hours
-        shown in the card below, not a district concentration bonus. This
-        slider is modeled on{' '}
+        This is a modeled policy proposal, not current law: Washington has no
+        statewide high-poverty concentration bonus. It is modeled on{' '}
         <StatuteLink href="https://www.cde.ca.gov/fg/aa/lc/lcffoverview.asp">
           California&apos;s Local Control Funding Formula
         </StatuteLink>
@@ -794,51 +745,6 @@ const LEVERS = [
     todayLabel: '$0 per student',
     markers: [],
   },
-  {
-    id: 'lapHours',
-    group: 'Student needs',
-    icon: 'lap',
-    color: '#0e7a5f',
-    label: 'Learning Assistance Program (LAP)',
-    sliderLabel: 'Extended-support hours per eligible student per week',
-    description:
-      'Extra academic support for students who are behind, funded by the share of students who are low-income.',
-    bill: (
-      <>
-        Current law:{' '}
-        <StatuteLink href="https://app.leg.wa.gov/rcw/default.aspx?cite=28A.150.260">
-          RCW 28A.150.260(10)
-        </StatuteLink>{' '}
-        funds {LAP_HOURS_PER_WEEK} hours a week per eligible student - the
-        slider&apos;s starting point.
-      </>
-    ),
-    note: (
-      <>
-        LAP is not a flat per-student amount: the statute turns hours into{' '}
-        <strong className="text-ink">funded teachers</strong> - each eligible
-        student&apos;s {LAP_HOURS_PER_WEEK} weekly hours, for {LAP_WEEKS}{' '}
-        weeks, in groups of {LAP_GROUP_SIZE}, over a{' '}
-        {fmtInt(LAP_ANNUAL_HOURS)}-hour teacher year - and prices them at the
-        state&apos;s certificated salary plus benefits.{' '}
-        <StatuteLink href="https://app.leg.wa.gov/rcw/default.aspx?cite=28A.150.260">
-          RCW 28A.150.260(10)(b)
-        </StatuteLink>{' '}
-        adds {HIGH_POVERTY_HOURS_PER_WEEK} High-Poverty LAP hours in schools
-        where at least {Math.round(100 * HIGH_POVERTY_THRESHOLD)}% of students
-        are low-income; those hours are a separate statute, so this slider
-        leaves them unchanged. Raising the slider scales each district&apos;s
-        actual base-LAP allocation in proportion to the hours, which keeps its
-        regionalization and salary mix intact.
-      </>
-    ),
-    impactKey: 'lap',
-    ...bounds('lapHours'),
-    effect: (value: number) => `${fmtHours(value)} hours per week`,
-    unit: 'per eligible student',
-    todayLabel: `${LAP_HOURS_PER_WEEK} hours per week`,
-    markers: [],
-  },
 ] as const;
 
 /** Small pictograms so each lever reads at a glance. */
@@ -864,12 +770,6 @@ function LeverIcon({ name }: { name: string }) {
     return (
       <svg {...p}>
         <path d="m3 10 9-6 9 6M5 9v10h14V9M9 19v-5h6v5" />
-      </svg>
-    );
-  if (name === 'lap')
-    return (
-      <svg {...p}>
-        <path d="M12 6.5C10.5 5 8.5 4.5 5.5 4.5H4v13h1.5c3 0 5 .5 6.5 2 1.5-1.5 3.5-2 6.5-2H20v-13h-1.5c-3 0-5 .5-6.5 2zM12 6.5v13" />
       </svg>
     );
   if (name === 'ell')
@@ -1255,82 +1155,6 @@ function LeverBar({
           </p>
         )}
       </figure>
-    );
-  }
-
-  // LAP: not a bar - the statute's own arithmetic in this district's numbers,
-  // with funded teachers tracking the slider's hours.
-  if (lever.id === 'lapHours') {
-    const lap = lapFor(district.record.code);
-    if (!lap) return null;
-    const hoursRatio = values.lapHours / LAP_HOURS_PER_WEEK;
-    const fteAtSlider = lap.baseTeacherFte * hoursRatio;
-    const fmtFte = (v: number) =>
-      v >= 100 ? fmtInt(Math.round(v)) : v.toFixed(1);
-    return (
-      <div>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <CardStat
-            label={`Low-income share (${lap.priorYear})`}
-            value={`${(100 * lap.lapPovertyRate).toFixed(1)}%`}
-          />
-          <CardStat
-            label="Eligible students"
-            value={fmtInt(Math.round(lap.lapEligibleStudents))}
-          />
-          <CardStat
-            label="Funded LAP teachers"
-            value={`${fmtFte(fteAtSlider + lap.highPovertyTeacherFte)} FTE`}
-          />
-          <CardStat
-            label={`Actual ${LAP_MODEL_YEAR} allocation`}
-            value={
-              lap.actualAllocation != null
-                ? fmtMoney(lap.actualAllocation)
-                : '-'
-            }
-          />
-        </div>
-        <p className="mt-4 text-sm text-ink-secondary">
-          {fmtInt(Math.round(lap.priorYearAafte))} students ({lap.priorYear}{' '}
-          funding FTE) × {(100 * lap.lapPovertyRate).toFixed(1)}% low-income ={' '}
-          <strong className="text-ink">
-            {fmtInt(Math.round(lap.lapEligibleStudents))} eligible students
-          </strong>
-          . At {fmtHours(values.lapHours)} hours a week that funds{' '}
-          <strong className="text-ink">
-            {fmtFte(fteAtSlider)} teachers
-          </strong>
-          {lap.qualifiesHighPoverty ? (
-            <>
-              , plus{' '}
-              <strong className="text-ink">
-                {fmtFte(lap.highPovertyTeacherFte)} High-Poverty LAP teachers
-              </strong>{' '}
-              this slider does not change
-            </>
-          ) : (
-            <>
-              . District-wide it sits below the{' '}
-              {Math.round(100 * HIGH_POVERTY_THRESHOLD)}% threshold for
-              High-Poverty LAP, though individual schools may still qualify
-            </>
-          )}
-          .
-        </p>
-        <p className="mt-3 text-xs text-ink-muted">
-          The model prices funded teachers at the average state-funded
-          certificated salary implied by OSPI&apos;s {LAP_MODEL_YEAR}{' '}
-          apportionment (
-          {fmtMoneyFull(Math.round(LAP_COMP.certificatedSalary))} plus{' '}
-          {Math.round(100 * LAP_COMP.benefitRate)}% benefits), so the
-          statewide total matches OSPI by construction; the district&apos;s
-          own figure differs through its regionalization factor and
-          school-level poverty mix, which this district-level dataset cannot
-          see. That is why the slider prices its change off the actual
-          allocation (revenue code 4155) instead.
-        </p>
-      </div>
     );
   }
 
@@ -2039,20 +1863,6 @@ export default function Simulator() {
               The local levy limit is shown separately because it is local
               property-tax authority voters may approve, not state spending, and
               it assumes districts use the full increase.
-            </li>
-            <li>
-              The Learning Assistance Program slider starts at current
-              law&apos;s 2.3975 hours and applies the statutory formula
-              (prior-year enrollment × prior-year low-income share × hours ÷
-              15 ÷ 900) to each district&apos;s own {LAP_PRIOR_YEAR} data.
-              Moving it scales the district&apos;s actual base-LAP allocation
-              in proportion to the hours; High-Poverty LAP&apos;s separate
-              1.1 hours are left unchanged, and are approximated
-              district-wide because the school-level poverty data the statute
-              uses is not in this dataset. Funded teachers are priced at the
-              average certificated salary and benefit rate implied by
-              OSPI&apos;s own apportionment, so the statewide modeled total
-              matches the actual statewide allocation by construction.
             </li>
             <li>
               The far end of each slider is a comparison ceiling, not a
