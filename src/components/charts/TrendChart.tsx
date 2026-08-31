@@ -106,18 +106,57 @@ export default function TrendChart({
               />
             )
         )}
-        {active === null && lastIdx >= 0 && points[lastIdx].value !== null && (
-          <text
-            x={x(lastIdx)}
-            y={y(points[lastIdx].value as number) - 8}
-            fontSize="10"
-            fontWeight="600"
-            fill="#0b0b0b"
-            textAnchor="end"
-          >
-            {format(points[lastIdx].value as number)}
-          </text>
-        )}
+        {active === null &&
+          lastIdx >= 0 &&
+          points[lastIdx].value !== null &&
+          (() => {
+            const last = points[lastIdx].value as number;
+            /*
+              The label hangs to the LEFT of the final point, which is also
+              where the last segment of the line is. When the series falls into
+              its final year the line runs down through exactly that space and
+              the number sat on top of it. Drop the label below the point in
+              that case - the line has vacated the space underneath - and keep
+              it above when the series rises.
+            */
+            const previous = points
+              .slice(0, lastIdx)
+              .reverse()
+              .find((p) => p.value !== null);
+            const falling = previous != null && (previous.value as number) > last;
+            /*
+              Dropping below only helps if there is room below: on a series
+              that ends near the floor the clamp pulls the label back up
+              against its own point. Above is the better of two bad options
+              there, and the halo carries it.
+            */
+            const below = Math.min(y(last) + 16, H - PAD.bottom - 2);
+            const labelY =
+              falling && below - y(last) >= 14
+                ? below
+                : Math.max(y(last) - 8, PAD.top - 2);
+            return (
+              <text
+                x={x(lastIdx)}
+                y={labelY}
+                fontSize="10"
+                fontWeight="600"
+                fill="#0b0b0b"
+                textAnchor="end"
+                /*
+                  A halo in the card color, painted under the glyphs, so the
+                  number stays readable wherever it lands - over a gridline, or
+                  over the line itself on a series that zigzags at the end.
+                */
+                stroke="#fcfcfb"
+                strokeWidth="3"
+                strokeLinejoin="round"
+                paintOrder="stroke"
+              >
+                {format(last)}
+              </text>
+            );
+          })()}
         {points.map((p, i) => (
           <text
             key={p.label}
