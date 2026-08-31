@@ -403,12 +403,10 @@ function FundBalanceCard({ district: d, year }: { district: District; year: stri
                   <span className={textCls}>{status.replace('—', '-')}</span>
                 </div>
                 <div className="text-xs text-ink-muted mt-1">
-                  Savings as a share of annual spending (fund balance ÷ spending).
-                  This site flags anything under 5%, the level Washington
-                  school-finance practice treats as a working floor and the point
-                  where one bad year can force cuts. It is a low bar: the
-                  Government Finance Officers Association&apos;s general guideline
-                  is two months of operating spending, about 17%.
+                  Savings left over at year&apos;s end, measured as a share of
+                  what the district spends in a year - how long it could keep
+                  paying the bills on reserves alone. Below 5% one bad year can
+                  force mid-year cuts; the national guideline is about 17%.
                 </div>
               </div>
             );

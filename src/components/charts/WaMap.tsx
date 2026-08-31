@@ -26,6 +26,14 @@ const RAMP_LOW_LABEL = '#7c3aed';
 const RAMP_HIGH_LABEL = '#10429b';
 const NO_DATA = '#e1e0d9';
 
+/*
+  One water color for the whole map. The inland lakes used to be painted a
+  brighter blue than the Sound, which reads as two different kinds of water on
+  a map where the difference means nothing - Lake Washington stood out beside
+  Mercer Island more than any funding color did.
+*/
+const WATER = '#e2f3f8';
+
 // How far past the state extent you can zoom out (breathing room around WA)
 const MAX_OUT = 1.45;
 
@@ -379,7 +387,7 @@ export default function WaMap({
           ref={svgRef}
           viewBox={`${view.x} ${view.y} ${view.w} ${view.h}`}
           className="w-full rounded-lg"
-          style={{ touchAction: 'pan-y', aspectRatio: `${map.w} / ${map.h}`, backgroundColor: '#e2f3f8' }}
+          style={{ touchAction: 'pan-y', aspectRatio: `${map.w} / ${map.h}`, backgroundColor: WATER }}
           role="img"
           aria-label={`Map of Washington school districts, colored by ${
             metric === 'perPupil' ? 'funding per student' : 'reserve ratio'
@@ -471,7 +479,7 @@ export default function WaMap({
           </g>
           <g pointerEvents="none" aria-hidden="true">
             {(map.water ?? []).map((water, index) => (
-              <path key={index} d={water.d} fill="#9fd4ef" />
+              <path key={index} d={water.d} fill={WATER} />
             ))}
           </g>
           {/*
