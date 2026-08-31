@@ -1338,6 +1338,7 @@
     "This district does not qualify for Local Effort Assistance - its property base raises more than the statewide goal at the standard rate.": "Este distrito no califica para Asistencia de Esfuerzo Local: su base de propiedades recauda más que la meta estatal a la tasa estándar.",
     "This district isn't in any year of this data - it may have moved, closed, or changed codes.": "Este distrito no aparece en ningún año de estos datos; es posible que se haya movido, cerrado o cambiado de código.",
     "This district qualifies for Local Effort Assistance.": "Este distrito califica para Asistencia de Esfuerzo Local.",
+    "This is a modeled policy proposal, not current law: Washington has no statewide high-poverty concentration bonus. It is modeled on": "Esta es una propuesta de política modelada, no una ley actual: Washington no tiene un bono de concentración de alta pobreza en todo el estado. Está modelado en",
     "This is an educational estimate for comparing ideas, not an official fiscal note. It applies simplified statewide averages to real 2024-25 enrollment.": "Esta es una estimación educativa para comparar ideas, no una nota fiscal oficial. Aplica promedios estatales simplificados a la inscripción real para 2024-25.",
     "This is state funding.": "Esta es la financiación estatal.",
     "This is where policy becomes actual dollars. Even when a separate funding bill fails, an idea can still receive, lose, or change funding through the operating budget.": "Aquí es donde la política se convierte en dólares reales. Incluso cuando fracasa un proyecto de ley de financiación separado, una idea aún puede recibir, perder o cambiar financiación a través del presupuesto operativo.",
@@ -1531,7 +1532,16 @@
     "Youth participation": "Participación juvenil",
     "Zoom in": "Acercar",
     "Zoom out": "Alejar",
-    "This is a modeled policy proposal, not current law: Washington has no statewide high-poverty concentration bonus. It is modeled on": "Esta es una propuesta de política modelada, no una ley actual: Washington no tiene un bono de concentración de alta pobreza en todo el estado. Está modelado en"
+    "LEAP Document 3 (2024 enacted)": "Documento LEAP 3 (promulgado en 2024)",
+    "· classified at the statewide base": "· clasificado en la base estatal",
+    "mt-6 grid grid-cols-1 gap-3": "cuadrícula mt-6 cuadrícula-cols-1 espacio-3",
+    ", including the experience adjustment": ", incluido el ajuste de la experiencia",
+    "· classified +": "· clasificado +",
+    "Per-district salary regionalization factors, shown on each district profile": "Factores de regionalización salarial por distrito, mostrados en el perfil de cada distrito",
+    "Salaries fund at the statewide base - no regional adjustment": "Fondo de salarios en la base estatal: sin ajuste regional",
+    "for local hiring costs": "para costos de contratación local",
+    "Regionalization": "Regionalización",
+    "Salary allocations +": "Asignaciones salariales +"
   },
   "zh": {
     "- a flat per-student amount covering everything that is not staff pay.": "- 每个学生的固定金额，涵盖员工工资以外的所有费用。",
@@ -2872,6 +2882,7 @@
     "This district does not qualify for Local Effort Assistance - its property base raises more than the statewide goal at the standard rate.": "该学区不符合地方努力援助的资格——其财产税基按标准税率筹到的资金超过全州目标。",
     "This district isn't in any year of this data - it may have moved, closed, or changed codes.": "该学区不属于该数据的任何年份 - 它可能已移动、关闭或更改代码。",
     "This district qualifies for Local Effort Assistance.": "该学区有资格获得地方努力援助。",
+    "This is a modeled policy proposal, not current law: Washington has no statewide high-poverty concentration bonus. It is modeled on": "这是一个模型化的政策提案，而不是现行法律：华盛顿没有全州范围内的高贫困集中度奖金。它是仿照",
     "This is an educational estimate for comparing ideas, not an official fiscal note. It applies simplified statewide averages to real 2024-25 enrollment.": "这是用于比较想法的教育估计，而不是官方的财政说明。它将简化的全州平均数应用于 2024-25 年实际入学人数。",
     "This is state funding.": "这是州资助。",
     "This is where policy becomes actual dollars. Even when a separate funding bill fails, an idea can still receive, lose, or change funding through the operating budget.": "这就是政策变成实际美元的地方。即使单独的资金法案失败，一个想法仍然可以通过运营预算获得、失去或改变资金。",
@@ -3065,7 +3076,16 @@
     "Youth participation": "青少年参与",
     "Zoom in": "放大",
     "Zoom out": "缩小",
-    "This is a modeled policy proposal, not current law: Washington has no statewide high-poverty concentration bonus. It is modeled on": "这是一个模型化的政策提案，而不是现行法律：华盛顿没有全州范围内的高贫困集中度奖金。它是仿照"
+    "Regionalization": "区域化",
+    "mt-6 grid grid-cols-1 gap-3": "mt-6 网格 grid-cols-1 间隙-3",
+    ", including the experience adjustment": "，包括经验调整",
+    "Per-district salary regionalization factors, shown on each district profile": "每个地区的薪资区域化因素，显示在每个地区的概况中",
+    "· classified at the statewide base": "· 在全州范围内进行分类",
+    "Salaries fund at the statewide base - no regional adjustment": "全州范围内的工资基金 - 无区域调整",
+    "LEAP Document 3 (2024 enacted)": "LEAP 文件 3（2024 年颁布）",
+    "· classified +": "·分类+",
+    "for local hiring costs": "当地招聘费用",
+    "Salary allocations +": "薪资分配+"
   },
   "vi": {
     "- a flat per-student amount covering everything that is not staff pay.": "- một khoản tiền cố định cho mỗi học sinh bao gồm mọi thứ không phải là lương của nhân viên.",
@@ -4406,6 +4426,7 @@
     "This district does not qualify for Local Effort Assistance - its property base raises more than the statewide goal at the standard rate.": "Học khu này không đủ điều kiện nhận Hỗ trợ Nỗ lực Địa phương - cơ sở tài sản của học khu thu được nhiều hơn mục tiêu toàn tiểu bang ở mức thuế suất tiêu chuẩn.",
     "This district isn't in any year of this data - it may have moved, closed, or changed codes.": "Học khu này không nằm trong bất kỳ năm nào của dữ liệu này - nó có thể đã di chuyển, đóng cửa hoặc thay đổi mã.",
     "This district qualifies for Local Effort Assistance.": "Học khu này đủ điều kiện nhận Hỗ trợ Nỗ lực Địa phương.",
+    "This is a modeled policy proposal, not current law: Washington has no statewide high-poverty concentration bonus. It is modeled on": "Đây là một đề xuất chính sách được mô hình hóa, không phải luật hiện hành: Washington không có phần thưởng tập trung nghèo đói cao trên toàn tiểu bang. Nó được mô hình hóa trên",
     "This is an educational estimate for comparing ideas, not an official fiscal note. It applies simplified statewide averages to real 2024-25 enrollment.": "Đây là ước tính mang tính giáo dục để so sánh các ý tưởng, không phải bản phân tích tài chính chính thức (fiscal note). Nó áp dụng các mức trung bình toàn tiểu bang đã đơn giản hóa cho số ghi danh thực tế 2024-25.",
     "This is state funding.": "Đây là nguồn tài trợ của tiểu bang.",
     "This is where policy becomes actual dollars. Even when a separate funding bill fails, an idea can still receive, lose, or change funding through the operating budget.": "Đây là nơi chính sách trở thành đô la thực tế. Ngay cả khi một dự luật tài trợ riêng không thành công, một ý tưởng vẫn có thể nhận được, mất hoặc thay đổi nguồn tài trợ thông qua ngân sách hoạt động.",
@@ -4599,7 +4620,16 @@
     "Youth participation": "Sự tham gia của giới trẻ",
     "Zoom in": "Phóng to",
     "Zoom out": "Thu nhỏ",
-    "This is a modeled policy proposal, not current law: Washington has no statewide high-poverty concentration bonus. It is modeled on": "Đây là một đề xuất chính sách được mô hình hóa, không phải luật hiện hành: Washington không có phần thưởng tập trung nghèo đói cao trên toàn tiểu bang. Nó được mô hình hóa trên"
+    "Salaries fund at the statewide base - no regional adjustment": "Quỹ tiền lương trên toàn tiểu bang - không điều chỉnh theo khu vực",
+    "Per-district salary regionalization factors, shown on each district profile": "Các yếu tố khu vực hóa lương theo quận, được hiển thị trên hồ sơ từng quận",
+    "mt-6 grid grid-cols-1 gap-3": "lưới mt-6 lưới-cols-1 khoảng cách-3",
+    ", including the experience adjustment": ", bao gồm cả việc điều chỉnh kinh nghiệm",
+    "LEAP Document 3 (2024 enacted)": "Tài liệu LEAP 3 (ban hành năm 2024)",
+    "· classified at the statewide base": "· được phân loại tại cơ sở toàn tiểu bang",
+    "Regionalization": "Khu vực hóa",
+    "for local hiring costs": "về chi phí tuyển dụng tại địa phương",
+    "Salary allocations +": "Phân bổ tiền lương +",
+    "· classified +": "· phân loại +"
   },
   "ru": {
     "- a flat per-student amount covering everything that is not staff pay.": "- фиксированная сумма на одного учащегося, покрывающая все, кроме заработной платы персонала.",
@@ -5939,6 +5969,7 @@
     "This district does not qualify for Local Effort Assistance - its property base raises more than the statewide goal at the standard rate.": "Этот округ не имеет права на Local Effort Assistance — его имущественная база приносит больше, чем общештатная цель, при стандартной ставке.",
     "This district isn't in any year of this data - it may have moved, closed, or changed codes.": "Этот округ не указан ни в одном году этих данных — возможно, он был перемещен, закрыт или изменил коды.",
     "This district qualifies for Local Effort Assistance.": "Этот округ имеет право на Local Effort Assistance.",
+    "This is a modeled policy proposal, not current law: Washington has no statewide high-poverty concentration bonus. It is modeled on": "Это смоделированное политическое предложение, а не действующий закон: в Вашингтоне нет бонуса за концентрацию высокого уровня бедности в масштабе всего штата. Он создан по образцу",
     "This is an educational estimate for comparing ideas, not an official fiscal note. It applies simplified statewide averages to real 2024-25 enrollment.": "Это образовательная оценка для сравнения идей, а не официальная фискальная справка. Она применяет упрощённые средние по штату к реальной численности учащихся 2024–25.",
     "This is state funding.": "Это финансирование от штата.",
     "This is where policy becomes actual dollars. Even when a separate funding bill fails, an idea can still receive, lose, or change funding through the operating budget.": "Именно здесь политика становится реальными долларами. Даже если отдельный законопроект о финансировании проваливается, идея все равно может получить, потерять или изменить финансирование через операционный бюджет.",
@@ -6132,8 +6163,17 @@
     "Youth participation": "Участие молодежи",
     "Zoom in": "Увеличить масштаб",
     "Zoom out": "Уменьшить масштаб",
+    "· classified +": "· классифицировано +",
+    "Regionalization": "Регионализация",
+    "Salary allocations +": "Распределение заработной платы +",
+    "for local hiring costs": "для местных затрат на найм",
+    "LEAP Document 3 (2024 enacted)": "Документ LEAP 3 (принят в 2024 г.)",
+    ", including the experience adjustment": ", включая корректировку опыта",
+    "· classified at the statewide base": "· классифицируется по общегосударственной базе",
+    "mt-6 grid grid-cols-1 gap-3": "сетка мт-6 сетка-столбцы-1 зазор-3",
+    "Per-district salary regionalization factors, shown on each district profile": "Коэффициенты регионализации заработной платы по районам, указанные в профиле каждого округа.",
     "The": "",
-    "This is a modeled policy proposal, not current law: Washington has no statewide high-poverty concentration bonus. It is modeled on": "Это смоделированное политическое предложение, а не действующий закон: в Вашингтоне нет бонуса за концентрацию высокого уровня бедности в масштабе всего штата. Он создан по образцу"
+    "Salaries fund at the statewide base - no regional adjustment": "Фонд заработной платы на уровне штата – без региональной корректировки"
   },
   "tl": {
     "- a flat per-student amount covering everything that is not staff pay.": "- isang flat na halagang bawat mag-aaral na sumasaklaw sa lahat ng hindi suweldo ng kawani.",
@@ -7474,6 +7514,7 @@
     "This district does not qualify for Local Effort Assistance - its property base raises more than the statewide goal at the standard rate.": "Hindi kwalipikado ang distritong ito para sa Local Effort Assistance - ang base ng ari-arian nito ay nakalilikom ng higit sa layuning pambuong-estado sa karaniwang rate.",
     "This district isn't in any year of this data - it may have moved, closed, or changed codes.": "Ang distritong ito ay wala sa anumang taon ng data na ito - maaaring inilipat, isinara, o binago nito ang mga code.",
     "This district qualifies for Local Effort Assistance.": "Kwalipikado ang distritong ito para sa Local Effort Assistance.",
+    "This is a modeled policy proposal, not current law: Washington has no statewide high-poverty concentration bonus. It is modeled on": "Ito ay isang modelong panukalang patakaran, hindi kasalukuyang batas: Ang Washington ay walang pambuong estadong mataas na poverty concentration bonus. Ito ay modelo sa",
     "This is an educational estimate for comparing ideas, not an official fiscal note. It applies simplified statewide averages to real 2024-25 enrollment.": "Ito ay isang pang-edukasyon na pagtatantya para sa paghahambing ng mga ideya, hindi isang opisyal na tala sa pananalapi. Inilalapat nito ang pinasimple na mga average sa buong estado sa totoong 2024-25 na pagpapatala.",
     "This is state funding.": "Ito ay pagpopondo ng estado.",
     "This is where policy becomes actual dollars. Even when a separate funding bill fails, an idea can still receive, lose, or change funding through the operating budget.": "Dito nagiging aktwal na dolyar ang patakaran. Kahit na nabigo ang isang hiwalay na bill sa pagpopondo, ang isang ideya ay maaari pa ring tumanggap, mawala, o magbago ng pagpopondo sa pamamagitan ng operating budget.",
@@ -7667,7 +7708,16 @@
     "Youth participation": "Pakikilahok ng kabataan",
     "Zoom in": "Mag-zoom in",
     "Zoom out": "Mag-zoom out",
-    "This is a modeled policy proposal, not current law: Washington has no statewide high-poverty concentration bonus. It is modeled on": "Ito ay isang modelong panukalang patakaran, hindi kasalukuyang batas: Ang Washington ay walang pambuong estadong mataas na poverty concentration bonus. Ito ay modelo sa"
+    "Per-district salary regionalization factors, shown on each district profile": "Mga salik ng regionalization ng suweldo sa bawat distrito, na ipinapakita sa bawat profile ng distrito",
+    "Salaries fund at the statewide base - no regional adjustment": "Pondo ng mga suweldo sa buong estadong base - walang pagsasaayos sa rehiyon",
+    "· classified at the statewide base": "· inuri sa buong estadong base",
+    ", including the experience adjustment": ", kasama ang pagsasaayos ng karanasan",
+    "mt-6 grid grid-cols-1 gap-3": "mt-6 grid grid-cols-1 gap-3",
+    "LEAP Document 3 (2024 enacted)": "LEAP Document 3 (2024 na pinagtibay)",
+    "· classified +": "· classified +",
+    "Regionalization": "Regionalization",
+    "Salary allocations +": "Mga alokasyon sa suweldo +",
+    "for local hiring costs": "para sa mga lokal na gastos sa pag-hire"
   },
   "ko": {
     "- a flat per-student amount covering everything that is not staff pay.": "- 교직원 급여가 아닌 모든 금액을 포함하는 학생당 정액 금액입니다.",
@@ -9008,6 +9058,7 @@
     "This district does not qualify for Local Effort Assistance - its property base raises more than the statewide goal at the standard rate.": "이 학군은 지역 노력 지원(LEA) 대상이 아닙니다. 재산 기반으로 표준 세율에서 주 전체 목표보다 많이 걷을 수 있기 때문입니다.",
     "This district isn't in any year of this data - it may have moved, closed, or changed codes.": "이 학군은 이 데이터의 어느 연도에도 없습니다. 통합되었거나, 폐지되었거나, 코드가 바뀌었을 수 있습니다.",
     "This district qualifies for Local Effort Assistance.": "이 학군은 지역 노력 지원(LEA)을 받을 자격이 됩니다.",
+    "This is a modeled policy proposal, not current law: Washington has no statewide high-poverty concentration bonus. It is modeled on": "이는 현행법이 아닌 모델링된 정책 제안입니다. 워싱턴에는 주 전체에 걸쳐 고빈곤 집중 보너스가 없습니다. 그것은 다음을 모델로 한 것입니다.",
     "This is an educational estimate for comparing ideas, not an official fiscal note. It applies simplified statewide averages to real 2024-25 enrollment.": "이는 아이디어 비교를 위한 교육용 추정치이며, 공식 재정 추계서(fiscal note)가 아닙니다. 단순화된 주 전체 평균을 실제 2024-25년 등록 인원에 적용합니다.",
     "This is state funding.": "이것이 주 자금입니다.",
     "This is where policy becomes actual dollars. Even when a separate funding bill fails, an idea can still receive, lose, or change funding through the operating budget.": "정책이 실제 돈이 되는 곳입니다. 별도의 자금 법안이 무산되어도, 아이디어는 운영 예산을 통해 자금을 받거나 잃거나 바뀔 수 있습니다.",
@@ -9201,6 +9252,15 @@
     "Youth participation": "청소년 참여",
     "Zoom in": "확대",
     "Zoom out": "축소",
-    "This is a modeled policy proposal, not current law: Washington has no statewide high-poverty concentration bonus. It is modeled on": "이는 현행법이 아닌 모델링된 정책 제안입니다. 워싱턴에는 주 전체에 걸쳐 고빈곤 집중 보너스가 없습니다. 그것은 다음을 모델로 한 것입니다."
+    "Per-district salary regionalization factors, shown on each district profile": "각 지구 프로필에 표시된 지구별 급여 지역화 요소",
+    "Salaries fund at the statewide base - no regional adjustment": "주 전체 기반의 급여 기금 - 지역 조정 없음",
+    "mt-6 grid grid-cols-1 gap-3": "mt-6 그리드 그리드-열-1 간격-3",
+    "LEAP Document 3 (2024 enacted)": "LEAP 문서 3(2024년 제정)",
+    ", including the experience adjustment": ", 경험 조정 포함",
+    "· classified at the statewide base": "· 주 전체 기준으로 분류됨",
+    "Salary allocations +": "급여배분 +",
+    "· classified +": "· 기밀 +",
+    "for local hiring costs": "현지 고용 비용",
+    "Regionalization": "지역화"
   }
 }

@@ -72,6 +72,11 @@ const LAW_LINKS: [string, string, string][] = [
     'https://app.leg.wa.gov/rcw/default.aspx?cite=28A.150.260',
   ],
   [
+    'LEAP Document 3 (2024 enacted)',
+    'Per-district salary regionalization factors, shown on each district profile',
+    'https://fiscal.wa.gov/statebudgets/OperatingLEAPDocs',
+  ],
+  [
     'WA Constitution, Art. IX §1',
     'The “paramount duty” clause',
     'https://leg.wa.gov/CodeReviser/Pages/WAConstitution.aspx',

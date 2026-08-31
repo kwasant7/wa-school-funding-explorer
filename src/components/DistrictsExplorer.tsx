@@ -14,6 +14,7 @@ import WaMap from '@/components/charts/WaMap';
 import ChartErrorBoundary from '@/components/ChartErrorBoundary';
 import { oversightFor, OVERSIGHT_SOURCE, OVERSIGHT_CHECKED_ON } from '@/data/oversight';
 import allocationJson from '@/data/allocation.json';
+import regionalizationJson from '@/data/regionalization.json';
 import districtsJson from '@/data/districts.json';
 import spendingJson from '@/data/spending.json';
 import { alignPair, fmtInt, fmtMoney, fmtMoneyFull, fmtMoneyOnGrid, fmtSignedMoney, pct } from '@/lib/format';
@@ -35,6 +36,22 @@ import { readSelectedDistrict, writeSelectedDistrict } from '@/lib/selected-dist
 const CHARTER_CODES = new Set(
   districtsJson.districts.filter(isCharter).map((x) => x.code)
 );
+
+/**
+ * This district's salary regionalization factors for one school year, from
+ * LEAP Document 3 (2024 enacted). The document only reaches back to 2023-24,
+ * so earlier years on the year switcher return null and the tile stands down
+ * rather than showing a factor from the wrong year.
+ */
+function regionalizationFor(code: string, year: string) {
+  const i = regionalizationJson.years.indexOf(year);
+  const d = (regionalizationJson.districts as Record<
+    string,
+    { cis: number[]; cas: number[]; exp: boolean[] }
+  >)[code];
+  if (i < 0 || !d) return null;
+  return { cis: d.cis[i], cas: d.cas[i], exp: d.exp[i] };
+}
 
 const BIG3_YEAR = spendingJson.schoolYear;
 const BIG3_ALLOCATION = allocationJson.districts as Record<
@@ -832,7 +849,14 @@ function DistrictDetail({
         {d.county} County · {d.esd}
       </p>
 
-      <div className="mt-6 grid grid-cols-1 sm:grid-cols-3 gap-3">
+      {(() => {
+        const region = regionalizationFor(d.code, year);
+        return (
+      <div
+        className={`mt-6 grid grid-cols-1 gap-3 ${
+          region ? 'sm:grid-cols-2 lg:grid-cols-4' : 'sm:grid-cols-3'
+        }`}
+      >
         <StatTile
           label={`Students (${year})`}
           value={fmtInt(Math.round(d.fundingEnrollment))}
@@ -844,7 +868,35 @@ function DistrictDetail({
           value={fmtMoneyFull(d.perPupil)}
           note={`Uses ${fmtInt(Math.round(d.fundingEnrollment))} funding FTE - not the ${fmtInt(d.enrollment)} headcount`}
         />
+        {region && (
+          <StatTile
+            label="Regionalization"
+            value={`${region.cis.toFixed(2)}×`}
+            note={
+              region.cis === 1 && region.cas === 1
+                ? 'Salaries fund at the statewide base - no regional adjustment'
+                : /*
+                    The file folds the experience adjustment into the same
+                    number, so for a district like Ritzville the whole +4% is
+                    experience - claiming "hiring costs" there would be wrong.
+                  */
+                  `Salary allocations +${Math.round(100 * (region.cis - 1))}%${
+                    region.exp
+                      ? ', including the experience adjustment'
+                      : ' for local hiring costs'
+                  }${
+                    region.cas === region.cis
+                      ? ''
+                      : region.cas === 1
+                        ? ' · classified at the statewide base'
+                        : ` · classified +${Math.round(100 * (region.cas - 1))}%`
+                  }`
+            }
+          />
+        )}
       </div>
+        );
+      })()}
 
       <FundBalanceCard district={d} year={year} />
 
