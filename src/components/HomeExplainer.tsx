@@ -158,55 +158,83 @@ export default function HomeExplainer() {
           for further information.
         </p>
         <div className="mt-5 grid gap-5">
-          <div className="card p-5 md:p-6 bg-accent-wash border-accent-soft">
+          <div>
             <h3 className="text-lg font-bold">How the model actually works</h3>
-            <div className="mt-4 grid md:grid-cols-2 lg:grid-cols-4 gap-4 text-sm text-ink-secondary">
-              <div>
-                <p className="font-semibold text-ink">1. Start with enrollment</p>
-                <p className="mt-1">
-                  The state counts students in{' '}
-                  <strong className="text-ink">FTE (full-time equivalent)</strong>{' '}
-                  - a measure of enrollment by how much school a student
-                  actually attends. For example, a student enrolled half-time
-                  counts as 0.5 FTE.
-                </p>
-              </div>
-              <div>
-                <p className="font-semibold text-ink">2. Divide into model schools</p>
-                <p className="mt-1">
-                  Each grade span&apos;s funding FTE is divided by its prototype
-                  size. 600 elementary FTE ÷ 400 = 1.5 model elementary schools,
-                  which generates 1.5 times the elementary staffing.
-                </p>
-              </div>
-              <div>
-                <p className="font-semibold text-ink">3. Generate a staffing allocation</p>
-                <p className="mt-1">
-                  Each model school generates teachers at a funded class size
-                  and fractional positions for eleven other roles, from
-                  principals to nurses.
-                </p>
-              </div>
-              <div>
-                <p className="font-semibold text-ink">4. Turn positions into dollars</p>
-                <p className="mt-1">
-                  Each position is priced at a statewide salary allocation, then
-                  multiplied by a{' '}
-                  <strong className="text-ink">regionalization factor</strong>{' '}
-                  that pays more where hiring costs more. Benefits, operating
-                  costs, and money for students with additional needs are added
-                  on top.
-                </p>
-              </div>
-            </div>
-            <p className="mt-4 text-sm text-ink-secondary">
-              These are simple funding allocations so districts can organize
-              schools differently, but must cover anything beyond the formula
-              with other available revenue. Two
-              exceptions: K-3 class-size money and the money for nurses,
-              counselors, social workers, psychologists, safety and family
-              engagement staff are each paid only in proportion to what a
-              district can show it actually runs or employs.
+            {/*
+              Four steps that used to sit in one washed panel. On a phone the
+              single-column stack ran them together into one unbroken column of
+              text; giving each step its own card keeps the four beats separate
+              at every width.
+            */}
+            <ol className="mt-4 grid md:grid-cols-2 lg:grid-cols-4 gap-3 text-sm text-ink-secondary">
+              {[
+                {
+                  title: 'Start with enrollment',
+                  body: (
+                    <>
+                      The state counts students in{' '}
+                      <strong className="text-ink">
+                        FTE (full-time equivalent)
+                      </strong>{' '}
+                      - a measure of enrollment by how much school a student
+                      actually attends. A student enrolled half-time counts as
+                      0.5 FTE.
+                    </>
+                  ),
+                },
+                {
+                  title: 'Divide into model schools',
+                  body: (
+                    <>
+                      Each grade span&apos;s funding FTE is divided by its
+                      prototype size. 600 elementary FTE ÷ 400 = 1.5 model
+                      elementary schools, which generates 1.5 times the
+                      elementary staffing.
+                    </>
+                  ),
+                },
+                {
+                  title: 'Generate a staffing allocation',
+                  body: (
+                    <>
+                      Each model school generates teachers at a funded class
+                      size and fractional positions for eleven other roles, from
+                      principals to nurses.
+                    </>
+                  ),
+                },
+                {
+                  title: 'Turn positions into dollars',
+                  body: (
+                    <>
+                      Each position is priced at a statewide salary allocation,
+                      then multiplied by a{' '}
+                      <strong className="text-ink">regionalization factor</strong>{' '}
+                      that pays more where hiring costs more. Benefits,
+                      operating costs, and money for students with additional
+                      needs are added on top.
+                    </>
+                  ),
+                },
+              ].map((step, i) => (
+                <li key={step.title} className="card p-4">
+                  <p className="flex items-center gap-2 font-semibold text-ink">
+                    <span
+                      aria-hidden
+                      className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-accent-wash text-xs font-bold text-accent"
+                    >
+                      {i + 1}
+                    </span>
+                    {step.title}
+                  </p>
+                  <p className="mt-2">{step.body}</p>
+                </li>
+              ))}
+            </ol>
+            <p className="mt-3 text-sm text-ink-secondary">
+              These are funding allocations, not staffing rules: a district can
+              organize its schools differently, but must cover anything beyond
+              the formula out of other revenue.
             </p>
           </div>
           <SchoolBuilder district={selectedDistrict} year={year} />
