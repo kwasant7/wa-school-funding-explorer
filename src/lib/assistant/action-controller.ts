@@ -133,7 +133,9 @@ export function describeAction(
       const value =
         control?.kind === 'multiplier'
           ? action.value.toFixed(2)
-          : `$${Math.round(action.value).toLocaleString('en-US')}`;
+          : control?.kind === 'hours'
+            ? `${action.value.toFixed(2)} hours/week`
+            : `$${Math.round(action.value).toLocaleString('en-US')}`;
       return fill(strings.actionSetControl, control?.label ?? action.controlId, value);
     }
     case 'reset_simulator':

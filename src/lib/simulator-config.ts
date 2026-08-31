@@ -40,7 +40,8 @@ export type SimulatorControlId =
   | 'spedMultiplier'
   | 'msoc'
   | 'transportation'
-  | 'povertyBonus';
+  | 'povertyBonus'
+  | 'lapHours';
 
 export type SimulatorControlSpec = {
   id: SimulatorControlId;
@@ -51,8 +52,8 @@ export type SimulatorControlSpec = {
   min: number;
   max: number;
   step: number;
-  /** How to describe the number: dollars per student, or a bare multiplier. */
-  kind: 'money' | 'multiplier';
+  /** How to describe the number: dollars per student, a bare multiplier, or hours per week. */
+  kind: 'money' | 'multiplier' | 'hours';
   /** Search terms that should resolve to this control. */
   aliases: string[];
 };
@@ -154,14 +155,23 @@ export const SIMULATOR_CONTROLS: readonly SimulatorControlSpec[] = [
     max: 3_000,
     step: 100,
     kind: 'money',
-    aliases: [
-      'poverty',
-      'high poverty',
-      'low income',
-      'poverty bonus',
-      'lap',
-      'learning assistance',
-    ],
+    aliases: ['poverty', 'high poverty', 'low income', 'poverty bonus'],
+  },
+  {
+    id: 'lapHours',
+    label: 'Learning Assistance Program hours',
+    /*
+      Current law's extended-support hours per eligible low-income student per
+      week, RCW 28A.150.260(10)(a). Mirrors LAP_HOURS_PER_WEEK in lib/lap.ts -
+      kept literal here so this config stays free of that module's data
+      imports; tests/lap.test.ts asserts the two never drift.
+    */
+    baseline: 2.3975,
+    min: 2.3975,
+    max: 4.8,
+    step: 0.05,
+    kind: 'hours',
+    aliases: ['lap', 'learning assistance', 'lap hours', 'extended support'],
   },
 ] as const;
 

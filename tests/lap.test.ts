@@ -4,6 +4,7 @@ import assert from 'node:assert/strict';
 import {
   HIGH_POVERTY_THRESHOLD,
   LAP_COMP,
+  LAP_HOURS_PER_WEEK,
   calculateBenefits,
   highPovertyLapTeacherFte,
   lapFor,
@@ -99,10 +100,26 @@ describe('LAP calibration', () => {
   });
 });
 
-describe('LAP is not a slider', () => {
-  test('no simulator control mentions LAP', () => {
-    for (const control of SIMULATOR_CONTROLS) {
-      assert.ok(!/lap|learningAssistance/i.test(control.id));
-    }
+describe('LAP hours slider', () => {
+  const control = SIMULATOR_CONTROLS.find((c) => c.id === 'lapHours');
+
+  test('starts at, and cannot go below, the statutory hours', () => {
+    assert.ok(control);
+    // The config keeps its own literal so it stays free of lap.ts's data
+    // imports; this is the check that stops the two copies drifting.
+    assert.equal(control.baseline, LAP_HOURS_PER_WEEK);
+    assert.equal(control.min, LAP_HOURS_PER_WEEK);
+    assert.ok(control.max > control.min);
+  });
+
+  test('owns the LAP aliases the poverty bonus used to claim', () => {
+    assert.ok(control!.aliases.includes('lap'));
+    const bonus = SIMULATOR_CONTROLS.find((c) => c.id === 'povertyBonus');
+    assert.ok(!bonus!.aliases.includes('lap'));
+  });
+
+  test('the statutory model itself still ignores slider state', () => {
+    assert.equal(lapFor.length, 1);
+    assert.deepEqual(lapFor('17001'), lapFor('17001'));
   });
 });
