@@ -95,14 +95,17 @@ function reserveColor(rr: number) {
 
 /*
   Regionalization runs dark purple (1.00, the statewide base - about half the
-  state) up to red (the +22% Puget Sound peak). Hue travels one way through
-  violet and magenta and lightness rises with it, so the ordering reads even
-  where red-green vision doesn't. The scale is absolute over the LEAP range,
-  not ranked: 1.00 means the same thing on every map.
+  state) up to yellow (the +22% peak) - the plasma path, violet through
+  magenta and orange. Lightness rises monotonically from near-black to
+  near-white, so the ordering reads in greyscale and for every kind of color
+  blindness. The scale is absolute over the LEAP range, not ranked: 1.00
+  means the same thing on every map.
 */
-const REGION_RAMP = ['#3b0764', '#6b21a8', '#a21caf', '#db2777', '#dc2626'];
+const REGION_RAMP = ['#3b0764', '#7e03a8', '#cc4778', '#f89441', '#f5e626'];
 const REGION_LOW_LABEL = '#3b0764';
-const REGION_HIGH_LABEL = '#dc2626';
+// The ramp's yellow end is unreadable as text on paper-white, so the legend's
+// high label darkens to amber - same reasoning as RAMP_LOW_LABEL above.
+const REGION_HIGH_LABEL = '#a16207';
 
 /*
   Factors pinned to the site's model year: LEAP Document 3 is a forward
