@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { District, LATEST, YEARS, districtSeries, statewideSeries, yearData } from '@/lib/data';
+import { District, LATEST, YEARS, districtCount, districtSeries, isCharter, statewideSeries, yearData } from '@/lib/data';
 import StatTile from '@/components/StatTile';
 import SourceShareBar from '@/components/charts/SourceShareBar';
 import CompareBar from '@/components/charts/CompareBar';
@@ -33,9 +33,7 @@ import { readSelectedDistrict, writeSelectedDistrict } from '@/lib/selected-dist
   hand-kept list that would silently miss the next charter to open.
 */
 const CHARTER_CODES = new Set(
-  districtsJson.districts
-    .filter((x) => x.esd.includes('Charter'))
-    .map((x) => x.code)
+  districtsJson.districts.filter(isCharter).map((x) => x.code)
 );
 
 const BIG3_YEAR = spendingJson.schoolYear;
@@ -267,7 +265,7 @@ function DistrictOverview({
       {!selectedCode && (
       <div data-assistant-section="district-stats" className="mt-6 grid lg:grid-cols-[1fr,22rem] gap-4 items-stretch">
         <div className="grid grid-cols-2 gap-3">
-          <StatTile label={`Districts & charters (${year})`} value={String(s.districts)} />
+          <StatTile label={`School districts (${year})`} value={String(districtCount(year))} />
           <StatTile
             label="Students statewide"
             value={fmtInt(Math.round(s.fundingEnrollment))}

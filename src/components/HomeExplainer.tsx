@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
-import { District, LATEST, yearData } from '@/lib/data';
+import { District, LATEST, districtCount, yearData } from '@/lib/data';
 import StatTile from '@/components/StatTile';
 import SourceShareBar from '@/components/charts/SourceShareBar';
 import CountUp from '@/components/interactive/CountUp';
@@ -101,8 +101,8 @@ export default function HomeExplainer() {
             note="Funding FTE, not October headcount"
           />
           <StatTile
-            label="Districts & charters"
-            value={<CountUp value={s.districts} kind="plain" />}
+            label="School districts"
+            value={<CountUp value={districtCount(year)} kind="plain" />}
           />
           <StatTile
             label="Average per student"

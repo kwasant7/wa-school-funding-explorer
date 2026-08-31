@@ -85,6 +85,24 @@ export function yearData(year: string): YearData {
 }
 
 /** A district's value in each year (null where it has no data that year). */
+/*
+  Charter schools stand their authorizer in place of an ESD, which is how the
+  rest of the site tells them apart too (the scatter's "exclude charters"
+  filter). Identified by data rather than a hand-kept list, so the next charter
+  to open is classified without anyone remembering to add it.
+*/
+export function isCharter(entity: { esd: string }): boolean {
+  return entity.esd.includes('Charter');
+}
+
+/**
+ * School districts in a year, charters excluded. statewide.districts counts
+ * every reporting entity, charters included - 315 rather than 298 in 2024-25.
+ */
+export function districtCount(year: string): number {
+  return yearData(year).districts.filter((d) => !isCharter(d)).length;
+}
+
 export function districtSeries<T>(
   code: string,
   pick: (d: District) => T
