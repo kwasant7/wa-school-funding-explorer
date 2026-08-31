@@ -109,7 +109,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         </header>
         <main id="main" className="flex-1">{children}</main>
         <footer className="border-t border-line bg-surface mt-16">
-          <div className="max-w-site mx-auto px-4 md:px-6 py-8 text-sm text-ink-secondary space-y-2">
+          <div className="max-w-site mx-auto px-4 md:px-6 pt-8 pb-24 md:pb-8 text-sm text-ink-secondary space-y-2">
             <p>
               Data: OSPI Report Card headcount, P-223 funding FTE, and F-196
               general fund revenue actuals, school years 2019-20 through

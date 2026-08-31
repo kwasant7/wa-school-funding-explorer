@@ -472,7 +472,7 @@ export default function TakeAction() {
                             href={legislator.url}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="mt-2 inline-block text-sm font-semibold text-accent hover:underline"
+                            className="mt-1 -mx-1 inline-flex min-h-[44px] items-center px-1 text-sm font-semibold text-accent hover:underline"
                           >
                             Contact ↗
                           </a>

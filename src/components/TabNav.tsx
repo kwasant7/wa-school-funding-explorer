@@ -23,7 +23,7 @@ export default function TabNav() {
         show a visitor more existed. Wrapping to a second row keeps every
         section visible without requiring anyone to discover a scroll gesture.
       */}
-      <ul className="flex flex-wrap gap-x-1 gap-y-0 md:gap-x-2">
+      <ul className="flex flex-wrap gap-x-1 gap-y-1 md:gap-x-2 md:gap-y-0">
         {TABS.map((tab, i) => {
           const active =
             tab.href === '/'

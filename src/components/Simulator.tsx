@@ -1500,7 +1500,13 @@ function LeverCard({
             return (
               <div
                 key={marker.value}
-                className="pointer-events-none absolute top-full flex -translate-x-1/2 flex-col items-center"
+                /*
+                  Pinned to the bottom edge of the painted 8px track, not to
+                  the bottom of the input: the input is now 44px tall for the
+                  benefit of thumbs, and top-full would leave the tick
+                  floating 18px below the track it marks.
+                */
+                className="pointer-events-none absolute top-[26px] flex -translate-x-1/2 flex-col items-center"
                 style={{ left: `${pct}%` }}
               >
                 <div
@@ -1517,7 +1523,9 @@ function LeverCard({
             );
           })}
         </div>
-        <div className="flex justify-between text-xs text-ink-muted mt-4">
+        {/* mt-6, not mt-4: the marker labels above are out of flow and a
+            16px margin let the cap tick collide with "Today (...)". */}
+        <div className="flex justify-between text-xs text-ink-muted mt-6">
           <span>
             Today (
             {districtShift !== 0

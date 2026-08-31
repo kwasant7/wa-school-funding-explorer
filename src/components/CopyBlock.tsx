@@ -51,7 +51,7 @@ export default function CopyBlock({ title, text }: { title: string; text: string
         <button
           data-nosnippet
           onClick={copy}
-          className={`text-sm font-medium px-3 py-1 rounded-md border transition-colors ${
+          className={`min-h-[44px] text-sm font-medium px-4 py-1 rounded-md border transition-colors ${
             state === 'copied'
               ? 'bg-good text-white border-good'
               : 'text-accent border-line hover:border-accent'

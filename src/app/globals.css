@@ -46,25 +46,49 @@ body {
    position instead of drifting ahead of it. */
 .range-slider {
   --thumb-size: 20px;
+  --track-height: 8px;
   --fill-edge: calc(
     (var(--thumb-size) / 2) + var(--fill) * (100% - var(--thumb-size))
   );
   -webkit-appearance: none;
   appearance: none;
+  display: block;
   width: 100%;
-  height: 8px;
+  /* The element is finger-height; the painted track stays 8px. The input used
+     to BE 8px tall, which is what a thumb had to hit - a fifth of Apple's 44px
+     minimum, on the only control this page has. The track moves to the
+     ::-*-track pseudo-elements so the visible design is unchanged. */
+  height: 44px;
+  background: transparent;
+  /* Without this, a drag with any vertical component is claimed by page
+     scroll and the slider never moves. */
+  touch-action: none;
+  outline: none;
+  cursor: pointer;
+}
+.range-slider::-webkit-slider-runnable-track {
+  height: var(--track-height);
   border-radius: 9999px;
   background: linear-gradient(
     to right,
     var(--track-color) var(--fill-edge),
     #e2e8f0 var(--fill-edge)
   );
-  outline: none;
-  cursor: pointer;
+}
+.range-slider::-moz-range-track {
+  height: var(--track-height);
+  border-radius: 9999px;
+  background: linear-gradient(
+    to right,
+    var(--track-color) var(--fill-edge),
+    #e2e8f0 var(--fill-edge)
+  );
 }
 .range-slider::-webkit-slider-thumb {
   -webkit-appearance: none;
   appearance: none;
+  /* Centres the thumb on a track that is shorter than it is. */
+  margin-top: calc((var(--track-height) - var(--thumb-size)) / 2);
   width: var(--thumb-size);
   height: var(--thumb-size);
   border-radius: 9999px;

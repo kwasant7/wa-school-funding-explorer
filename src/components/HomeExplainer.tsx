@@ -131,7 +131,7 @@ export default function HomeExplainer() {
             How <span data-no-translate>{selectedDistrict.name}</span>&apos;s funding is split
           </h2>
           <p className="mt-1 text-sm text-ink-secondary">
-            Actual {year} general-fund revenue by source. Hover the bar for
+            Actual {year} general-fund revenue by source. Tap or hover the bar for
             exact amounts and shares.
           </p>
           <div className="mt-4">

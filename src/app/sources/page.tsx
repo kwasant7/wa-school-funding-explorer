@@ -169,7 +169,7 @@ export default function SourcesPage() {
       </ul>
 
       <div className="mt-6 card p-5 md:p-6 bg-accent-wash border-accent-soft">
-        <h2 className="font-bold">See the actual data behind this site</h2>
+        <h2 className="text-xl font-bold">See the actual data behind this site</h2>
         <p className="mt-1 text-sm text-ink-secondary">
           Every district's enrollment, demographics, and revenue by source, as
           joined from the OSPI files below - the same file this site itself
@@ -299,7 +299,7 @@ export default function SourcesPage() {
             <tbody>
               {F196_FILES.map(([label, url]) => (
                 <tr key={url} className="border-t border-line">
-                  <td className="px-4 py-2.5 whitespace-nowrap">{label}</td>
+                  <td className="px-4 py-2.5">{label}</td>
                   <td className="px-4 py-2.5">
                     <Ext href={url}>{url.split('/').pop()}</Ext>
                   </td>
@@ -333,7 +333,7 @@ export default function SourcesPage() {
             </table>
           </div>
           <div className="card p-5 text-sm text-ink-secondary space-y-2">
-            <p className="font-semibold text-ink">Processing rules</p>
+            <h3 className="text-base font-bold text-ink">Processing rules</h3>
             <p>
               Total funding = codes 1000-9000, general fund only. Code 9000
               is included in “Other” so totals reconcile to OSPI&apos;s full
@@ -354,9 +354,9 @@ export default function SourcesPage() {
         </div>
 
         <div className="mt-4 card p-5 text-sm text-ink-secondary space-y-2">
-          <p className="font-semibold text-ink">
+          <h3 className="text-base font-bold text-ink">
             Levies & Local Effort Assistance (the policy simulator)
-          </p>
+          </h3>
           <p>
             The simulator&apos;s levy and LEA sliders run Washington&apos;s
             actual formula on real district data. Assessed valuation,
@@ -383,9 +383,9 @@ export default function SourcesPage() {
         </div>
 
         <div className="mt-4 card p-5 text-sm text-ink-secondary space-y-2">
-          <p className="font-semibold text-ink">
+          <h3 className="text-base font-bold text-ink">
             What districts actually spend (the simulator&apos;s comparison lines)
-          </p>
+          </h3>
           <p>
             The &ldquo;what they actually spend&rdquo; markers on the special
             education, MSOC, and transportation sliders come from the{' '}
@@ -423,9 +423,9 @@ export default function SourcesPage() {
         </div>
 
         <div className="mt-4 card p-5 text-sm text-ink-secondary space-y-2">
-          <p className="font-semibold text-ink">
+          <h3 className="text-base font-bold text-ink">
             What the state allocation pays for (the 7-step walkthrough)
-          </p>
+          </h3>
           <p>
             The breakdown of a district&apos;s state allocation into salaries,
             benefits, materials and operating costs, special education,
@@ -454,9 +454,9 @@ export default function SourcesPage() {
         </div>
 
         <div className="mt-4 card p-5 text-sm text-ink-secondary space-y-2">
-          <p className="font-semibold text-ink">
+          <h3 className="text-base font-bold text-ink">
             Binding conditions &amp; financial oversight
-          </p>
+          </h3>
           <p>
             Districts flagged as being on binding conditions or under enhanced
             state oversight are transcribed by hand from OSPI&apos;s{' '}
@@ -471,9 +471,9 @@ export default function SourcesPage() {
         </div>
 
         <div className="mt-4 card p-5 text-sm text-ink-secondary space-y-2">
-          <p className="font-semibold text-ink">
+          <h3 className="text-base font-bold text-ink">
             Expenditures, fund balance & reserve ratio
-          </p>
+          </h3>
           <p>
             Total spending comes from the parallel &ldquo;Actuals - General Fund
             Expenditures&rdquo; CSVs on the same{' '}
@@ -508,7 +508,7 @@ export default function SourcesPage() {
         </div>
 
         <div className="mt-4 card p-5 text-sm text-ink-secondary space-y-2">
-          <p className="font-semibold text-ink">Translations</p>
+          <h3 className="text-base font-bold text-ink">Translations</h3>
           <p>
             The non-English versions of this site&apos;s interface text are
             machine translations, generated once at build time via Google
@@ -613,7 +613,7 @@ export default function SourcesPage() {
             <tbody>
               {LAW_LINKS.map(([name, use, url]) => (
                 <tr key={name} className="border-t border-line">
-                  <td className="px-4 py-2.5 whitespace-nowrap">
+                  <td className="px-4 py-2.5">
                     <Ext href={url}>{name}</Ext>
                   </td>
                   <td className="px-4 py-2.5 text-ink-secondary">{use}</td>

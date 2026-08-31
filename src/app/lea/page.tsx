@@ -130,7 +130,7 @@ export default function LeaPage() {
             it asks what the district <em>could</em> raise at a common rate, no
             matter what its voters actually approved.
           </p>
-          <pre className="overflow-x-auto rounded-lg bg-baseline/40 p-3 text-xs text-ink">
+          <pre className="whitespace-pre-wrap break-words rounded-lg bg-baseline/40 p-3 text-xs text-ink">
 {`capacity per student = assessed value × $${LEA.leaMaxRate.toFixed(2)} ÷ 1,000 ÷ enrollment`}
           </pre>
         </Step>
@@ -141,7 +141,7 @@ export default function LeaPage() {
             the goal gets nothing; the shortfall for everyone else is the
             per-student amount the state is willing to cover.
           </p>
-          <pre className="overflow-x-auto rounded-lg bg-baseline/40 p-3 text-xs text-ink">
+          <pre className="whitespace-pre-wrap break-words rounded-lg bg-baseline/40 p-3 text-xs text-ink">
 {`LEA per student = max(0, ${fmtMoneyFull(LEA.leaThresholdPerPupil)} − capacity per student)`}
           </pre>
         </Step>
@@ -151,7 +151,7 @@ export default function LeaPage() {
             Multiply by enrollment to get the district&apos;s maximum LEA
             entitlement for the year.
           </p>
-          <pre className="overflow-x-auto rounded-lg bg-baseline/40 p-3 text-xs text-ink">
+          <pre className="whitespace-pre-wrap break-words rounded-lg bg-baseline/40 p-3 text-xs text-ink">
 {`maximum LEA = LEA per student × enrollment`}
           </pre>
         </Step>
@@ -163,7 +163,7 @@ export default function LeaPage() {
             levying half that rate collects half. This is why LEA is a{' '}
             <em>match</em> rather than a grant.
           </p>
-          <pre className="overflow-x-auto rounded-lg bg-baseline/40 p-3 text-xs text-ink">
+          <pre className="whitespace-pre-wrap break-words rounded-lg bg-baseline/40 p-3 text-xs text-ink">
 {`payable LEA = maximum LEA × min(district levy rate ÷ $${LEA.leaMaxRate.toFixed(2)}, 1)`}
           </pre>
         </Step>

@@ -597,7 +597,7 @@ export default function WaMap({
         )}
 
         {/* zoom controls */}
-        <div className="absolute top-2 right-2 flex flex-col gap-1">
+        <div className="absolute top-2 right-2 flex flex-col gap-1.5">
           {[
             ['+', () => zoomCenter(2), 'Zoom in'],
             ['−', () => zoomCenter(0.5), 'Zoom out'],
@@ -615,7 +615,7 @@ export default function WaMap({
                 with the same text already in `title`.
               */
               aria-label={title as string}
-              className="w-8 h-8 card flex items-center justify-center text-lg font-semibold text-ink-secondary hover:border-accent hover:text-accent"
+              className="w-10 h-10 card flex items-center justify-center text-lg font-semibold text-ink-secondary hover:border-accent hover:text-accent"
             >
               <span aria-hidden="true">{label as string}</span>
             </button>
@@ -686,7 +686,7 @@ export default function WaMap({
           </span>
         )}
         <span className="text-ink-muted">
-          click a district to open its profile below · pinch or Ctrl+scroll to
+          tap a district to open its profile below · pinch or Ctrl+scroll to
           zoom · drag to pan
         </span>
       </div>

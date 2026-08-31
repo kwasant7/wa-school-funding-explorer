@@ -378,7 +378,7 @@ function AllocationBar({
       </div>
 
       <p className="mt-2 min-h-[1.5rem] text-xs text-ink-muted">
-        {active ? active.blurb : 'Hover a band to see what it covers.'}
+        {active ? active.blurb : 'Tap a band to see what it covers.'}
       </p>
 
       <table className="mt-2 w-full text-sm">

@@ -259,7 +259,7 @@ export default function NeedVsFundingChart({
             {fmtInt(hover.enrollment)} students
           </>
         ) : (
-          'Each dot is a district. Hover one to see it.'
+          'Each dot is a district. Tap or hover one to see it.'
         )}
       </p>
 

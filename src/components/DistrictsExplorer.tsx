@@ -905,24 +905,24 @@ function DistrictDetail({
             Every Washington district in {year} · <span data-no-translate>{d.name}</span> highlighted
           </p>
           <span className="flex flex-wrap items-center gap-x-4 gap-y-1.5">
-            <label className="flex cursor-pointer items-center gap-1.5 text-xs text-ink-secondary">
+            <label className="flex min-h-[44px] cursor-pointer items-center gap-2 text-xs text-ink-secondary">
               <input
                 type="checkbox"
                 checked={hideCharters}
                 onChange={(e) => setHideCharters(e.target.checked)}
-                className="h-3.5 w-3.5 accent-accent"
+                className="h-4 w-4 accent-accent"
               />
               Exclude charter schools ({CHARTER_CODES.size})
             </label>
             <label
-              className="flex cursor-pointer items-center gap-1.5 text-xs text-ink-secondary"
+              className="flex min-h-[44px] cursor-pointer items-center gap-2 text-xs text-ink-secondary"
               title="400 students is the prototypical model's reference school - the size the state formula funds as one whole school."
             >
               <input
                 type="checkbox"
                 checked={hideSmall}
                 onChange={(e) => setHideSmall(e.target.checked)}
-                className="h-3.5 w-3.5 accent-accent"
+                className="h-4 w-4 accent-accent"
               />
               Exclude districts under 400 students
             </label>

@@ -155,7 +155,7 @@ function IssueCard({ issue, index }: { issue: Issue; index: number }) {
 
       {issue.refs.length > 0 && (
         <details className="mt-3 group">
-          <summary className="cursor-pointer text-xs font-semibold text-accent hover:underline">
+          <summary className="inline-flex min-h-[44px] cursor-pointer items-center text-xs font-semibold text-accent hover:underline">
             Where this comes from
           </summary>
           <ul className="mt-2 space-y-1.5">
@@ -237,7 +237,7 @@ export default function DistrictBrief({ code }: { code: string }) {
       </p>
 
       <details className="mt-2 group">
-        <summary className="cursor-pointer text-xs font-semibold text-accent hover:underline">
+        <summary className="inline-flex min-h-[44px] cursor-pointer items-center text-xs font-semibold text-accent hover:underline">
           How these problems are picked
         </summary>
         <div className="mt-2 text-xs text-ink-secondary space-y-1.5">
