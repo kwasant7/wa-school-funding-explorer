@@ -158,6 +158,15 @@ def main():
             continue
         c = code(row[0])
         total = num(row[AAFTE_TOTAL - 1])
+        # The sheet ends with a phantom appendix: eight district codes repeat
+        # after the table's last row with every value blank (CY2027 workbook,
+        # rows 312-319 - North Kitsap, Puyallup, North Thurston, Ferndale,
+        # Enumclaw, Omak, Quillayute Valley, Selah). Letting a blank repeat
+        # overwrite the real row zeroed their enrollment, and the build then
+        # silently dropped all eight districts from levy.json - which is why
+        # the simulator's levy and LEA cards drew nothing for them.
+        if c in enroll_by_code and total <= 0:
+            continue
         transfer_out = num(row[AAFTE_TRANSFER_OUT - 1])
         transfer_in = num(row[AAFTE_TRANSFER_IN - 1])
         enroll_by_code[c] = total - transfer_out + transfer_in
