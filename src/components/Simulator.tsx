@@ -14,6 +14,18 @@ import {
   type SimulatorControlId,
 } from '@/lib/simulator-config';
 import { useAssistantDistrict, useAssistantSimulator } from '@/lib/assistant/store';
+import {
+  HIGH_POVERTY_THRESHOLD,
+  LAP_ANNUAL_HOURS,
+  LAP_GROUP_SIZE,
+  LAP_HOURS_PER_WEEK,
+  HIGH_POVERTY_HOURS_PER_WEEK,
+  LAP_MODEL_YEAR,
+  LAP_PRIOR_YEAR,
+  LAP_WEEKS,
+  LAP_COMP,
+  lapFor,
+} from '@/lib/lap';
 import { readSelectedDistrict, writeSelectedDistrict } from '@/lib/selected-district';
 
 /**
@@ -707,8 +719,10 @@ const LEVERS = [
       'Extra money for schools where most students are low-income.',
     bill: (
       <>
-        This is a modeled policy proposal, not current law: Washington has no
-        statewide high-poverty concentration bonus. It is modeled on{' '}
+        This is a modeled policy proposal, not current law: Washington&apos;s
+        existing high-poverty money is the school-level High-Poverty LAP hours
+        shown in the card below, not a district concentration bonus. This
+        slider is modeled on{' '}
         <StatuteLink href="https://www.cde.ca.gov/fg/aa/lc/lcffoverview.asp">
           California&apos;s Local Control Funding Formula
         </StatuteLink>
@@ -770,6 +784,12 @@ function LeverIcon({ name }: { name: string }) {
     return (
       <svg {...p}>
         <path d="m3 10 9-6 9 6M5 9v10h14V9M9 19v-5h6v5" />
+      </svg>
+    );
+  if (name === 'lap')
+    return (
+      <svg {...p}>
+        <path d="M12 6.5C10.5 5 8.5 4.5 5.5 4.5H4v13h1.5c3 0 5 .5 6.5 2 1.5-1.5 3.5-2 6.5-2H20v-13h-1.5c-3 0-5 .5-6.5 2zM12 6.5v13" />
       </svg>
     );
   if (name === 'ell')
@@ -1344,6 +1364,147 @@ function LeverBar({
 }
 
 /** One numbered policy card: slider, context, district picture, stat strip. */
+/*
+  LAP is modeled with the statutory Washington allocation formula, not as a
+  user-selected policy scenario: RCW 28A.150.260(10) fixes the hours, group
+  size and poverty threshold, so there is deliberately no slider here and no
+  entry in simulator-config. The card exists so the base funding the sliders
+  sit on is visible, and it re-computes from the selected district's own
+  prior-year enrollment and poverty - lapFor() reads no slider state, so no
+  lever can move it. The full formula and its calibration live in lib/lap.ts.
+*/
+function LapCard({ district }: { district: SimDistrict | null }) {
+  const lap = district ? lapFor(district.record.code) : null;
+  const fmtFte = (v: number) =>
+    v >= 100 ? fmtInt(Math.round(v)) : v.toFixed(1);
+  return (
+    <section className="card p-5 md:p-6">
+      <div className="flex items-start justify-between gap-3 flex-wrap">
+        <div className="flex items-center gap-3">
+          <span
+            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-white"
+            style={{ backgroundColor: '#0e7a5f' }}
+          >
+            <LeverIcon name="lap" />
+          </span>
+          <div>
+            <p className="text-xs text-ink-muted">Student needs</p>
+            <h3 className="text-lg font-bold">
+              Learning Assistance Program (LAP)
+            </h3>
+          </div>
+        </div>
+        <span className="inline-block rounded-full bg-baseline/50 px-2.5 py-1 text-xs font-semibold uppercase tracking-wide text-ink-secondary">
+          Current law · no slider
+        </span>
+      </div>
+
+      <p className="mt-3 text-sm text-ink-secondary">
+        Extra academic support for students who are behind, funded by the
+        share of students who are low-income. Unlike the sliders above, LAP is
+        a fixed part of basic state funding:{' '}
+        <StatuteLink href="https://app.leg.wa.gov/rcw/default.aspx?cite=28A.150.260">
+          RCW 28A.150.260(10)
+        </StatuteLink>{' '}
+        sets the hours ({LAP_HOURS_PER_WEEK} per eligible student per week),
+        the group size ({LAP_GROUP_SIZE}), and the {LAP_WEEKS}-week year, and
+        the formula turns them into funded teachers - not a flat per-student
+        amount.
+      </p>
+
+      {lap ? (
+        <>
+          <div className="mt-4 grid grid-cols-2 md:grid-cols-4 gap-4">
+            <CardStat
+              label={`Low-income share (${lap.priorYear})`}
+              value={`${(100 * lap.lapPovertyRate).toFixed(1)}%`}
+            />
+            <CardStat
+              label="Eligible students"
+              value={fmtInt(Math.round(lap.lapEligibleStudents))}
+            />
+            <CardStat
+              label="Funded LAP teachers"
+              value={`${fmtFte(lap.totalTeacherFte)} FTE`}
+            />
+            <CardStat
+              label={`Actual ${LAP_MODEL_YEAR} allocation`}
+              value={
+                lap.actualAllocation != null
+                  ? fmtMoney(lap.actualAllocation)
+                  : '-'
+              }
+            />
+          </div>
+
+          {/* The statute's own arithmetic, in the district's numbers. */}
+          <p className="mt-4 text-sm text-ink-secondary">
+            {fmtInt(Math.round(lap.priorYearAafte))} students (
+            {lap.priorYear} funding FTE) ×{' '}
+            {(100 * lap.lapPovertyRate).toFixed(1)}% low-income ={' '}
+            <strong className="text-ink">
+              {fmtInt(Math.round(lap.lapEligibleStudents))} eligible students
+            </strong>
+            , each generating {LAP_HOURS_PER_WEEK} hours a week for{' '}
+            {LAP_WEEKS} weeks in groups of {LAP_GROUP_SIZE} - over a{' '}
+            {fmtInt(LAP_ANNUAL_HOURS)}-hour teacher year, that is{' '}
+            <strong className="text-ink">
+              {fmtFte(lap.baseTeacherFte)} funded teachers
+            </strong>
+            {lap.qualifiesHighPoverty ? (
+              <>
+                , plus{' '}
+                <strong className="text-ink">
+                  {fmtFte(lap.highPovertyTeacherFte)} High-Poverty LAP teachers
+                </strong>{' '}
+                ({HIGH_POVERTY_HOURS_PER_WEEK} extra hours a week where at
+                least {Math.round(100 * HIGH_POVERTY_THRESHOLD)}% of students
+                are low-income)
+              </>
+            ) : (
+              <>
+                . District-wide it sits below the{' '}
+                {Math.round(100 * HIGH_POVERTY_THRESHOLD)}% threshold for
+                High-Poverty LAP, though individual schools may still qualify
+              </>
+            )}
+            . Priced at the state&apos;s certificated salary allocation plus
+            benefits, that is about{' '}
+            <strong className="text-ink">{fmtMoney(lap.totalFunding)}</strong>{' '}
+            {lap.actualAllocation != null && (
+              <>
+                - against {fmtMoney(lap.actualAllocation)} actually allocated
+                in {LAP_MODEL_YEAR}
+              </>
+            )}
+            .
+          </p>
+
+          <p className="mt-3 text-xs text-ink-muted">
+            Modeled dollars price funded teachers at the average state-funded
+            certificated salary implied by OSPI&apos;s {LAP_MODEL_YEAR}{' '}
+            apportionment ({fmtMoneyFull(Math.round(LAP_COMP.certificatedSalary))}{' '}
+            plus {Math.round(100 * LAP_COMP.benefitRate)}% benefits), so the
+            statewide total matches OSPI by construction; a district&apos;s
+            own figure differs through its regionalization factor and its
+            school-level poverty mix, which this district-level dataset cannot
+            see. High-Poverty LAP is school-by-school in law; here it is
+            approximated district-wide. The actual allocation is revenue code
+            4155.
+          </p>
+        </>
+      ) : (
+        <p className="mt-4 text-sm text-ink-muted">
+          Pick a district above to see the formula in its own numbers.
+          Statewide, the formula funds about{' '}
+          {fmtInt(Math.round(LAP_COMP.statewideFte))} LAP teachers -{' '}
+          {fmtMoney(LAP_COMP.statewideActual)} in {LAP_MODEL_YEAR}.
+        </p>
+      )}
+    </section>
+  );
+}
+
 function LeverCard({
   lever,
   index,
@@ -1865,6 +2026,18 @@ export default function Simulator() {
               it assumes districts use the full increase.
             </li>
             <li>
+              The Learning Assistance Program card is current law, not a
+              lever: base LAP applies the statutory formula (prior-year
+              enrollment × prior-year low-income share × 2.3975 hours ÷ 15 ÷
+              900) to each district&apos;s own {LAP_PRIOR_YEAR} data, and
+              High-Poverty LAP is approximated district-wide because the
+              school-level poverty data the statute uses is not in this
+              dataset. Funded teachers are priced at the average certificated
+              salary and benefit rate implied by OSPI&apos;s own
+              apportionment, so the statewide modeled total matches the actual
+              statewide allocation by construction.
+            </li>
+            <li>
               The far end of each slider is a comparison ceiling, not a
               recommendation or a prediction.
             </li>
@@ -2062,6 +2235,7 @@ export default function Simulator() {
             district={district}
           />
         ))}
+        <LapCard district={district} />
         {dirty && (
           <button
             type="button"
