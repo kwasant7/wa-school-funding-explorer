@@ -413,7 +413,7 @@ export default function WaMap({
       {/* Metric selector: what the map colors represent */}
       <div className="mb-3 flex flex-wrap items-center gap-2">
         <span className="text-sm text-ink-secondary">Color the map by</span>
-        <div className="inline-flex rounded-lg border border-line overflow-hidden">
+        <div className="inline-flex rounded-lg border border-line overflow-hidden divide-x divide-line">
           {METRICS.map((m) => (
             <button
               key={m.id}
