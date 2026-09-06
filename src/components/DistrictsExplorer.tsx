@@ -390,8 +390,7 @@ function FundBalanceCard({ district: d, year }: { district: District; year: stri
               {fmtSignedMoney(d.fundBalance).replace('+', '')}
             </div>
             <div className="text-xs text-ink-muted mt-1">
-              The savings left at year&apos;s end, carried forward for emergencies,
-              uneven cash flow, and next year&apos;s start-up costs.
+              Year-end savings · emergencies, cash flow, next year&apos;s costs
             </div>
           </div>
           {(() => {
@@ -418,10 +417,7 @@ function FundBalanceCard({ district: d, year }: { district: District; year: stri
                   <span className={textCls}>{status.replace('—', '-')}</span>
                 </div>
                 <div className="text-xs text-ink-muted mt-1">
-                  Savings left over at year&apos;s end, measured as a share of
-                  what the district spends in a year - how long it could keep
-                  paying the bills on reserves alone. Below 5% one bad year can
-                  force mid-year cuts; the national guideline is about 17%.
+                  Year-end savings ÷ annual spending
                 </div>
               </div>
             );
@@ -632,84 +628,38 @@ function Big3Card({ district: d }: { district: District }) {
 
 /**
  * Data-driven read of a district's trends. Everything here is computed from the
- * district's own series (per-student, enrollment, surplus) so it works for any
+ * district's own series (per-student funding and surplus) so it works for any
  * district - no hand-written per-district claims.
  */
-function TrendAnalysis({ district: d }: { district: District }) {
+function TrendAnalysis({ district: d, year }: { district: District; year: string }) {
   const ppSeries = districtSeries(d.code, (x) => x.perPupil);
   const pp = ppSeries
-    .map((p) => p.value)
-    .filter((v): v is number => v != null);
-  const enr = districtSeries(d.code, (x) => x.enrollment)
     .map((p) => p.value)
     .filter((v): v is number => v != null);
   const surp = districtSeries(d.code, (x) => x.surplus)
     .map((p) => p.value)
     .filter((v): v is number => v != null);
-  if (pp.length < 2 || enr.length < 2) return null;
+  if (pp.length < 2) return null;
   // Districts that opened mid-series (charters, new compact schools) have no
   // 2019-20 row, so anchor the comparison on their own first year of data.
   const firstYear = ppSeries.find((p) => p.value != null)?.label ?? YEARS[0];
 
   const ppPct = ((pp[pp.length - 1] - pp[0]) / pp[0]) * 100;
-  const enrPct = ((enr[enr.length - 1] - enr[0]) / enr[0]) * 100;
   const deficitYears = surp.filter((v) => v < 0).length;
   const cumNet = surp.reduce((a, b) => a + b, 0);
-  const drewDown = cumNet < 0;
-  const name = d.name.replace(/ School District.*$/, '').replace(/ Public Schools$/, '');
-
-  const sentences: string[] = [];
-
-  // 1. The headline trend
-  if (ppPct > 2) {
-    sentences.push(
-      `${name}'s funding per student has risen about ${Math.round(ppPct)}% since ${firstYear} (from ${fmtMoneyFull(pp[0])} to ${fmtMoneyFull(pp[pp.length - 1])}).`
-    );
-  } else if (ppPct < -2) {
-    sentences.push(
-      `${name}'s funding per student has fallen about ${Math.round(Math.abs(ppPct))}% since ${firstYear}.`
-    );
-  } else {
-    sentences.push(`${name}'s funding per student has held roughly flat since ${firstYear}.`);
-  }
-
-  // 2. The context that complicates the headline
-  if (ppPct > 2 && drewDown) {
-    sentences.push(
-      `That upward line looks reassuring, but it doesn't mean the district is flush: it spent more than it took in during ${deficitYears} of the last ${surp.length} years, drawing down about ${fmtMoney(Math.abs(cumNet))} net from reserves. Per-student funding rising while savings shrink usually means the increases aren't keeping pace with real costs.`
-    );
-  } else if (ppPct > 2 && enrPct < -3) {
-    sentences.push(
-      `Some of that increase is mechanical: enrollment fell about ${Math.round(Math.abs(enrPct))}% over the same span, so a similar pot of money is split among fewer students rather than reflecting genuinely richer funding.`
-    );
-  } else if (ppPct > 2) {
-    sentences.push(
-      `Whether that keeps pace with rising salaries, special-education costs, and inflation is the real question - a higher nominal figure can still be a cut in real terms.`
-    );
-  } else if (drewDown) {
-    sentences.push(
-      `Meanwhile the district ran a deficit in ${deficitYears} of the last ${surp.length} years, drawing down about ${fmtMoney(Math.abs(cumNet))} net from reserves - a sign that funding hasn't matched what it costs to run these schools.`
-    );
-  } else {
-    sentences.push(
-      `Against rising salaries and inflation, flat funding is effectively a cut, even as the total dollar figure holds steady.`
-    );
-  }
-
-  // 3. The reserve-ratio reality check (the sharpest signal when available)
-  if (d.reserveRatio != null && d.reserveRatio < 0) {
-    sentences.push(
-      `Its reserves have run dry: the reserve ratio is now ${d.reserveRatio.toFixed(1)}%, meaning the district has essentially no savings cushion left, so any further shortfall means cuts.`
-    );
-  } else if (d.reserveRatio != null && d.reserveRatio < 5) {
-    sentences.push(
-      `Its reserve ratio has slipped to ${d.reserveRatio.toFixed(1)}%, under the 5% this site flags as thin - a single bad year could force cuts.`
-    );
-  } else {
-    sentences.push(
-      `Read the funding line together with the surplus/deficit bars above: more dollars per student only help if they outpace what the district actually needs to spend.`
-    );
-  }
+  const fundingTrend = ppPct > 2
+    ? `Up ${Math.round(ppPct)}% since ${firstYear}`
+    : ppPct < -2
+      ? `Down ${Math.round(Math.abs(ppPct))}% since ${firstYear}`
+      : `Roughly flat since ${firstYear}`;
+  const balanceTrend = surp.length > 0
+    ? `${deficitYears} of ${surp.length} years had deficits; ${fmtMoney(Math.abs(cumNet))} ${cumNet < 0 ? 'net shortfall' : 'net surplus'}.`
+    : 'No surplus/deficit history is available.';
+  const reserveAction = d.reserveRatio == null
+    ? 'Check the latest district budget for its fund balance and reserve target.'
+    : d.reserveRatio < 5
+      ? 'Ask the school board how it plans to rebuild reserves.'
+      : 'Ask the school board whether reserves meet its target.';
 
   const oversight = oversightFor(d.code);
 
@@ -718,9 +668,22 @@ function TrendAnalysis({ district: d }: { district: District }) {
       <p className="text-xs font-semibold uppercase tracking-wide text-accent-deep">
         What the trends mean
       </p>
-      <p className="mt-2 text-sm md:text-base text-ink-secondary leading-relaxed">
-        {sentences.join(' ')}
-      </p>
+      <ul className="mt-3 list-disc space-y-2 pl-5 text-sm text-ink-secondary leading-relaxed">
+        <li>
+          <strong className="text-ink">Compare funding with costs.</strong>{' '}
+          {fundingTrend}; {fmtMoneyFull(pp[pp.length - 1])} per student in {LATEST}.
+          Compare that with changes in staffing and operating costs.
+        </li>
+        <li>
+          <strong className="text-ink">Check the budget balance.</strong>{' '}
+          {balanceTrend} Ask how next year&apos;s budget matches spending to revenue.
+        </li>
+        <li>
+          <strong className="text-ink">Review the reserve plan.</strong>{' '}
+          {d.reserveRatio != null && `Fund balance was ${d.reserveRatio.toFixed(1)}% of annual spending in ${year}. `}
+          {reserveAction}
+        </li>
+      </ul>
       {/*
         Binding conditions is the one hard, official judgement about a
         district's finances - worth surfacing above our own generated read of
@@ -734,24 +697,20 @@ function TrendAnalysis({ district: d }: { district: District }) {
               : 'On state binding conditions'}
           </p>
           <p className="mt-1 text-sm text-ink-secondary">
-            {oversight.detail} Districts that cannot adopt a balanced budget must
-            request binding conditions from OSPI, which then sets fund-balance
-            targets and requires more frequent financial reporting.{' '}
+            {oversight.detail}{' '}
             <a
               href={OVERSIGHT_SOURCE}
               target="_blank"
               rel="noopener noreferrer"
               className="font-semibold text-accent hover:underline"
             >
-              OSPI status documents ↗
+              Review OSPI&apos;s recovery requirements ↗
             </a>
           </p>
         </div>
       )}
       <p className="mt-2 text-xs text-ink-muted">
-        Auto-generated from this district&apos;s own funding, enrollment, and
-        surplus/deficit data - a starting point for interpretation, not a formal
-        fiscal assessment.
+        Based on district financial data; not a formal fiscal assessment.
         {oversight
           ? ` Oversight status transcribed from OSPI on ${OVERSIGHT_CHECKED_ON}.`
           : ''}
@@ -928,7 +887,7 @@ function DistrictDetail({
         annual-average funding FTE; this chart uses October headcount.
       </p>
 
-      <TrendAnalysis district={d} />
+      <TrendAnalysis district={d} year={year} />
 
       <div className="mt-4 card p-5">
         <h2 className="font-semibold mb-1">

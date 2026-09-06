@@ -192,9 +192,9 @@ function currentCapFor(code: string) {
  * What raising the per-pupil cap does for one district, split by whether the
  * money needs a new election.
  *
- * Many districts have already passed a levy larger than the cap lets them
- * collect - 46 of them in 2026, Bellevue by $8.9M - so the first dollars a
- * higher cap frees up are dollars voters ALREADY approved. Only past that
+ * Many districts have already passed a levy larger than the modeled cap lets
+ * them collect, so the first dollars a higher cap frees up are dollars voters
+ * ALREADY approved. Only past that
  * point does a district have to go back to the ballot.
  */
 function levyRoom(levy: LevyDistrict, newPerPupil: number, currentCap: number) {
@@ -882,7 +882,7 @@ function LeverBar({
         <figcaption className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-ink-secondary">
           <span className="flex items-center gap-1.5">
             <span className="inline-block w-3 h-3 rounded-sm bg-series-state" />
-            Collected today
+            Collectible under current cap
           </span>
           {room.unlocked > 0 && (
             <span className="flex items-center gap-1.5">
@@ -954,13 +954,33 @@ function LeverBar({
             {cap !== LEA.maxLevyPerPupil
               ? ' it qualifies for as a district above 40,000 students'
               : ''}{' '}
-            only lets it collect{' '}
-            <strong className="text-ink">{fmtMoney(room.collectedToday)}</strong>.
+            allows an estimated{' '}
+            <strong className="text-ink">{fmtMoney(room.collectedToday)}</strong> in {levyData.calendarYear} collections.
             {room.unlocked > 0
               ? ` Raising the cap frees ${fmtMoney(room.unlocked)} of that without another election.`
               : ' Raising the cap is what would release the rest.'}
           </p>
         )}
+        <details className="mt-3 text-xs text-ink-secondary">
+          <summary className="cursor-pointer font-semibold text-accent hover:underline">
+            Where these levy figures come from
+          </summary>
+          <p className="mt-2 leading-relaxed">
+            Source:{' '}
+            <a href={levyData.sources.workbook} target="_blank" rel="noopener noreferrer" className="font-semibold text-accent underline underline-offset-2">
+              OSPI&apos;s {levyData.calendarYear} levy projection workbook ↗
+            </a>
+            , &ldquo;Voter Approved&rdquo; sheet, {levyData.levyYear} column (updated June 26, 2026).
+            Property values and enrollment come from its &ldquo;Data&rdquo; and &ldquo;District AAFTE&rdquo; sheets.
+          </p>
+          <p className="mt-2 leading-relaxed">
+            We estimate collectible levy as the smallest of voter approval,
+            assessed value × $2.50 ÷ 1,000, and enrollment × the per-student cap.
+            The green segment is the portion of already-approved money your
+            higher cap would unlock; amounts are divided by enrollment for this chart.
+            These are modeled {levyData.calendarYear} collections, not actual receipts.
+          </p>
+        </details>
       </figure>
     );
   }

@@ -1,5 +1,11 @@
 {
   "es": {
+    "Actual revenue · includes funding outside the prototype formula.": "Ingresos reales · incluyen financiación ajena a la fórmula del prototipo.",
+    "Calculation notes": "Notas de cálculo",
+    "Running Start college enrollment:": "Inscripción universitaria en Running Start:",
+    "FTE. Funded separately from the on-campus prototype calculation.": "FTE. Financiado por separado del cálculo del prototipo en el campus.",
+    "Year-end savings · emergencies, cash flow, next year's costs": "Ahorros al cierre del año · emergencias, flujo de caja, gastos del próximo año",
+    "Year-end savings ÷ annual spending": "Ahorros al cierre del año ÷ gasto anual",
     "- a flat per-student amount covering everything that is not staff pay.": "- una cantidad fija por estudiante que cubra todo lo que no sea remuneración del personal.",
     "- a measure of enrollment by how much school a student actually attends. A student enrolled half-time counts as 0.5 FTE.": "- una medida de inscripción según la cantidad de escuelas a las que realmente asiste un estudiante. Un estudiante matriculado a tiempo parcial cuenta como 0,5 FTE.",
     "- about": "- aproximadamente",
@@ -1551,6 +1557,12 @@
     "salary regionalization factor for": "factor de regionalización salarial para"
   },
   "zh": {
+    "Actual revenue · includes funding outside the prototype formula.": "实际收入 · 包含原型公式以外的资金。",
+    "Calculation notes": "计算说明",
+    "Running Start college enrollment:": "Running Start 大学注册人数：",
+    "FTE. Funded separately from the on-campus prototype calculation.": "FTE。资金独立于校内原型计算。",
+    "Year-end savings · emergencies, cash flow, next year's costs": "年末结余 · 应急、现金周转、下一年度开支",
+    "Year-end savings ÷ annual spending": "年末结余 ÷ 年度支出",
     "- a flat per-student amount covering everything that is not staff pay.": "- 每个学生的固定金额，涵盖员工工资以外的所有费用。",
     "- a measure of enrollment by how much school a student actually attends. A student enrolled half-time counts as 0.5 FTE.": "- 通过学生实际就读的学校数量来衡量入学率。注册的学生半日制算作 0.5 FTE。",
     "- about": "- 关于",
@@ -3102,6 +3114,12 @@
     "salary regionalization factor for": "薪资区域化因素"
   },
   "vi": {
+    "Actual revenue · includes funding outside the prototype formula.": "Doanh thu thực tế · gồm nguồn tài trợ ngoài công thức trường nguyên mẫu.",
+    "Calculation notes": "Ghi chú tính toán",
+    "Running Start college enrollment:": "Số ghi danh đại học Running Start:",
+    "FTE. Funded separately from the on-campus prototype calculation.": "FTE. Được tài trợ riêng ngoài phép tính nguyên mẫu trong khuôn viên.",
+    "Year-end savings · emergencies, cash flow, next year's costs": "Khoản tiết kiệm cuối năm · khẩn cấp, dòng tiền, chi phí năm tới",
+    "Year-end savings ÷ annual spending": "Khoản tiết kiệm cuối năm ÷ chi tiêu hằng năm",
     "- a flat per-student amount covering everything that is not staff pay.": "- một khoản tiền cố định cho mỗi học sinh bao gồm mọi thứ không phải là lương của nhân viên.",
     "- a measure of enrollment by how much school a student actually attends. A student enrolled half-time counts as 0.5 FTE.": "- thước đo số lượng tuyển sinh bằng số lượng học sinh thực sự theo học. Một sinh viên đăng ký học nửa thời gian được tính là 0,5 FTE.",
     "- about": "- khoảng",
@@ -4653,6 +4671,12 @@
     "salary regionalization factor for": "yếu tố khu vực hóa tiền lương cho"
   },
   "ru": {
+    "Actual revenue · includes funding outside the prototype formula.": "Фактические доходы · включают финансирование вне формулы прототипа.",
+    "Calculation notes": "Примечания к расчёту",
+    "Running Start college enrollment:": "Численность студентов колледжа по Running Start:",
+    "FTE. Funded separately from the on-campus prototype calculation.": "FTE. Финансируется отдельно от расчёта школьного прототипа.",
+    "Year-end savings · emergencies, cash flow, next year's costs": "Сбережения на конец года · непредвиденные расходы, денежный поток, расходы следующего года",
+    "Year-end savings ÷ annual spending": "Сбережения на конец года ÷ годовые расходы",
     "- a flat per-student amount covering everything that is not staff pay.": "- фиксированная сумма на одного учащегося, покрывающая все, кроме заработной платы персонала.",
     "- a measure of enrollment by how much school a student actually attends. A student enrolled half-time counts as 0.5 FTE.": "- показатель набора по тому, сколько школ фактически посещает учащийся. Студент, зачисленный на полставки, засчитывается как 0,5 ЭПЗ.",
     "- about": "- около",
@@ -6204,6 +6228,12 @@
     "× regionalization": "× регионализация"
   },
   "tl": {
+    "Actual revenue · includes funding outside the prototype formula.": "Aktwal na kita · kasama ang pondo sa labas ng pormula ng prototype.",
+    "Calculation notes": "Mga tala sa pagkalkula",
+    "Running Start college enrollment:": "Enrolment sa kolehiyo sa Running Start:",
+    "FTE. Funded separately from the on-campus prototype calculation.": "FTE. Hiwalay ang pagpopondo sa pagkalkula ng prototype sa paaralan.",
+    "Year-end savings · emergencies, cash flow, next year's costs": "Ipon sa katapusan ng taon · emerhensiya, daloy ng pera, gastos sa susunod na taon",
+    "Year-end savings ÷ annual spending": "Ipon sa katapusan ng taon ÷ taunang gastos",
     "- a flat per-student amount covering everything that is not staff pay.": "- isang flat na halagang bawat mag-aaral na sumasaklaw sa lahat ng hindi suweldo ng kawani.",
     "- a measure of enrollment by how much school a student actually attends. A student enrolled half-time counts as 0.5 FTE.": "- isang sukatan ng pagpapatala sa kung gaano karaming paaralan ang aktwal na pinapasukan ng isang estudyante. Ang isang mag-aaral na naka-enroll sa kalahating oras ay binibilang bilang 0.5 FTE.",
     "- about": "- tungkol sa",
@@ -7755,6 +7785,12 @@
     "| certificated salary allocations, scaled for local hiring costs": "| mga sertipikadong paglalaan ng suweldo, na pinaliit para sa mga lokal na gastos sa pag-hire"
   },
   "ko": {
+    "Actual revenue · includes funding outside the prototype formula.": "실제 수입 · 프로토타입 공식 외 지원금 포함.",
+    "Calculation notes": "계산 참고 사항",
+    "Running Start college enrollment:": "Running Start 대학 등록 인원:",
+    "FTE. Funded separately from the on-campus prototype calculation.": "FTE. 교내 프로토타입 계산과 별도로 지원.",
+    "Year-end savings · emergencies, cash flow, next year's costs": "연말 적립금 · 비상 지출, 현금 흐름, 다음 연도 비용",
+    "Year-end savings ÷ annual spending": "연말 적립금 ÷ 연간 지출",
     "- a flat per-student amount covering everything that is not staff pay.": "- 교직원 급여가 아닌 모든 금액을 포함하는 학생당 정액 금액입니다.",
     "- a measure of enrollment by how much school a student actually attends. A student enrolled half-time counts as 0.5 FTE.": "- 학생이 실제로 출석하는 학교 수에 따른 등록 척도입니다. 하프타임에 등록한 학생은 0.5 FTE로 계산됩니다.",
     "- about": "- 약",

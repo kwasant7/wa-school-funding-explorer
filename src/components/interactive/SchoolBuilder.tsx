@@ -190,13 +190,17 @@ export default function SchoolBuilder({
           <SourceShareBar slices={district.rev} />
         </div>
         <p className="mt-3 text-xs text-ink-muted">
-          Actual revenue sources: {fmtMoney(district.rev.state)} state ·{' '}
-          {fmtMoney(district.rev.local)} local · {fmtMoney(district.rev.federal)} federal ·{' '}
-          {fmtMoney(district.rev.other)} other. Running Start college enrollment is{' '}
-          {fmtFteLong(district.fundingFte.runningStart)} FTE and is funded separately
-          from the on-campus prototype calculation. The revenue bar is actual
-          F-196 context; it is not produced entirely by the prototype formula.
+          Actual revenue · includes funding outside the prototype formula.
         </p>
+        <details className="mt-2 text-xs text-ink-muted">
+          <summary className="cursor-pointer font-semibold text-accent hover:underline">
+            Calculation notes
+          </summary>
+          <p className="mt-2">
+            Running Start college enrollment: {fmtFteLong(district.fundingFte.runningStart)} FTE.
+            Funded separately from the on-campus prototype calculation.
+          </p>
+        </details>
       </div>
     )}
 
