@@ -6,6 +6,7 @@ import { LATEST } from '@/lib/years';
 import regionalizationJson from '@/data/regionalization.json';
 import DistrictCombobox from '@/components/DistrictCombobox';
 import { fmtInt, fmtMoneyFull } from '@/lib/format';
+import { RESERVE_BENCHMARK_PCT, RESERVE_THIN_PCT } from '@/lib/reserves';
 
 type MapFile = {
   w: number;
@@ -35,6 +36,33 @@ const NO_DATA = '#e1e0d9';
   Mercer Island more than any funding color did.
 */
 const WATER = '#e2f3f8';
+
+/*
+  With a district open below the map, every other district is washed this far
+  toward the page color so the selected one stands out. A thin outline alone
+  was easy to lose: a small district like Walla Walla is a few pixels across at
+  the statewide view, and a dark line vanishes against a dark fill. The fade
+  keeps the pattern readable for comparison, and hovering any district shows
+  its true color.
+*/
+const SPOTLIGHT_FADE = 0.55;
+const SPOTLIGHT_TOWARD = '#fcfcfb';
+
+/** Bounding box of a district path. The map file uses only absolute M/L/Z. */
+function pathBounds(d: string) {
+  const nums = (d.match(/-?\d*\.?\d+/g) ?? []).map(Number);
+  let x0 = Infinity;
+  let y0 = Infinity;
+  let x1 = -Infinity;
+  let y1 = -Infinity;
+  for (let i = 0; i + 1 < nums.length; i += 2) {
+    x0 = Math.min(x0, nums[i]);
+    x1 = Math.max(x1, nums[i]);
+    y0 = Math.min(y0, nums[i + 1]);
+    y1 = Math.max(y1, nums[i + 1]);
+  }
+  return { x0, y0, x1, y1 };
+}
 
 // How far past the state extent you can zoom out (breathing room around WA)
 const MAX_OUT = 1.45;
@@ -66,18 +94,24 @@ function rampColor(t: number) {
 
 /**
  * Reserve ratio uses a diverging red -> amber -> green scale anchored on values
- * that actually mean something: 0% (no cushion at all) and 5% (the minimum
- * experts recommend). Lightness also rises across the ramp so the scale stays
- * readable for red/green color blindness; exact values are in the tooltip.
+ * that actually mean something: 0% (no cushion at all), one month of spending,
+ * and the State Auditor's benchmark of 60 days (src/lib/reserves.ts). Green
+ * starts at the benchmark, so a district reads as healthy only once it clears
+ * the line the Auditor uses; exact values are in the tooltip.
  */
 const RESERVE_STOPS: [number, string][] = [
   [-5, '#7f1d1d'], // deeply negative - insolvent
   [0, '#d03b3b'], // no cushion
-  [2.5, '#eb6834'], // well below the recommended floor
-  [5, '#eda100'], // right at the 4-5% minimum
-  [10, '#5faa4a'], // comfortable
-  [20, '#0b7a28'], // strong reserves
+  [RESERVE_THIN_PCT / 2, '#eb6834'], // about two weeks of spending
+  [RESERVE_THIN_PCT, '#eda100'], // one month
+  [RESERVE_BENCHMARK_PCT, '#5faa4a'], // the Auditor's 60 days
+  [24.7, '#0b7a28'], // 90 days - strong reserves
 ];
+const RESERVE_LO = RESERVE_STOPS[0][0];
+const RESERVE_HI = RESERVE_STOPS[RESERVE_STOPS.length - 1][0];
+/** Where a reserve ratio falls along the legend bar, in percent. */
+const reserveLegendAt = (rr: number) =>
+  ((rr - RESERVE_LO) / (RESERVE_HI - RESERVE_LO)) * 100;
 
 function reserveColor(rr: number) {
   const stops = RESERVE_STOPS;
@@ -134,7 +168,7 @@ type Metric = 'perPupil' | 'reserveRatio' | 'regionalization';
 
 /*
   Reserve ratio leads and is the default view. It is the measure with a fixed,
-  meaningful threshold - below 5% a district is one bad year from cuts - so it
+  published benchmark - the State Auditor's 60 days of spending - so it
   answers "is my district in trouble?" directly, whereas funding per student
   only means something once you know how big and how rural the district is.
 */
@@ -239,7 +273,7 @@ export default function WaMap({
           continue;
         }
         if (metric === 'reserveRatio') {
-          // Absolute scale - the 0% and 5% thresholds carry real meaning, so
+          // Absolute scale - zero and the 60-day benchmark carry real meaning, so
           // don't rank-normalize the way per-student funding does.
           fills.set(
             d.code,
@@ -271,6 +305,19 @@ export default function WaMap({
   const selectedName = selectedShape
     ? info.get(selectedShape.code)?.name ?? selectedShape.name
     : null;
+
+  const fadedFills = useMemo(() => {
+    const faded = new Map<string, string>();
+    fills.forEach((fill, code) =>
+      faded.set(code, lerpColor(fill, SPOTLIGHT_TOWARD, SPOTLIGHT_FADE))
+    );
+    return faded;
+  }, [fills]);
+
+  const selectedBounds = useMemo(
+    () => (selectedShape ? pathBounds(selectedShape.d) : null),
+    [selectedShape]
+  );
 
   // Flat district list for the searchable picker
   const comboDistricts = useMemo(
@@ -387,6 +434,20 @@ export default function WaMap({
         Loading map…
       </div>
     );
+  }
+
+  /*
+    Where the selected district's name tag sits, as a share of the visible map.
+    It points at the district's top edge and flips below the district when that
+    edge is too near the top of the view for the tag to fit above it.
+  */
+  let tag: { x: number; y: number; below: boolean } | null = null;
+  if (selectedBounds) {
+    const x = (((selectedBounds.x0 + selectedBounds.x1) / 2 - view.x) / view.w) * 100;
+    const top = ((selectedBounds.y0 - view.y) / view.h) * 100;
+    const below = top < 12;
+    const y = below ? ((selectedBounds.y1 - view.y) / view.h) * 100 : top;
+    if (x >= 0 && x <= 100 && y >= 0 && y <= 100) tag = { x, y, below };
   }
 
   return (
@@ -521,7 +582,11 @@ export default function WaMap({
               <path
                 key={d.code}
                 d={d.d}
-                fill={fills.get(d.code) ?? NO_DATA}
+                fill={
+                  (selected && d.code !== selected && d.code !== hovered
+                    ? fadedFills.get(d.code)
+                    : fills.get(d.code)) ?? NO_DATA
+                }
                 stroke="#fcfcfb"
                 strokeWidth={0.7}
                 vectorEffect="non-scaling-stroke"
@@ -587,7 +652,7 @@ export default function WaMap({
                 d={selectedShape.d}
                 fill="none"
                 stroke="#fcfcfb"
-                strokeWidth={4.5}
+                strokeWidth={6}
                 strokeLinejoin="round"
                 vectorEffect="non-scaling-stroke"
               />
@@ -595,7 +660,7 @@ export default function WaMap({
                 d={selectedShape.d}
                 fill="none"
                 stroke="#0b0b0b"
-                strokeWidth={2.2}
+                strokeWidth={2.8}
                 strokeLinejoin="round"
                 vectorEffect="non-scaling-stroke"
               />
@@ -612,6 +677,42 @@ export default function WaMap({
             />
           )}
         </svg>
+
+        {/*
+          The selected district's name tag, pinned to it in screen space so it
+          stays the same size at any zoom. It carries the short place name -
+          the full one is in the picker above - so it clears the zoom buttons
+          on a phone. Shifting the tag by the same share of its own width as
+          the anchor sits across the map keeps it inside the frame at either
+          edge while the pointer stays on the district.
+        */}
+        {tag && selectedName && (
+          <div
+            className="pointer-events-none absolute"
+            style={{ left: `${tag.x}%`, top: `${tag.y}%` }}
+            aria-hidden="true"
+          >
+            <svg
+              width="12"
+              height="7"
+              viewBox="0 0 12 7"
+              className={`absolute -translate-x-1/2 ${tag.below ? 'top-0 rotate-180' : 'bottom-0'}`}
+            >
+              <path d="M0 0H12L6 7Z" fill="#0b0b0b" />
+            </svg>
+            <span
+              className={`absolute left-0 block whitespace-nowrap rounded-md bg-ink px-2 py-1 text-xs font-semibold leading-tight text-white shadow-md ${
+                tag.below ? 'top-[6px]' : 'bottom-[6px]'
+              }`}
+              style={{ transform: `translateX(-${tag.x}%)` }}
+              data-no-translate
+            >
+              {selectedName
+                .replace(/ School District.*$/, '')
+                .replace(/ Public Schools$/, '')}
+            </span>
+          </div>
+        )}
 
         {/* hover tooltip - compact, tucked beside the cursor */}
         {hovered && hoverPoint && (
@@ -642,7 +743,7 @@ export default function WaMap({
                       className={
                         d.reserveRatio < 0
                           ? 'text-critical'
-                          : d.reserveRatio < 5
+                          : d.reserveRatio < RESERVE_BENCHMARK_PCT
                             ? 'text-amber-600'
                             : 'text-good'
                       }
@@ -760,20 +861,21 @@ export default function WaMap({
                   className="absolute inset-0 rounded-sm"
                   style={{
                     background: `linear-gradient(to right, ${RESERVE_STOPS.map(
-                      ([v, c]) => `${c} ${((v + 5) / 25) * 100}%`
+                      ([v, c]) => `${c} ${reserveLegendAt(v)}%`
                     ).join(', ')})`,
                   }}
                 />
-                {/* marker at the 5% recommended minimum */}
+                {/* marker at the State Auditor's 60-day benchmark */}
                 <span
                   className="absolute -top-1 -bottom-1 w-px bg-ink"
-                  style={{ left: `${((5 + 5) / 25) * 100}%` }}
+                  style={{ left: `${reserveLegendAt(RESERVE_BENCHMARK_PCT)}%` }}
                 />
               </span>
               <span className="text-good font-medium">strong savings</span>
             </span>
             <span className="text-ink-muted">
-              | tick = 5%, the level this site flags as thin
+              | tick = 60 days of spending (about 16%), the State Auditor&apos;s
+              benchmark
             </span>
           </>
         )}

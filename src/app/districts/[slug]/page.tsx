@@ -12,6 +12,11 @@ import {
 } from '@/lib/site-metadata';
 import { fmtInt, fmtMoney, fmtMoneyFull, fmtSignedMoney, pct } from '@/lib/format';
 import { OVERSIGHT_CHECKED_ON, oversightFor } from '@/data/oversight';
+import levyJson from '@/data/levy.json';
+import { RESERVE_BENCHMARK_PCT, RESERVE_THIN_PCT, reserveDays } from '@/lib/reserves';
+
+const LEVY_CALENDAR_YEAR = levyJson.calendarYear;
+const LEA_SCHOOL_YEAR = levyJson.actualLeaSchoolYear;
 
 /*
   315 static pages, one per district, emitted at build time by `output:
@@ -72,6 +77,14 @@ export default function DistrictPage({ params }: Params) {
   const rev = p.revenue;
   const oversight = oversightFor(p.code);
   const hasTrend = p.trend.filter((t) => t.total != null).length > 1;
+  // Voters can approve more than the law lets a district collect (OSPI's
+  // LevyCalc row O, "rollback"). Which of the two limits binds decides how the
+  // blocked amount is explained.
+  const levyCapped = p.levy != null && p.levy.payableLevy < p.levy.levy;
+  const rateCapBinds =
+    p.levy != null &&
+    p.levy.maxLevy ===
+      Math.round((p.levy.av * levyJson.assumptions.maxLevyRate) / 1000);
 
   const revenueRows = [
     ['State', rev.state, 'The prototypical-school formula allocation, plus other state programs.'],
@@ -395,37 +408,75 @@ export default function DistrictPage({ params }: Params) {
       {p.levy && (
         <Section id="levy" title="Local levy and Local Effort Assistance">
           <p className="text-ink-secondary">
-            Enrichment levies are capped per student by state law, and
+            State law limits an enrichment levy to the lesser of $2.50 per
+            $1,000 of assessed value and a set amount per student, and
             property-poor districts receive Local Effort Assistance to close part
             of the gap between what their property base raises and the statewide
             goal.
           </p>
+          {/*
+            Levies and LEA are calendar-year money, while everything else on
+            this page is a September-August school year - and the two figures
+            here are not even the same year as each other. A district business
+            office reading "levy rate" with no year attached cannot tell which
+            levy it is, so each figure carries its own.
+          */}
+          <p className="mt-2 text-sm text-ink-muted">
+            Levies and Local Effort Assistance are paid by calendar year, not by
+            school year, so each figure below is labeled with its year.
+          </p>
           <dl className="mt-4 grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
             <div className="card p-4">
-              <dt className="stat-label">Voter-approved levy</dt>
+              <dt className="stat-label">
+                Voter-approved levy, {LEVY_CALENDAR_YEAR}
+              </dt>
               <dd className="text-xl font-semibold">{fmtMoneyFull(p.levy.levy)}</dd>
+              <dd className="mt-1 text-xs text-ink-muted">
+                Calendar year {LEVY_CALENDAR_YEAR} collections, as approved by voters
+              </dd>
             </div>
             <div className="card p-4">
-              <dt className="stat-label">Levy rate</dt>
+              <dt className="stat-label">Levy rate, {LEVY_CALENDAR_YEAR}</dt>
               <dd className="text-xl font-semibold">
-                ${p.levy.levyRate.toFixed(2)}
+                ${p.levy.payableLevyRate.toFixed(2)}
                 <span className="text-sm font-normal text-ink-muted">
                   {' '}per $1,000 of value
                 </span>
               </dd>
+              <dd className="mt-1 text-xs text-ink-muted">
+                {levyCapped ? (
+                  <>
+                    The most state law allows. Voters approved $
+                    {p.levy.levyRate.toFixed(2)}.
+                  </>
+                ) : (
+                  <>OSPI estimate, from current property values</>
+                )}
+              </dd>
             </div>
             <div className="card p-4">
-              <dt className="stat-label">Local Effort Assistance received</dt>
+              <dt className="stat-label">
+                Local Effort Assistance received, {LEA_SCHOOL_YEAR}
+              </dt>
               <dd className="text-xl font-semibold">
                 {fmtMoneyFull(p.levy.actualLea)}
               </dd>
+              <dd className="mt-1 text-xs text-ink-muted">
+                School year {LEA_SCHOOL_YEAR} (September to August), from the
+                district&apos;s financial report
+              </dd>
             </div>
           </dl>
-          {p.capBlocked > 0 && (
+          {levyCapped && (
             <p className="mt-4">
-              About <strong>{fmtMoney(p.capBlocked)}</strong> of the levy
-              {" "}voters approved here is above the statutory per-student
-              cap, so the district cannot collect it without a change to the cap
+              State law blocks about{' '}
+              <strong>{fmtMoney(p.levy.levy - p.levy.payableLevy)}</strong> of the
+              levy voters approved here for {LEVY_CALENDAR_YEAR}: that much is above
+              the{' '}
+              {rateCapBinds
+                ? 'limit of $2.50 per $1,000 of assessed value'
+                : 'statutory per-student limit'}
+              , so the district cannot collect it without a change to state law
               rather than a new election.
             </p>
           )}
@@ -458,24 +509,56 @@ export default function DistrictPage({ params }: Params) {
           <StatTile
             label="Ending fund balance"
             value={p.fundBalance != null ? fmtMoneyFull(p.fundBalance) : 'Not reported'}
-            note={p.reserveRatio != null ? `${p.reserveRatio}% of spending` : undefined}
+            note={
+              p.reserveRatio == null
+                ? undefined
+                : p.reserveRatio < 0
+                  ? `${p.reserveRatio}% of spending`
+                  : `${p.reserveRatio}% of spending, about ${reserveDays(p.reserveRatio)} days`
+            }
           />
         </div>
         {p.reserveRatio != null && (
-          <p className="mt-4 text-ink-secondary">
-            {p.reserveRatio < 5 ? (
-              <>
-                A reserve ratio of {p.reserveRatio}% is below the 5% that
-                Washington districts commonly treat as a minimum cushion, which
-                is the level state financial-oversight guidance watches.
-              </>
-            ) : (
-              <>
-                A reserve ratio of {p.reserveRatio}% is at or above the 5% level
-                Washington districts commonly treat as a minimum cushion.
-              </>
-            )}
-          </p>
+          <>
+            <p className="mt-4 text-ink-secondary">
+              {p.reserveRatio < 0 ? (
+                <>
+                  A negative fund balance means the district has spent all of its
+                  savings and is carrying a shortfall into the next year.
+                </>
+              ) : p.reserveRatio >= RESERVE_BENCHMARK_PCT ? (
+                <>
+                  A fund balance of {p.reserveRatio}% of spending would run the
+                  district for about {reserveDays(p.reserveRatio)} days. That
+                  meets the State Auditor&apos;s benchmark of at least 60 days
+                  (about 16% of a year&apos;s spending).
+                </>
+              ) : p.reserveRatio >= RESERVE_THIN_PCT ? (
+                <>
+                  A fund balance of {p.reserveRatio}% of spending would run the
+                  district for about {reserveDays(p.reserveRatio)} days. That is
+                  short of the State Auditor&apos;s benchmark of at least 60 days
+                  (about 16% of a year&apos;s spending), and the Auditor rates a
+                  general fund below it as concerning.
+                </>
+              ) : (
+                <>
+                  A fund balance of {p.reserveRatio}% of spending would run the
+                  district for about {reserveDays(p.reserveRatio)} days - less
+                  than one month, and well short of the State Auditor&apos;s
+                  benchmark of at least 60 days (about 16% of a year&apos;s
+                  spending).
+                </>
+              )}
+            </p>
+            <p className="mt-2 text-sm text-ink-muted">
+              The 60-day benchmark comes from the State Auditor&apos;s Financial
+              Intelligence Tool, which adopts the Government Finance Officers
+              Association&apos;s two-month guideline. It is not a legal
+              requirement, and each school board sets its own minimum fund
+              balance in policy.
+            </p>
+          </>
         )}
         {oversight && (
           <p className="mt-3 rounded-lg border border-line bg-surface p-4 text-sm">

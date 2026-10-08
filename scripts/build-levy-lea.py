@@ -29,6 +29,17 @@
 #   max LEA            = max LEA per pupil * (K + ALE adjustment)
 #   payable LEA        = max LEA * min(r / 1.50, 1)
 #
+# And the levy a district can actually collect (LevyCalc rows L, M, N, P):
+#   max levy           = lesser of AV * 2.50 / 1000 and K * per-pupil cap
+#   payable levy       = lesser of max levy and the voter-approved levy
+#   payable levy rate  = payable levy / AV * 1000
+# Voters can approve more than the cap allows - Walla Walla's CY2027 levy is
+# $2.63 per $1,000 as approved, but it collects at the $2.50 limit. The LEA
+# formula above still uses the voter-approved rate r (row T), as OSPI does.
+# Neither limit can change LEA: the rate limit sits above LEA's $1.50 effort
+# ceiling, and a district whose per-pupil limit binds below $1.50 has too much
+# property per student to qualify for LEA at all.
+#
 # Run: python3 scripts/build-levy-lea.py
 import csv
 import json
@@ -50,6 +61,9 @@ WORKBOOK_URL = (
 WORKBOOK = os.path.join(RAW, '2027levyprojectiontool.xlsx')
 # F-196 actuals already cached by fetch-data.mjs
 REVENUES = os.path.join(RAW, 'gf-revenues-2425.csv')
+# Published beside the figure: LEA runs on the calendar year, but F-196 reports
+# by September-August school year, so 'actualLea' straddles two calendar years.
+ACTUAL_LEA_SCHOOL_YEAR = '2024-25'
 
 CALENDAR_YEAR = 2027
 # The assessed valuation OSPI uses for CY2027 is the most recent *actual*
@@ -214,11 +228,23 @@ def main():
             else 0.0
         )
         payable = max_lea * effort
+        # Rows L, M, N, P: both limits are rounded to whole dollars, and the
+        # per-pupil one is measured on K, without the ALE adjustment.
+        per_pupil_cap = (
+            MAX_LEVY_PER_PUPIL_LARGE if c in LARGE_DISTRICT_CODES else MAX_LEVY_PER_PUPIL
+        )
+        max_levy = min(
+            round(av * MAX_LEVY_RATE / 1000), round(enrollment * per_pupil_cap)
+        )
+        payable_levy = min(max_levy, levy)
         districts[c] = {
             'av': round(av),
             'enrollment': round(enrollment, 2),
             'levy': round(levy),
             'levyRate': round(levy_rate, 4),
+            'maxLevy': max_levy,
+            'payableLevy': round(payable_levy),
+            'payableLevyRate': round(payable_levy / av * 1000, 4),
             'capacityPerPupil': round(capacity_per_pupil, 2),
             'maxLeaPerPupil': round(max_lea_per_pupil, 2),
             'maxLea': round(max_lea),
@@ -230,6 +256,7 @@ def main():
     out = {
         'calendarYear': CALENDAR_YEAR,
         'levyYear': int(latest_levy_year),
+        'actualLeaSchoolYear': ACTUAL_LEA_SCHOOL_YEAR,
         'assumptions': {
             'leaThresholdPerPupil': LEA_THRESHOLD,
             'leaMaxRate': LEA_MAX_RATE,
@@ -245,7 +272,8 @@ def main():
                 '(LevyCalc rows Q, R, T, V, X). Voter-approved levy amounts '
                 'are final as of June 26, 2026 and include the February 10 '
                 "and April 28, 2026 elections. 'actualLea' is F-196 revenue "
-                'code 3300, Local Effort Assistance, school year 2024-25.'
+                'code 3300, Local Effort Assistance, school year '
+                f'{ACTUAL_LEA_SCHOOL_YEAR}.'
             ),
         },
         'districts': districts,

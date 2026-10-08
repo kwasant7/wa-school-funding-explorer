@@ -20,6 +20,7 @@ import spendingJson from '@/data/spending.json';
 import { alignPair, fmtInt, fmtMoney, fmtMoneyFull, fmtMoneyOnGrid, fmtSignedMoney, pct } from '@/lib/format';
 import { useAssistantDistrict, useAssistantYear } from '@/lib/assistant/store';
 import { readSelectedDistrict, writeSelectedDistrict } from '@/lib/selected-district';
+import { RESERVE_BENCHMARK_PCT, RESERVE_THIN_PCT, reserveDays } from '@/lib/reserves';
 
 /*
   The Big 3 card compares one year of allocation and spending, so it reads the
@@ -396,25 +397,37 @@ function FundBalanceCard({ district: d, year }: { district: District; year: stri
           {(() => {
             const rr = d.reserveRatio;
             if (rr == null) return null;
+            // Graded against the State Auditor's 60-day benchmark; see
+            // src/lib/reserves.ts for where each line comes from.
             const cls =
-              rr >= 5
+              rr >= RESERVE_BENCHMARK_PCT
                 ? 'border-good/40 bg-green-50'
                 : rr >= 0
                   ? 'border-amber-300 bg-amber-50'
                   : 'border-critical/40 bg-red-50';
-            const textCls = rr >= 5 ? 'text-good' : rr >= 0 ? 'text-amber-600' : 'text-critical';
+            const textCls =
+              rr >= RESERVE_BENCHMARK_PCT ? 'text-good' : rr >= 0 ? 'text-amber-600' : 'text-critical';
             const status =
-              rr >= 5
-                ? 'Healthy cushion'
-                : rr >= 0
-                  ? 'Thin - under the 5% this site flags'
-                  : 'Negative - no cushion left';
+              rr >= RESERVE_BENCHMARK_PCT
+                ? "Meets the State Auditor's 60-day benchmark"
+                : rr >= RESERVE_THIN_PCT
+                  ? "Below the State Auditor's 60-day benchmark"
+                  : rr >= 0
+                    ? 'Thin - less than one month of spending'
+                    : 'Negative - no cushion left';
             return (
               <div className={`rounded-lg border p-4 ${cls}`}>
                 <div className="text-sm text-ink-secondary">Reserve ratio</div>
-                <div className={`text-2xl font-bold ${textCls}`}>{rr.toFixed(1)}%</div>
+                <div className={`text-2xl font-bold ${textCls}`}>
+                  {rr.toFixed(1)}%
+                  {rr >= 0 && (
+                    <span className="text-sm font-medium text-ink-secondary">
+                      {' '}about {reserveDays(rr)} days
+                    </span>
+                  )}
+                </div>
                 <div className="text-xs mt-0.5 font-medium">
-                  <span className={textCls}>{status.replace('—', '-')}</span>
+                  <span className={textCls}>{status}</span>
                 </div>
                 <div className="text-xs text-ink-muted mt-1">
                   Year-end savings ÷ annual spending
@@ -657,7 +670,7 @@ function TrendAnalysis({ district: d, year }: { district: District; year: string
     : 'No surplus/deficit history is available.';
   const reserveAction = d.reserveRatio == null
     ? 'Check the latest district budget for its fund balance and reserve target.'
-    : d.reserveRatio < 5
+    : d.reserveRatio < RESERVE_THIN_PCT
       ? 'Ask the school board how it plans to rebuild reserves.'
       : 'Ask the school board whether reserves meet its target.';
 

@@ -507,7 +507,7 @@ function drawVisual(pdf: Pdf, visual: IssueVisual, x: number, width: number) {
     case 'gauge': {
       pdf.ensure(40);
       const min = Math.min(0, visual.value);
-      const max = Math.max(visual.safe * 3, visual.value, 15);
+      const max = Math.max(visual.safe * 1.5, visual.value, 15);
       const span = max - min || 1;
       const at = (n: number) => x + ((n - min) / span) * width;
 
@@ -546,12 +546,7 @@ function drawVisual(pdf: Pdf, visual: IssueVisual, x: number, width: number) {
       pdf.rect(at(visual.safe), barTop - 12, 1, 15, INK);
       pdf.y = barTop - 13;
       pdf.text(
-        /*
-          Do not fold safeLabel into this sentence - it is a caption for the
-          tick mark ("This site flags below 5%"), not a noun phrase, and
-          lowercasing it into the middle of a clause produced broken grammar.
-        */
-        `The black line marks ${visual.safe}%, the level this site flags as thin. Below it, one bad year means cuts.`,
+        `The black line marks ${visual.safe}%, about 60 days of spending - the State Auditor's benchmark. The Auditor rates reserves below it as concerning.`,
         { x, size: 7.5, colour: INK_SECONDARY, width, leading: 10 }
       );
       break;

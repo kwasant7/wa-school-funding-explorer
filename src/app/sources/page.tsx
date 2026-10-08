@@ -7,8 +7,18 @@ import {
   webPageJsonLd,
 } from '@/lib/site-metadata';
 import levyData from '@/data/levy.json';
+import districtsJson from '@/data/districts.json';
+import { RESERVE_BENCHMARK_PCT } from '@/lib/reserves';
 
 const LEA = levyData.assumptions;
+
+/** How many districts clear the State Auditor's 60-day reserve benchmark. */
+const RESERVE_RATIOS = districtsJson.districts
+  .map((d) => d.reserveRatio)
+  .filter((r): r is number => r != null);
+const MEETS_RESERVE_BENCHMARK = RESERVE_RATIOS.filter(
+  (r) => r >= RESERVE_BENCHMARK_PCT
+).length;
 // This page states precise dollars-and-cents figures rather than the rounded
 // whole-dollar amounts shown elsewhere on the site - it's the methodology
 // page, where the exact statutory figure is the point.
@@ -166,10 +176,11 @@ export default function SourcesPage() {
           &ldquo;Estimate details and assumptions&rdquo; on that page.
         </li>
         <li>
-          The reserve-fund &ldquo;danger line&rdquo; (5% of annual spending)
-          is this site&apos;s own judgment call, not a state or GFOA
-          standard - GFOA&apos;s published benchmark is about 17%, shown for
-          comparison on the District Explorer.
+          Reserves are measured against the State Auditor&apos;s 60-day
+          benchmark, which the Auditor describes as informational rather than
+          a requirement. Calling a balance under one month of spending
+          &ldquo;thin&rdquo; is this site&apos;s own plain-language marker, not
+          a state standard.
         </li>
       </ul>
 
@@ -375,7 +386,13 @@ export default function SourcesPage() {
             calculation reproduces that workbook&apos;s LevyCalc sheet
             (capacity per pupil, maximum LEA per pupil, levy rate, and payable
             LEA), and the LEA a district actually received is F-196 revenue code
-            3300. The per-student levy cap has two tiers:{' '}
+            3300. The levy rate shown on each district page is the rate the
+            district can collect: the lesser of its voter-approved levy and the
+            two caps, divided by assessed value. Voters sometimes approve more
+            than the caps allow, so the approved rate can be higher than $2.50;
+            the collectible rate cannot. Levies and LEA run on the calendar
+            year, while the F-196 figure covers a September-to-August school
+            year. The per-student levy cap has two tiers:{' '}
             {money2(LEA.maxLevyPerPupil)} for {levyData.calendarYear}, and{' '}
             {money2(LEA.maxLevyPerPupilLarge)} for districts of 40,000 or more
             FTE students, which under RCW 84.52.0531 means Seattle and no one
@@ -499,16 +516,39 @@ export default function SourcesPage() {
             <Ext href="https://fiscal.wa.gov/K12/K12FinanceDistrict">
               fiscal.wa.gov&apos;s K-12 finance page
             </Ext>
-            ), joined by district code. Reserve ratios below{' '}
-            <strong className="text-ink">5%</strong> are flagged on each district
-            profile. That threshold is this site&apos;s own editorial choice, not
-            a statutory or professional standard: it reflects Washington
-            school-finance practice and OSPI&apos;s budget-challenge process, and
-            it is deliberately conservative next to the Government Finance
-            Officers Association&apos;s general guideline of two months of
-            operating spending, about 17%. Almost every Washington district
-            clears 5%; almost none clears 17%.
+            ), joined by district code.
             Script: <code className="text-ink">scripts/build-fund-balance.py</code>.
+          </p>
+          <p>
+            Reserve ratios are compared with the benchmark the Washington State
+            Auditor&apos;s Office uses. Its{' '}
+            <Ext href="https://www.sao.wa.gov/sites/default/files/2024-10/FIT%20Financial%20Health%20Indicators%20Reference%20Guide.pdf">
+              Financial Intelligence Tool
+            </Ext>{' '}
+            rates a school district&apos;s general fund by how many days its
+            ending fund balance would cover, and rates anything under{' '}
+            <strong className="text-ink">60 days</strong> as concerning - a
+            figure it takes from the Government Finance Officers
+            Association&apos;s guideline of two months of operating spending.
+            Sixty days is about <strong className="text-ink">16.4%</strong> of a
+            year&apos;s spending. The Auditor also counts debt payments and
+            transfers out as spending, so its figure can differ slightly from
+            this site&apos;s. In {districtsJson.schoolYear},{' '}
+            {MEETS_RESERVE_BENCHMARK} of {RESERVE_RATIOS.length} districts met
+            the benchmark.
+          </p>
+          <p>
+            Neither the Auditor nor OSPI sets a required minimum. The Auditor
+            describes the tool as informational, not prescriptive guidance.
+            OSPI&apos;s{' '}
+            <Ext href="https://ospi.k12.wa.us/policy-funding/school-apportionment/guidance-and-tools/school-district-budget-challenges-and-financial-insolvency">
+              financial-health indicators
+            </Ext>{' '}
+            score unrestricted fund balance against revenue as a monitoring
+            tool, and each school board sets its own minimum fund balance in
+            policy. This site calls a balance under one month of spending
+            (about 8%) thin; that line is its own plain-language marker, not a
+            state standard.
           </p>
         </div>
 

@@ -117,12 +117,12 @@ function Dots({ visual }: { visual: Extract<Visual, { kind: 'dots' }> }) {
   );
 }
 
-/** Savings against the level below which one bad year forces cuts. */
+/** Savings against the State Auditor's 60-day reserve benchmark. */
 function Gauge({ visual }: { visual: Extract<Visual, { kind: 'gauge' }> }) {
   // Negative reserves are real and have to be drawable, so the track spans a
   // little below zero rather than clamping the bar to nothing.
   const min = Math.min(0, visual.value);
-  const max = Math.max(visual.safe * 3, visual.value, 15);
+  const max = Math.max(visual.safe * 1.5, visual.value, 15);
   const span = max - min || 1;
   const position = (n: number) => `${((n - min) / span) * 100}%`;
   const negative = visual.value < 0;
@@ -157,8 +157,8 @@ function Gauge({ visual }: { visual: Extract<Visual, { kind: 'gauge' }> }) {
         />
       </div>
       <figcaption className="mt-2 text-xs text-ink-secondary">
-        The black line is the {visual.safeLabel.toLowerCase()} ({visual.safe}%). Below it,
-        one bad year means cuts.
+        The black line is the {visual.safeLabel} ({visual.safe}% of a year&apos;s
+        spending). The Auditor rates reserves below it as concerning.
       </figcaption>
     </figure>
   );

@@ -34,6 +34,7 @@ import baselineJson from '@/data/enrollment-baseline.json';
 import { oversightFor, type Oversight } from '@/data/oversight';
 import { fmtMoney, fmtMoneyFull, fmtInt, alignPair } from '@/lib/format';
 import { PROTOTYPES } from '@/lib/prototypical-model';
+import { RESERVE_BENCHMARK_PCT, RESERVE_THIN_PCT, reserveDays } from '@/lib/reserves';
 
 type DistrictRecord = (typeof districtsJson.districts)[number];
 type Allocation = (typeof allocationJson.districts)[keyof typeof allocationJson.districts];
@@ -590,7 +591,10 @@ const reservesIssue: Builder = (m) => {
   */
   const deficitShare = m.record.exp > 0 ? (100 * -m.surplus) / m.record.exp : 0;
   const materialDeficit = deficitShare >= 1;
-  const thinReserves = rr < 5;
+  // Under a month of spending. The State Auditor's 60-day benchmark is the
+  // line on the gauge, but most districts sit below it (the statewide median
+  // is about 50 days), so flagging every one would cry wolf.
+  const thinReserves = rr < RESERVE_THIN_PCT;
   if (!materialDeficit && !thinReserves) return null;
 
   /*
@@ -614,13 +618,13 @@ const reservesIssue: Builder = (m) => {
       ? `${m.name} ended ${LATEST_YEAR} with a negative fund balance - it has spent its savings and is carrying a shortfall forward.`
       : materialDeficit
         ? `${m.name} spent ${plainMoney(Math.abs(m.surplus))} more than it took in last year, covering the difference out of savings.`
-        : `${m.name} has enough savings to cover only ${pctText(rr, 1)} of a year of spending.`,
+        : `${m.name} has enough savings to run for only about ${reserveDays(rr)} days, less than one month of spending.`,
     visual: {
       kind: 'gauge',
       value: rr,
-      safe: 5,
+      safe: RESERVE_BENCHMARK_PCT,
       label: 'Savings here',
-      safeLabel: 'This site flags below 5%',
+      safeLabel: "State Auditor's 60-day benchmark",
     },
     ask: 'Ask lawmakers for steady funding every year, not a one-time patch.',
     refs: [BILLS.budget, BILLS.enrollment],
@@ -976,7 +980,14 @@ function statsFor(m: Metrics): BriefStat[] {
     stats.push({
       label: 'Reserves',
       value: `${m.reserveRatio.toFixed(1)}%`,
-      note: m.reserveRatio < 5 ? 'Below the 5% danger line' : 'Share of annual spending',
+      note:
+        m.reserveRatio < 0
+          ? 'No savings left'
+          : m.reserveRatio < RESERVE_THIN_PCT
+            ? 'Less than one month of spending'
+            : m.reserveRatio < RESERVE_BENCHMARK_PCT
+              ? "Below the State Auditor's 60-day benchmark"
+              : "Meets the State Auditor's 60-day benchmark",
     });
   }
   return stats;
