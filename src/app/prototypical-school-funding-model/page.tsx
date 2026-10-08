@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { TopicPage, TopicSection } from '@/components/topic/TopicPage';
 import { pageMetadata } from '@/lib/site-metadata';
-import { ALLOCATION_TOTALS, ALLOCATION_YEAR } from '@/lib/topic-stats';
+import { ALLOCATION_TOTALS, ALLOCATION_YEAR, SMALL_SCHOOL_TOTALS } from '@/lib/topic-stats';
 import { fmtMoney, pct } from '@/lib/format';
 import {
   CENTRAL_ADMIN_RATE,
@@ -330,6 +330,54 @@ export default function PrototypicalModelPage() {
             </tbody>
           </table>
         </div>
+      </TopicSection>
+
+      <TopicSection id="small-schools" title="Schools too small for the prototypes">
+        <p>
+          The prototypes scale staff down with enrollment, which breaks for a
+          very small school: a high school with 51 students would earn about
+          two and a half teachers, too few to offer a high school&apos;s courses.
+          So the state budget guarantees a minimum. A district qualifies if it
+          has a high school with fewer than 300 students in grades 9-12, has 100
+          or fewer students in grades K-8, runs an isolated school OSPI has
+          judged remote and necessary, or is a non-high district - one with no
+          high school of its own - with 50 to 180 students. The budget sets
+          each minimum in staff units -
+          nine certificated instructional units and half an administrator for
+          a small high school&apos;s first 60 students, for example - plus one
+          classified unit for every 2.94 certificated ones, and pays whatever
+          the prototypes fall short of it.
+        </p>
+        <p>
+          <strong className="text-ink">{SMALL_SCHOOL_TOTALS.districts}</strong>{' '}
+          districts received these extra staff units in {ALLOCATION_YEAR}:{' '}
+          <strong className="text-ink">{Math.round(SMALL_SCHOOL_TOTALS.cis)}</strong>{' '}
+          certificated instructional,{' '}
+          <strong className="text-ink">{Math.round(SMALL_SCHOOL_TOTALS.cas)}</strong>{' '}
+          administrative and{' '}
+          <strong className="text-ink">{Math.round(SMALL_SCHOOL_TOTALS.cls)}</strong>{' '}
+          classified. Few next to a statewide workforce, but in the smallest
+          districts they outnumber the certificated staff the prototypes
+          generate. Pick a district on
+          the{' '}
+          <Link href="/" className="text-accent hover:underline">
+            home page
+          </Link>{' '}
+          to see its own small-school units beside its model schools.
+        </p>
+        <p className="text-sm text-ink-muted">
+          Source: the{' '}
+          <a
+            href="https://lawfilesext.leg.wa.gov/biennium/2023-24/Pdf/Bills/Session%20Laws/Senate/5950-S.SL.pdf"
+            className="text-accent hover:underline"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            2024 supplemental operating budget
+          </a>
+          , section 502(13), under RCW 28A.150.260(3)(a); district units from
+          OSPI&apos;s {ALLOCATION_YEAR} apportionment.
+        </p>
       </TopicSection>
 
       <TopicSection id="student-need" title="Money for particular students">

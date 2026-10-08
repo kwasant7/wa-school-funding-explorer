@@ -85,6 +85,28 @@ COL_ALE_78 = 28          # A19 Grades 7-8 ALE FTE        (Header sheet)
 COL_ALE_912 = 29         # A20 Grades 9-12 ALE FTE       (Header sheet)
 COL_MSOC_REG_RATE = 183  # M80 MSOC-Reg per-student rate (State Constants sheet)
 
+# Small-school staffing (Header sheet), found by OSPI item code rather than
+# column position. These are the staff units the state adds ON TOP of the
+# prototypical formula so a school too small for the prototype recipe still
+# gets a minimum staff - a 51-FTE high school earns about 2.6 teacher-type
+# units from the formula, and the small-high-school provision tops it up to 9.
+#   Z002 / Z003 / Z004  small-school and remote-and-necessary CIS / CAS / CLS
+#                       FTE, i.e. certificated instructional, certificated
+#                       administrative and classified staff units
+#   S001-S004           which provisions the district qualifies under
+# Z002 is the total, not the component columns beside it (Z306, Z314, Z311,
+# ...): it is what OSPI's own "School Generated CIS FTE" (Z005) adds to the
+# formula units, and the components leave out remote-and-necessary school
+# plants and second small high schools (Cape Flattery: 3.8 vs 12.1). It also
+# carries the non-high districts' extra half- or quarter-unit.
+SMALL_SCHOOL_UNITS = (('cis', 'Z002'), ('cas', 'Z003'), ('cls', 'Z004'))
+SMALL_SCHOOL_KINDS = (
+    ('S003', 'smallHigh'),
+    ('S002', 'remoteNecessary'),
+    ('S001', 'smallDistrict'),
+    ('S004', 'nonHigh'),
+)
+
 # App Revenue: an explicit allowlist of revenue codes, matched on their
 # 4-digit prefix (OSPI suffixes sub-allocations, e.g. 4158 -> 415801, 415803,
 # ...). Every code here is confirmed general-fund per-pupil money by its own
@@ -172,8 +194,15 @@ def main():
     #    rate (State Constants, one row - $1,533.02 in 2024-25), for the
     #    imputed ALE share of the Big-3 MSOC total.
     ale_fte = {}
+    small_school = {}
     rows = book['Header'].iter_rows(values_only=True)
-    next(rows)
+    header = next(rows)
+    item_col = {
+        str(cell).split()[0]: i for i, cell in enumerate(header) if cell
+    }
+    for item in [i for _, i in SMALL_SCHOOL_UNITS] + [s for s, _ in SMALL_SCHOOL_KINDS]:
+        if item not in item_col:
+            raise SystemExit(f'Header sheet has no {item} column')
     for row in rows:
         code = str(row[COL_CODE] or '').strip().zfill(5)
         if not code:
@@ -183,6 +212,19 @@ def main():
             + (row[COL_ALE_78] or 0)
             + (row[COL_ALE_912] or 0)
         )
+        units = {
+            key: round(row[item_col[item]] or 0, 3)
+            for key, item in SMALL_SCHOOL_UNITS
+        }
+        # A couple of small high schools carry hundredth-of-a-unit negatives
+        # (the formula already clears the minimum); those get no top-up.
+        has_units = sum(units.values()) > 0
+        units['kinds'] = [
+            kind
+            for switch, kind in SMALL_SCHOOL_KINDS
+            if has_units and row[item_col[switch]]
+        ]
+        small_school[code] = units
 
     rows = book['State Constants'].iter_rows(values_only=True)
     next(rows)
@@ -233,6 +275,11 @@ def main():
             entry[name] = round(buckets.get(name, 0))
         entry['otherState'] = round(other_state)
         entry['total'] = round(rev_state)
+        # Every district carries the same shape, zeros included, so the
+        # site's types inferred from this JSON stay a single record type.
+        entry['smallSchool'] = small_school.get(
+            code, {'cis': 0, 'cas': 0, 'cls': 0, 'kinds': []}
+        )
         districts[code] = entry
 
     payload = {
@@ -257,7 +304,14 @@ def main():
                 "includes small-school/remote-and-necessary MSOC) plus CTE "
                 "MSOC for programs 31/34 (Z164 + 146A) plus an imputed ALE "
                 "share (ALE FTE x the regular MSOC per-student rate, State "
-                "Constants M80); skills-center MSOC excluded."
+                "Constants M80); skills-center MSOC excluded. 'smallSchool' "
+                "is the staff the state funds on top of the prototypical "
+                "formula under its small-school, remote-and-necessary and "
+                "non-high provisions (Header sheet Z002/Z003/Z004: "
+                "certificated instructional, certificated administrative and "
+                "classified FTE units), with the provisions it qualifies "
+                "under (S001-S004). Their salaries and benefits are already "
+                "inside 'salaries' and 'benefits'."
             ),
         },
         'districts': districts,
@@ -274,6 +328,16 @@ def main():
         if d['total'] > 0 and d['otherState'] / d['total'] > 0.25
     ]
     print(f'Wrote allocation.json for {len(districts)} districts.')
+    with_units = [d['smallSchool'] for d in districts.values() if d['smallSchool']['kinds']]
+    print(
+        f'  small-school staffing: {len(with_units)} districts, '
+        f"{sum(u['cis'] for u in with_units):.1f} CIS / "
+        f"{sum(u['cas'] for u in with_units):.1f} CAS / "
+        f"{sum(u['cls'] for u in with_units):.1f} CLS units"
+    )
+    inch = districts.get('10070', {}).get('smallSchool')
+    if inch:
+        print(f'  Inchelium check (expect 6.397 / 0.292 / 2.275, smallHigh): {inch}')
     print(f'  skipped (no matching F-196 state revenue): {skipped_no_revenue}')
     print(f'  negative "other state programs" residual: {len(negatives)}')
     if negatives:

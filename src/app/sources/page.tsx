@@ -473,6 +473,18 @@ export default function SourcesPage() {
             still sums to the 3100 apportionment. Script:{' '}
             <code className="text-ink">scripts/build-state-allocation.py</code>.
           </p>
+          <p>
+            The small-school staff units shown beside a district&apos;s model
+            schools come from the same workbook&apos;s Header sheet: the
+            small-school and remote-and-necessary certificated instructional,
+            administrative and classified staff units, which OSPI computes as a
+            top-up over the prototype formula&apos;s own units, and the flags
+            for which provision a district qualifies under (small high school,
+            small district, remote and necessary school, non-high district). The
+            provisions themselves are in section 502(13) of the 2024
+            supplemental operating budget. Their salaries and benefits are
+            already inside the salary and benefit figures above.
+          </p>
         </div>
 
         <div className="mt-4 card p-5 text-sm text-ink-secondary space-y-2">

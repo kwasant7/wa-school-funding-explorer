@@ -49,6 +49,26 @@ export const ALLOCATION_YEAR = allocationJson.schoolYear;
 /** The calendar year the levy worksheet figures describe (levies run on CY, not SY). */
 export const LEVY_CALENDAR_YEAR = levyJson.calendarYear;
 
+/**
+ * Staff the state funds on top of the prototypes for very small and remote
+ * schools (budget sec. 502(13)), summed across districts, with how many
+ * districts qualify under each provision.
+ */
+export const SMALL_SCHOOL_TOTALS = (() => {
+  const sum = { districts: 0, cis: 0, cas: 0, cls: 0 };
+  const byKind: Record<string, number> = {};
+  for (const d of Object.values(ALLOC)) {
+    const u = d.smallSchool;
+    if (u.cis + u.cas + u.cls <= 0) continue;
+    sum.districts += 1;
+    sum.cis += u.cis;
+    sum.cas += u.cas;
+    sum.cls += u.cls;
+    for (const kind of u.kinds) byKind[kind] = (byKind[kind] ?? 0) + 1;
+  }
+  return { ...sum, byKind };
+})();
+
 /** Every state allocation line, summed across all districts. */
 export const ALLOCATION_TOTALS = (() => {
   const sum = {

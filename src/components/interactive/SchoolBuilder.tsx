@@ -1,6 +1,7 @@
 'use client';
 
 import type { District } from '@/lib/data';
+import allocationData from '@/data/allocation.json';
 import SourceShareBar from '@/components/charts/SourceShareBar';
 import { fmtMoney, fmtMoneyFull } from '@/lib/format';
 import { LATEST } from '@/lib/years';
@@ -59,13 +60,7 @@ function fundedTeachers(type: SchoolType, fte: number, district?: District | nul
   return teacherUnits(fte, classSize, planningTime);
 }
 
-function ModelCard({
-  type,
-  district,
-}: {
-  type: SchoolType;
-  district?: District | null;
-}) {
+function modelStaff(type: SchoolType, district?: District | null) {
   const model = PROTOTYPES[type];
   const fundingFte = district ? district.fundingFte[type] : model.proto;
   const teachers = fundedTeachers(type, fundingFte, district);
@@ -76,6 +71,18 @@ function ModelCard({
     fte: (fundingFte * row[type]) / model.proto,
   }));
   const totalStaff = teachers + staff.reduce((total, item) => total + item.fte, 0);
+  return { fundingFte, teachers, staff, totalStaff };
+}
+
+function ModelCard({
+  type,
+  district,
+}: {
+  type: SchoolType;
+  district?: District | null;
+}) {
+  const model = PROTOTYPES[type];
+  const { fundingFte, teachers, staff, totalStaff } = modelStaff(type, district);
   const modelSchools = fundingFte / model.proto;
   const modelSchoolLabel =
     type === 'high' ? 'high schools' : `${model.label.toLowerCase()} schools`;
@@ -133,6 +140,125 @@ function ModelCard({
   </article>;
 }
 
+type SmallSchool = (typeof allocationData.districts)[keyof typeof allocationData.districts]['smallSchool'];
+const ALLOCATION = allocationData.districts as Record<string, { smallSchool: SmallSchool }>;
+
+/*
+  The provisions in the budget's small-school subsection (2024 supplemental,
+  ESSB 5950 sec. 502(13)), in the words a reader needs to recognize their own
+  district. OSPI's apportionment flags which ones a district qualifies under.
+*/
+const SMALL_SCHOOL_KINDS: Record<string, { label: string; description: string }> = {
+  smallHigh: {
+    label: 'Small high school',
+    description: 'fewer than 300 students in grades 9-12',
+  },
+  smallDistrict: {
+    label: 'Small district',
+    description: '100 or fewer students in grades K-8',
+  },
+  remoteNecessary: {
+    label: 'Remote and necessary school',
+    description: 'an isolated school OSPI has judged remote and necessary',
+  },
+  nonHigh: {
+    label: 'Non-high district',
+    description: 'runs no high school of its own',
+  },
+};
+
+/**
+ * Staff the state funds on top of the prototype recipe for schools too small
+ * for it. The recipe scales staff down with enrollment, so a 51-student high
+ * school earns about two and a half teachers - not enough to offer a high
+ * school's courses. The budget guarantees a minimum instead (nine certificated
+ * instructional units and half an administrator for a high school's first 60
+ * students) and pays the difference. Without this card the builder showed a
+ * district like Inchelium only its recipe staff, then told readers anything
+ * beyond that was local money, when the state was paying for 6.4 more
+ * certificated staff.
+ */
+function SmallSchoolCard({
+  units,
+  district,
+  year,
+  formulaStaff,
+}: {
+  units: SmallSchool;
+  district: District;
+  year: string;
+  formulaStaff: number;
+}) {
+  const total = units.cis + units.cas + units.cls;
+  // `label`, not `role`: the translation collector only reads string values
+  // under the property names in its TEXT_PROPERTIES list.
+  const rows = [
+    {
+      label: 'Certificated instructional staff',
+      detail: 'teachers, librarians, counselors and other certificated staff',
+      fte: units.cis,
+    },
+    {
+      label: 'Certificated administrators',
+      detail: 'principals and other administrators',
+      fte: units.cas,
+    },
+    {
+      label: 'Classified staff',
+      detail: 'office, custodial, paraeducator and other support staff',
+      fte: units.cls,
+    },
+  ];
+
+  return <article className="mt-4 rounded-xl border border-accent-soft bg-accent-wash p-4 md:p-5">
+    <div className="flex items-baseline justify-between gap-3 flex-wrap">
+      <h4 className="text-lg font-bold">Small-school staffing</h4>
+      <p className="text-sm text-ink-secondary">
+        <strong className="text-ink text-lg">+{fmtFte(total)}</strong> staff units
+      </p>
+    </div>
+    <p className="mt-2 text-sm text-ink-secondary">
+      The prototype recipe cannot staff a very small school, so the state
+      budget guarantees a minimum and pays the difference on top of the model
+      schools above. <span data-no-translate>{district.name}</span> qualifies
+      as:
+    </p>
+    <ul className="mt-2 space-y-1 text-sm text-ink-secondary">
+      {units.kinds.map((kind) => {
+        const k = SMALL_SCHOOL_KINDS[kind];
+        return k ? <li key={kind}>
+          <strong className="text-ink">{k.label}</strong> - {k.description}
+        </li> : null;
+      })}
+    </ul>
+    <div className="mt-4 space-y-4">
+      {rows.filter((r) => r.fte > 0).map(({ label, detail, fte }) => <div key={label}>
+        <div className="flex items-baseline gap-2 flex-wrap"><span className="w-36 shrink-0 text-sm font-semibold">{label}</span><span className="text-sm tabular-nums font-bold text-accent-deep w-12">{fmtFte(fte)}</span><span className="text-xs text-ink-muted">{detail}</span></div>
+        <div className="mt-1.5 pl-0 md:pl-36"><StaffIcons count={fte} /></div>
+      </div>)}
+    </div>
+    <p className="mt-5 border-t border-accent-soft pt-3 text-sm text-ink-secondary">
+      <strong className="text-ink">{fmtFte(total)} more state-funded staff units</strong>{' '}
+      on top of the roughly {fmtFte(formulaStaff)} the model schools above
+      generate.
+    </p>
+    <p className="mt-2 text-xs text-ink-muted">
+      Units from OSPI&apos;s {year} apportionment, already net of the formula
+      staff above. Their salaries and benefits are part of the state
+      allocation below. Source: the{' '}
+      <a
+        href="https://lawfilesext.leg.wa.gov/biennium/2023-24/Pdf/Bills/Session%20Laws/Senate/5950-S.SL.pdf"
+        target="_blank"
+        rel="noopener noreferrer"
+        className="font-semibold text-accent underline underline-offset-2"
+      >
+        2024 supplemental budget ↗
+      </a>
+      , section 502(13).
+    </p>
+  </article>;
+}
+
 export default function SchoolBuilder({
   district,
   year = LATEST,
@@ -145,6 +271,18 @@ export default function SchoolBuilder({
       district.fundingFte.middle / PROTOTYPES.middle.proto +
       district.fundingFte.high / PROTOTYPES.high.proto
     : 0;
+  // Small-school units are an apportionment figure for one year, so they are
+  // only shown when the builder is on that year.
+  const smallSchool =
+    district && year === allocationData.schoolYear
+      ? ALLOCATION[district.code]?.smallSchool ?? null
+      : null;
+  const hasSmallSchool =
+    smallSchool != null && smallSchool.cis + smallSchool.cas + smallSchool.cls > 0;
+  const formulaStaff = (Object.keys(PROTOTYPES) as SchoolType[]).reduce(
+    (total, type) => total + modelStaff(type, district).totalStaff,
+    0
+  );
 
   return <div className="card p-5 md:p-7">
     <h3 className="text-xl md:text-2xl font-bold">
@@ -212,9 +350,10 @@ export default function SchoolBuilder({
     */}
     <p className="mt-6 rounded-lg border border-accent-soft bg-accent-wash px-4 py-3 text-sm text-ink-secondary">
       <strong className="text-ink">This is state funding.</strong> The staff
-      below are what Washington&apos;s formula allocates and pays for. Anything a
-      district staffs beyond these numbers comes out of local levy, federal, or
-      other money.
+      below are what Washington&apos;s formula allocates and pays for, including
+      the extra staff very small and remote schools get. Anything a district
+      staffs beyond these numbers comes out of local levy, federal, or other
+      money.
     </p>
 
     <div className="mt-4 grid xl:grid-cols-3 gap-4">
@@ -222,6 +361,14 @@ export default function SchoolBuilder({
         <ModelCard key={type} type={type} district={district} />
       ))}
     </div>
+    {district && hasSmallSchool && (
+      <SmallSchoolCard
+        units={smallSchool}
+        district={district}
+        year={year}
+        formulaStaff={formulaStaff}
+      />
+    )}
     <p className="mt-5 text-xs text-ink-muted">
       School-level staff only, from RCW 28A.150.260(4) and (5). Roles marked *
       are funded in proportion to the staff a district can show it employs.

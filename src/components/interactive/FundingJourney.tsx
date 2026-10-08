@@ -209,18 +209,36 @@ const STEPS: Step[] = [
         d.fundingFte.elementary / PROTOTYPES.elementary.proto +
         d.fundingFte.middle / PROTOTYPES.middle.proto +
         d.fundingFte.high / PROTOTYPES.high.proto;
-      return <Stat big={models.toFixed(0)} cap="pretend model schools" />;
+      // Rounded to a whole number, a district under half a model school read
+      // "0 pretend model schools" - and a quarter of districts are that small.
+      return (
+        <Stat
+          big={models < 10 ? models.toFixed(1) : models.toFixed(0)}
+          cap="pretend model schools"
+        />
+      );
     },
   },
   {
     headline: 'Add staff to each',
     blurb: 'Teachers, nurses, admin, custodians.',
-    visual: () => (
-      <div>
-        <PeopleCluster />
-        <div className="mt-1 text-xs text-ink-muted">a staff recipe per school</div>
-      </div>
-    ),
+    visual: (_d, a) => {
+      // The recipe scales staff down with enrollment, so a very small school
+      // gets a guaranteed minimum on top. Naming it here keeps the next step's
+      // salary total from looking larger than the recipe could explain.
+      const extra = a ? a.smallSchool.cis + a.smallSchool.cas + a.smallSchool.cls : 0;
+      return (
+        <div>
+          <PeopleCluster />
+          <div className="mt-1 text-xs text-ink-muted">a staff recipe per school</div>
+          {extra > 0 && (
+            <div className="mt-1 text-xs font-medium text-accent-deep">
+              +{extra.toFixed(1)} small-school staff units
+            </div>
+          )}
+        </div>
+      );
+    },
   },
   {
     headline: 'Turn staff into money',

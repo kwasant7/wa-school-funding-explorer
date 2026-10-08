@@ -199,7 +199,8 @@ export default function HomeExplainer() {
                     <>
                       Each model school generates teachers at a funded class
                       size and fractional positions for eleven other roles, from
-                      principals to nurses.
+                      principals to nurses. Very small and remote schools get
+                      extra staff on top, so none falls below a minimum.
                     </>
                   ),
                 },
