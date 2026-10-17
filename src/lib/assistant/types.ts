@@ -18,7 +18,7 @@ export function isAssistantLanguage(value: string): value is AssistantLanguage {
 /**
  * Internal routes the assistant is allowed to navigate to.
  *
- * The six topic explainers belong here as much as the five main tabs do: they
+ * The six topic explainers belong here as much as the six main tabs do: they
  * are the pages written to answer the questions people actually ask the
  * assistant, and leaving them out meant a reader asking how the prototypical
  * model works could not be taken to the page about the prototypical model.
@@ -28,6 +28,7 @@ export const ALLOWED_ROUTES = [
   '/districts',
   '/simulator',
   '/take-action',
+  '/resources',
   '/sources',
   '/lea',
   '/washington-school-funding',
@@ -58,7 +59,6 @@ export const ALLOWED_SECTIONS = [
   'simulator-summary',
   'delegation',
   'district-brief',
-  'templates',
   'bills',
   'resources',
   'sources-list',

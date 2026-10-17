@@ -146,13 +146,6 @@ function IssueCard({ issue, index }: { issue: Issue; index: number }) {
         </div>
       )}
 
-      <div className="mt-4 rounded-xl border border-accent-soft bg-accent-wash p-3.5">
-        <p className="text-xs font-semibold uppercase tracking-wide text-accent-deep">
-          What to ask for
-        </p>
-        <p className="mt-1 font-medium text-ink">{issue.ask}</p>
-      </div>
-
       {issue.refs.length > 0 && (
         <details className="mt-3 group">
           <summary className="inline-flex min-h-[44px] cursor-pointer items-center text-xs font-semibold text-accent hover:underline">
@@ -187,10 +180,7 @@ export default function DistrictBrief({ code }: { code: string }) {
     <section data-assistant-section="district-brief" className="mt-8">
       <div className="flex items-end justify-between gap-4 flex-wrap">
         <div className="min-w-0">
-          <p className="text-sm font-semibold text-accent uppercase tracking-wide">
-            Your district&apos;s brief
-          </p>
-          <h2 className="mt-1 text-2xl md:text-3xl font-bold">
+          <h2 className="text-2xl md:text-3xl font-bold">
             What needs to change in{' '}
             <span data-no-translate>{brief.name}</span>
           </h2>

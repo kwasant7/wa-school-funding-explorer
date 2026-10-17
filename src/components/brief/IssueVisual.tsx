@@ -96,16 +96,18 @@ function Dots({ visual }: { visual: Extract<Visual, { kind: 'dots' }> }) {
       aria-label={`${filled} out of every 100 ${visual.label}, compared with ${compare} out of 100 ${visual.compareLabel}.`}
     >
       <div className="flex items-baseline gap-2">
-        <span className="text-3xl font-bold tabular-nums text-accent">{filled}</span>
+        <span className="text-xl font-bold tabular-nums text-accent">{filled}</span>
         <span className="text-sm text-ink-secondary">
           out of every 100 {visual.label}
         </span>
       </div>
-      <div aria-hidden className="mt-2 grid w-fit grid-cols-[repeat(20,minmax(0,1fr))] gap-[3px]">
+      {/* 25 across, four rows: wide enough to fill the card, short enough
+          that the filled run still reads as one block at a glance. */}
+      <div aria-hidden className="mt-2 grid w-full grid-cols-[repeat(25,minmax(0,1fr))] gap-1 sm:gap-1.5">
         {Array.from({ length: 100 }, (_, i) => (
           <span
             key={i}
-            className={`h-2 w-2 rounded-full ${i < filled ? 'bg-accent' : 'bg-line'}`}
+            className={`aspect-square w-full rounded-full ${i < filled ? 'bg-accent' : 'bg-line'}`}
           />
         ))}
       </div>

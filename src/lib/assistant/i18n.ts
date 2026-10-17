@@ -54,6 +54,7 @@ export type AssistantStrings = {
   pageDistricts: string;
   pageSimulator: string;
   pageTakeAction: string;
+  pageResources: string;
   pageSources: string;
   pageLea: string;
 };
@@ -102,6 +103,7 @@ const en: AssistantStrings = {
   pageDistricts: 'District Explorer',
   pageSimulator: 'Policy Simulator',
   pageTakeAction: 'Take Action',
+  pageResources: 'Resources',
   pageSources: 'Sources & Methodology',
   pageLea: 'Local Effort Assistance',
 };
@@ -151,6 +153,7 @@ const es: AssistantStrings = {
   pageDistricts: 'Explorador del distrito',
   pageSimulator: 'Simulador de políticas',
   pageTakeAction: 'Tomar medidas',
+  pageResources: 'Recursos',
   pageSources: 'Fuentes y metodología',
   pageLea: 'Asistencia al Esfuerzo Local',
 };
@@ -197,6 +200,7 @@ const zh: AssistantStrings = {
   pageDistricts: '学区浏览器',
   pageSimulator: '政策模拟器',
   pageTakeAction: '采取行动',
+  pageResources: '资源',
   pageSources: '来源与方法',
   pageLea: '地方努力补助',
 };
@@ -245,6 +249,7 @@ const vi: AssistantStrings = {
   pageDistricts: 'Khám phá học khu',
   pageSimulator: 'Trình mô phỏng chính sách',
   pageTakeAction: 'Hành động',
+  pageResources: 'Tài nguyên',
   pageSources: 'Nguồn và phương pháp',
   pageLea: 'Hỗ trợ Nỗ lực Địa phương',
 };
@@ -293,6 +298,7 @@ const ru: AssistantStrings = {
   pageDistricts: 'Обзор округов',
   pageSimulator: 'Симулятор политики',
   pageTakeAction: 'Действовать',
+  pageResources: 'Ресурсы',
   pageSources: 'Источники и методология',
   pageLea: 'Local Effort Assistance',
 };
@@ -343,6 +349,7 @@ const tl: AssistantStrings = {
   pageDistricts: 'Explorer ng Distrito',
   pageSimulator: 'Simulator ng Patakaran',
   pageTakeAction: 'Kumilos',
+  pageResources: 'Mga Mapagkukunan',
   pageSources: 'Mga Pinagkunan at Metodolohiya',
   pageLea: 'Local Effort Assistance',
 };
@@ -390,6 +397,7 @@ const ko: AssistantStrings = {
   pageDistricts: '학군 탐색기',
   pageSimulator: '정책 시뮬레이터',
   pageTakeAction: '행동하기',
+  pageResources: '자료',
   pageSources: '출처 및 방법론',
   pageLea: 'Local Effort Assistance',
 };

@@ -229,12 +229,6 @@ export type DistrictBrief = {
   summary: string;
   stats: BriefStat[];
   issues: Issue[];
-  /** Short phrase for the email template's issue placeholder. */
-  emailIssue: string;
-  /** Phrased to follow "I'm asking you to ...". */
-  emailAsk: string;
-  /** The one hard number worth putting in a letter. */
-  emailFact: string | null;
   /** Set when the district looks broadly typical, so the brief says so. */
   steadyNote: string | null;
 };
@@ -879,57 +873,6 @@ const BUILDERS: Builder[] = [
  * Assembling the brief
  * ------------------------------------------------------------------ */
 
-/**
- * The short phrase each issue contributes to the email template. Every one of
- * these has to complete the sentence "Washington's funding formula currently
- * ...", so they stay in the present tense.
- */
-const EMAIL_PHRASES: Record<IssueId, string> = {
-  oversight: 'leaves our district under state financial oversight',
-  reserves: 'has forced our district to spend down its reserves to cover last year’s costs',
-  levyCap: 'blocks our district from collecting a levy our voters already approved',
-  leaDependence: 'under-equalizes districts without much local property wealth',
-  sped: 'does not cover what special education actually costs',
-  msoc: 'has not kept operating-cost funding level with what districts spend',
-  transportation: 'leaves a transportation gap our district pays for itself',
-  ell: 'funds multilingual learners for too few years and at too low a rate',
-  lowIncome: 'barely adjusts for concentrated student poverty',
-  enrollmentDecline: 'cuts funding faster than a declining district can cut costs',
-  smallScale: 'assumes a school much larger than ours',
-};
-
-/**
- * Phrased to complete the sentence "I'm asking you to ...".
- *
- * Each names a mechanism - a bill, a statute, a rate - and then says what it
- * would buy, because a legislator's office sorts mail by what is being asked
- * for. "Increase special education funding" is a sentiment and gets tallied;
- * "raise the multipliers so special education stops being paid for out of
- * every other student's classroom" is a request with a reason attached, and
- * the reason is the part a staffer can repeat to the member.
- */
-const EMAIL_ASKS: Record<IssueId, string> = {
-  oversight:
-    'address the funding gaps that pushed our district into state financial oversight, rather than treating the oversight itself as the fix',
-  reserves:
-    'provide the recurring revenue our district needs to balance its budget, not another one-time budget proviso',
-  levyCap:
-    'raise the per-student enrichment levy cap in RCW 84.52.0531, so our district can collect the levy our own voters already approved',
-  leaDependence:
-    'raise the Local Effort Assistance threshold and protect levy equalization in the operating budget, so a district’s property wealth stops deciding what its students get',
-  sped: 'raise the special education funding multipliers and fully fund the high-cost safety net, so special education stops being paid for out of every other student’s classroom',
-  msoc: 'increase the MSOC allocation and revive the per-student operating-cost increase that died in SSB 5918, so heat and power stop competing with staffing',
-  transportation:
-    'bring back the transportation safety net proposed in SB 5858 and address the outdated bus depreciation schedule, so districts like ours are not forced to cover these gaps locally',
-  ell: 'extend the years a student generates bilingual funding and raise the per-student rate, so the money follows students for as long as they are actually learning English',
-  lowIncome:
-    'increase Learning Assistance Program funding and weight the basic education formula by student poverty, so the schools serving the most students in poverty are funded for it',
-  enrollmentDecline:
-    'revive the enrollment stabilization funding that died in SB 6125, so a district losing students is not cutting teachers faster than it can close buildings',
-  smallScale:
-    'review the small-district and remote-and-necessary funding enhancements, which have not kept pace with costs, so a small district is not funded as though it were the size the formula imagines',
-};
-
 function summaryFor(m: Metrics, issues: Issue[]): string {
   if (issues.length === 0) {
     return `Compared with Washington's other 314 districts, nothing here stands out as unusually bad. That does not mean the schools are well funded - the statewide gaps still apply.`;
@@ -1008,26 +951,15 @@ export function briefFor(code: string): DistrictBrief | null {
     .sort((a, b) => b.severity - a.severity)
     .slice(0, 4);
 
-  const top = issues[0] ?? null;
-  const emailIssue = top
-    ? EMAIL_PHRASES[top.id]
-    : 'does not cover what special education actually costs';
-  const emailAsk = top
-    ? EMAIL_ASKS[top.id]
-    : 'raise the special education funding multipliers and fully fund the high-cost safety net';
-
   return {
     code: m.code,
     name: m.name,
     summary: summaryFor(m, issues),
     stats: statsFor(m),
     issues,
-    emailIssue,
-    emailAsk,
-    emailFact: top ? top.fact : null,
     steadyNote:
       issues.length === 0
-        ? 'Nothing here scores as unusually bad for Washington. The email and testimony templates below still work - use the statewide picture and what you have seen yourself.'
+        ? 'Nothing here scores as unusually bad for Washington. The statewide picture and what you have seen yourself still make a strong case.'
         : null,
   };
 }

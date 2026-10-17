@@ -9,7 +9,7 @@ import {
 
 const TITLE = 'Take Action';
 const DESCRIPTION =
-  'Find the Washington legislators connected to your school district, review 2026 school-funding bills, and prepare an email or public testimony.';
+  "Find the Washington legislators connected to your school district, see your district's funding brief, and review 2026 school-funding bills.";
 
 export const metadata: Metadata = pageMetadata({
   title: TITLE,

@@ -52,7 +52,14 @@ export const ASSISTANT_SOURCES: readonly AssistantSource[] = [
     label: 'Take Action',
     url: '/take-action',
     type: 'internal',
-    description: 'Your legislators, 2026 funding bills, and message templates.',
+    description: 'Your legislators, your district brief, and 2026 funding bills.',
+  },
+  {
+    id: 'site-resources',
+    label: 'Resources',
+    url: '/resources',
+    type: 'internal',
+    description: 'Official explainers, legislative tools, and advocacy groups for going further.',
   },
   {
     id: 'site-sources',
@@ -349,7 +356,7 @@ export const KNOWLEDGE: readonly Chunk[] = [
   {
     id: 'take-action',
     title: 'Contacting legislators and testifying',
-    text: 'A Washington school district usually sits inside several legislative districts, and every one of those delegations votes on school funding, so the Take Action page lists all of them for a selected district along with the share of the district area each covers. It also provides an email template and a roughly one-minute public testimony template. Anyone may testify on a bill remotely, in person, or in writing, or simply sign in to record support or opposition; students can and do testify. Verify your exact delegation from your home address with the Legislature District Finder.',
+    text: 'A Washington school district usually sits inside several legislative districts, and every one of those delegations votes on school funding, so the Take Action page lists all of them for a selected district along with the share of the district area each covers. Anyone may testify on a bill remotely, in person, or in writing, or simply sign in to record support or opposition; students can and do testify. Verify your exact delegation from your home address with the Legislature District Finder.',
     sourceIds: ['site-take-action', 'leg-testify', 'leg-district-finder', 'leg-bill-info'],
     keywords: ['legislator', 'legislators', 'contact', 'testify', 'testimony', 'advocacy', 'representative', 'senator', 'email', 'hearing', 'committee', 'bill'],
   },
@@ -370,7 +377,7 @@ export const KNOWLEDGE: readonly Chunk[] = [
   {
     id: 'site-navigation',
     title: 'How this website is organised',
-    text: 'The site has five main sections plus a set of topic explainers. How It Works explains the prototypical school model and lets you personalise it to a district. District Explorer shows funding, enrollment, revenue mix, demographics and trends for every district and charter, in any year since 2019-20. Policy Simulator lets you raise each funding lever and see the estimated cost. Take Action gives your legislators, a generated district brief, 2026 funding bills, and message templates. Sources & Methodology lists every dataset and statute. Alongside those, one explainer page each covers the prototypical school funding model, how Washington funds K-12 overall, MSOC, special education, levies and Local Effort Assistance, and student transportation.',
+    text: 'The site has six main sections plus a set of topic explainers. How It Works explains the prototypical school model and lets you personalise it to a district. District Explorer shows funding, enrollment, revenue mix, demographics and trends for every district and charter, in any year since 2019-20. Policy Simulator lets you raise each funding lever and see the estimated cost. Take Action gives your legislators, a generated district brief, and 2026 funding bills. Resources links official explainers, legislative tools and advocacy groups. Sources & Methodology lists every dataset and statute. Alongside those, one explainer page each covers the prototypical school funding model, how Washington funds K-12 overall, MSOC, special education, levies and Local Effort Assistance, and student transportation.',
     sourceIds: ['site-home', 'site-districts', 'site-simulator', 'site-take-action', 'site-sources', 'site-lea', 'site-prototypical-model'],
     keywords: ['navigate', 'navigation', 'pages', 'sections', 'menu', 'tabs', 'where', 'find', 'how to use', 'help'],
   },

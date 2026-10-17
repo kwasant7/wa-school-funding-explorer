@@ -201,9 +201,6 @@ describe('every rendered brief', () => {
       if (!brief) continue;
       const strings = [
         brief.summary,
-        brief.emailIssue,
-        brief.emailAsk,
-        brief.emailFact ?? '',
         brief.steadyNote ?? '',
         ...brief.stats.flatMap((s) => [s.value, s.note]),
         ...brief.issues.flatMap((i) => [i.title, i.fact, i.ask]),

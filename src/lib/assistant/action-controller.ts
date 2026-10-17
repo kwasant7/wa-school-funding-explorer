@@ -73,6 +73,8 @@ function routeLabel(route: string, strings: AssistantStrings): string {
       return strings.pageSimulator;
     case '/take-action':
       return strings.pageTakeAction;
+    case '/resources':
+      return strings.pageResources;
     case '/sources':
       return strings.pageSources;
     case '/lea':

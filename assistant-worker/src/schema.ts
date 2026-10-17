@@ -56,7 +56,7 @@ const ACTION_SCHEMA = {
     },
     route: {
       type: ['string', 'null'],
-      enum: ['/', '/districts', '/simulator', '/take-action', '/sources', '/lea', null],
+      enum: ['/', '/districts', '/simulator', '/take-action', '/resources', '/sources', '/lea', null],
       description: 'For navigate: the internal route.',
     },
     sectionId: {

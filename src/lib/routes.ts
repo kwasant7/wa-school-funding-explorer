@@ -26,6 +26,7 @@ export const STATIC_ROUTES = [
   { path: '/lea/', priority: 0.7 },
   { path: '/simulator/', priority: 0.7 },
   { path: '/take-action/', priority: 0.7 },
+  { path: '/resources/', priority: 0.6 },
   { path: '/sources/', priority: 0.6 },
 ] as const;
 
