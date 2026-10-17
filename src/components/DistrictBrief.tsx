@@ -2,7 +2,7 @@
 
 /**
  * The brief for a single district: what is wrong with its funding, in
- * pictures, and what to ask a lawmaker for.
+ * pictures, with the sources behind each one.
  *
  * Written for a reader with no background in school finance - a student, a
  * parent at a board meeting - so each problem gets one number, one chart and
@@ -110,7 +110,7 @@ function DownloadBriefButton({ brief }: { brief: Brief }) {
 }
 
 /**
- * One problem, as a card: a number, a picture, and one thing to ask for.
+ * One problem, as a card: a number, a picture, and where it comes from.
  *
  * The bill citations are collapsed behind a <details> rather than listed. They
  * are the part a curious reader or a journalist wants and the part that made

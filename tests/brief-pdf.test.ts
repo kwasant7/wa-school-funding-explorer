@@ -10,7 +10,7 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 
-import { briefFor } from '@/lib/diagnosis';
+import { briefFor, type DistrictBrief } from '@/lib/diagnosis';
 import { buildBriefPdf, briefFileName, pdfStringForTest } from '@/lib/brief-pdf';
 
 const META = {
@@ -23,13 +23,14 @@ const META = {
 const BELLEVUE = '17405';
 const STEADY = '06119';
 const ENHANCED_OVERSIGHT = '31025';
-// Almira's MSOC ask cites "(SSB 5918)" - parentheses inside drawn text.
-const HAS_PARENS = '22017';
 
-async function bytesFor(code: string): Promise<string> {
+async function bytesFor(
+  code: string,
+  patch: Partial<DistrictBrief> = {}
+): Promise<string> {
   const brief = briefFor(code);
   assert.ok(brief, `no brief for ${code}`);
-  const blob = buildBriefPdf(brief, META);
+  const blob = buildBriefPdf({ ...brief, ...patch }, META);
   const buffer = await blob.arrayBuffer();
   // Latin-1 so byte offsets and character indices stay in step.
   return Buffer.from(buffer).toString('latin1');
@@ -106,12 +107,14 @@ describe('brief PDF content', () => {
   it('carries the district name and headline into the file', async () => {
     const pdf = await bytesFor(BELLEVUE);
     assert.ok(pdf.includes('Bellevue School District'));
-    assert.ok(pdf.includes('WHAT TO ASK FOR'));
     assert.ok(pdf.includes('WA SCHOOL FUNDING EXPLORER'));
   });
 
   it('escapes parentheses so they cannot terminate a PDF string early', async () => {
-    const pdf = await bytesFor(HAS_PARENS);
+    // No generated copy carries parentheses today, so supply some.
+    const pdf = await bytesFor(BELLEVUE, {
+      summary: 'A bill to fix this (SSB 5918) died in 2026.',
+    });
     assert.ok(pdf.includes('\\(SSB 5918\\)'), 'expected escaped parentheses');
     // A bare "(" inside a drawn string would break the content stream.
     for (const match of Array.from(pdf.matchAll(/\(((?:[^()\\]|\\.)*)\) Tj/g))) {

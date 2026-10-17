@@ -55,8 +55,8 @@ const BASELINE_FTE = baselineJson.districts as Record<string, number>;
 /**
  * Bills are quoted only from the vetted 2026 set already shown on this page.
  * Nothing here invents a bill number: where no 2026 bill addresses a problem
- * (the levy cap, the special education multiplier), the ask points at the
- * statute or the budget instead.
+ * (the levy cap, the special education multiplier), the citation points at
+ * the statute or the budget instead.
  */
 const BILLS = {
   msoc: {
@@ -212,9 +212,7 @@ export type Issue = {
    * leave this unset rather than guessing.
    */
   response?: string;
-  /** One sentence: what to ask a lawmaker for. */
-  ask: string;
-  /** Real bills or statutes attached to that ask. */
+  /** Real bills or statutes behind this issue. */
   refs: BillRef[];
   /** 0-100, comparable across issue types, used only for ranking. */
   severity: number;
@@ -563,7 +561,6 @@ const oversightIssue: Builder = (m) => {
       current: enhanced ? 3 : 2,
     },
     response: m.oversight.response,
-    ask: 'Ask lawmakers to fix what caused this. Watching a shortfall does not pay for it.',
     refs: [BILLS.budget, BILLS.review],
     severity: enhanced ? 100 : 94,
   };
@@ -620,7 +617,6 @@ const reservesIssue: Builder = (m) => {
       label: 'Savings here',
       safeLabel: "State Auditor's 60-day benchmark",
     },
-    ask: 'Ask lawmakers for steady funding every year, not a one-time patch.',
     refs: [BILLS.budget, BILLS.enrollment],
     severity: rr < 0 ? 90 : materialDeficit && thinReserves ? 78 : materialDeficit ? 68 : 60,
   };
@@ -643,10 +639,9 @@ const levyCapIssue: Builder = (m) => {
     title: 'Voters said yes. State law says no.',
     fact: `People here voted to pay ${plainMoney(m.levy.levy)} in school taxes. State law blocks ${plainMoney(fig.gap)} of it.`,
     visual: fig.visual,
-    ask: 'Ask lawmakers to raise the levy cap. This money needs no new vote.',
     refs: [LEVY_STATUTE],
     // A cap that blocks a lot per student matters more than one blocking a
-    // rounding error, but any blocked money is a strong, concrete ask.
+    // rounding error, but any blocked money is a strong, concrete case.
     severity: 70 + pctile * 0.18,
   };
 };
@@ -670,7 +665,6 @@ const leaIssue: Builder = (m) => {
       gapLabel: `${Math.round((100 * m.avPerPupil) / MEDIANS.avPerPupil)}% of typical`,
       format: 'money',
     },
-    ask: 'Ask lawmakers to protect and raise the money that evens this out.',
     refs: [LEA_STATUTE, BILLS.budget],
     severity: 55 + pctile * 0.25,
   };
@@ -701,7 +695,6 @@ const spedIssue: Builder = (m) => {
     */
     fact: `The district pays the missing ${plainMoney(fig.gap)} out of regular school money - about ${round(m.spedGapPerPupil)} taken from every student. Federally funded services are left out of both figures.`,
     visual: fig.visual,
-    ask: 'Ask lawmakers to pay what special education actually costs.',
     refs: [BILLS.budget, BILLS.spedIncrease],
     severity: 50 + pctile * 0.4,
   };
@@ -725,7 +718,6 @@ const msocIssue: Builder = (m) => {
     title: 'Everyday running costs are underfunded',
     fact: `Heat, power, insurance, supplies and computers cost ${plainMoney(fig.gap)} more than the state sends for them.`,
     visual: fig.visual,
-    ask: `Ask lawmakers to raise this rate. A bill to do it (${BILLS.msoc.bill}) died in 2026.`,
     refs: [BILLS.msoc, BILLS.utilities],
     severity: 48 + pctile * 0.4,
   };
@@ -749,7 +741,6 @@ const transportationIssue: Builder = (m) => {
     title: 'Getting students to school costs more than the state pays',
     fact: `Buses and routes cost ${plainMoney(fig.gap)} more here than the state sends for them.`,
     visual: fig.visual,
-    ask: `Ask lawmakers to pay the real cost of hard routes (${BILLS.transportation.bill} would have).`,
     refs: [BILLS.transportation, BILLS.buses],
     severity: 45 + pctile * 0.35,
   };
@@ -771,7 +762,6 @@ const ellIssue: Builder = (m) => {
       compare: perHundred(STATEWIDE.ellRate),
       compareLabel: 'statewide',
     },
-    ask: 'Ask lawmakers to fund these students for more years, at a higher rate.',
     refs: [BILLS.budget],
     severity: 45 + pctile * 0.35,
   };
@@ -801,7 +791,6 @@ const lowIncomeIssue: Builder = (m) => {
       compare: perHundred(STATEWIDE.lowIncomeRate),
       compareLabel: 'statewide',
     },
-    ask: 'Ask lawmakers to send more money to schools with more student need.',
     refs: [BILLS.budget, BILLS.review],
     severity: 42 + pctile * 0.32,
   };
@@ -826,7 +815,6 @@ const enrollmentIssue: Builder = (m) => {
       to: m.record.fundingEnrollment,
       changeLabel: `${pctText(Math.abs(change), 0)} fewer students`,
     },
-    ask: `Ask lawmakers for time to adjust (${BILLS.enrollment.bill} would have given it).`,
     refs: [BILLS.enrollment, BILLS.budget],
     severity: 50 + Math.min(Math.abs(change), 30),
   };
@@ -849,7 +837,6 @@ const smallScaleIssue: Builder = (m) => {
       gapLabel: 'One nurse costs the same either way',
       format: 'plain',
     },
-    ask: 'Ask lawmakers to raise the extra funding small districts get.',
     refs: [BILLS.review, BILLS.budget],
     severity: 40 + Math.min(pctile * 0.2, 20),
   };

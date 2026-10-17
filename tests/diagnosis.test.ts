@@ -203,7 +203,7 @@ describe('every rendered brief', () => {
         brief.summary,
         brief.steadyNote ?? '',
         ...brief.stats.flatMap((s) => [s.value, s.note]),
-        ...brief.issues.flatMap((i) => [i.title, i.fact, i.ask]),
+        ...brief.issues.flatMap((i) => [i.title, i.fact]),
       ];
       for (const s of strings) {
         assert.ok(!BAD.test(s), `${code}: leaked into brief text — "${s}"`);

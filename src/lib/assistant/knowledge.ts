@@ -363,7 +363,7 @@ export const KNOWLEDGE: readonly Chunk[] = [
   {
     id: 'district-brief',
     title: "The Take Action district brief",
-    text: "The Take Action page generates a short brief for the selected district: the funding problems that are unusual for that district ranked against the other 314, with the district's own numbers and a specific ask for each. It scores issues such as state financial oversight, an unbalanced budget, the levy cap blocking approved money, dependence on levy equalization, special education and MSOC gaps, transportation, multilingual learners, concentrated poverty, falling enrollment, and small-district scale. Severity is a percentile rank against all districts, so 'unusually high' means unusual for Washington. Districts whose numbers are unremarkable get a short brief saying so rather than a manufactured problem.",
+    text: "The Take Action page generates a short brief for the selected district: the funding problems that are unusual for that district ranked against the other 314, with the district's own numbers and the sources for each. It scores issues such as state financial oversight, an unbalanced budget, the levy cap blocking approved money, dependence on levy equalization, special education and MSOC gaps, transportation, multilingual learners, concentrated poverty, falling enrollment, and small-district scale. Severity is a percentile rank against all districts, so 'unusually high' means unusual for Washington. Districts whose numbers are unremarkable get a short brief saying so rather than a manufactured problem.",
     sourceIds: ['site-take-action', 'site-sources'],
     keywords: ['brief', 'district brief', 'what needs to change', 'issues', 'problems', 'ranked', 'severity'],
   },

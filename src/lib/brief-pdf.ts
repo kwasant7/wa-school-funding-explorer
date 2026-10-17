@@ -193,9 +193,7 @@ const INK = [0.043, 0.043, 0.043] as const;
 const INK_SECONDARY = [0.322, 0.318, 0.306] as const;
 const INK_MUTED = [0.537, 0.529, 0.506] as const;
 const ACCENT = [0.145, 0.416, 0.749] as const;
-const ACCENT_DEEP = [0.063, 0.259, 0.506] as const;
 const LINE = [0.882, 0.878, 0.851] as const;
-const WASH = [0.933, 0.957, 0.984] as const;
 const ACCENT_SOFT = [0.804, 0.886, 0.984] as const;
 const GOOD = [0, 0.388, 0] as const;
 const GOOD_WASH = [0.941, 0.992, 0.957] as const;
@@ -713,51 +711,23 @@ function issueSection(pdf: Pdf, issue: DistrictBrief['issues'][number], index: n
     pdf.y = top - responseH - 12;
   }
 
-  // "The ask" panel. Measured before drawing so the wash sits behind the text.
-  const askWidth = CONTENT_W - (indent - MARGIN) - 20;
-  const askLines = wrap(issue.ask, 'regular', 9.5, askWidth).length;
   // Citations collapse to one line of bill numbers. The page hides them behind
   // a disclosure; print has no such affordance, so they shrink instead.
   const refLine = issue.refs.map((ref) => ref.bill).join('  ·  ');
-  const refLines = refLine ? wrap(refLine, 'regular', 7.5, askWidth).length : 0;
-  const askH = 26 + askLines * 13 + (refLines > 0 ? 5 + refLines * 10 : 0);
-
-  pdf.gap(4);
-  pdf.ensure(askH + 6);
-  const askTop = pdf.y;
-  pdf.rect(indent, askTop - askH, CONTENT_W - (indent - MARGIN), askH, WASH);
-  pdf.rect(indent, askTop - askH, 2.5, askH, ACCENT);
-
-  pdf.y = askTop - 9;
-  pdf.text('WHAT TO ASK FOR', {
-    x: indent + 10,
-    size: 7.5,
-    font: 'bold',
-    colour: ACCENT_DEEP,
-    width: askWidth,
-    leading: 11,
-  });
-  pdf.text(issue.ask, {
-    x: indent + 10,
-    size: 9.5,
-    font: 'bold',
-    colour: INK,
-    width: askWidth,
-    leading: 13,
-  });
-
   if (refLine) {
-    pdf.gap(2);
-    pdf.text(refLine, {
-      x: indent + 10,
+    const refWidth = CONTENT_W - (indent - MARGIN);
+    pdf.gap(4);
+    pdf.ensure(wrap(refLine, 'regular', 7.5, refWidth).length * 10 + 6);
+    pdf.text(`Sources: ${refLine}`, {
+      x: indent,
       size: 7.5,
       colour: INK_MUTED,
-      width: askWidth,
+      width: refWidth,
       leading: 10,
     });
   }
 
-  pdf.y = askTop - askH - 12;
+  pdf.gap(12);
 }
 
 export type BriefPdfMeta = {
