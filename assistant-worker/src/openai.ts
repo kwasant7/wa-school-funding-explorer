@@ -16,7 +16,11 @@ import OpenAI from 'openai';
 import { RESPONSE_SCHEMA, RESPONSE_SCHEMA_NAME, type WorkerResponse } from './schema.ts';
 import { SYSTEM_PROMPT } from './systemPrompt.ts';
 import type { CleanRequest } from './validation.ts';
-import { statewideSection } from './statewide.ts';
+import {
+  statewideFinanceSection,
+  statewideHistorySection,
+  statewideSection,
+} from './statewide.ts';
 import { districtHistorySection, districtSection } from './district.ts';
 import { phraseNotes } from './phrases.ts';
 
@@ -108,8 +112,16 @@ function buildInput(request: CleanRequest): string {
     dump is genuinely structural - the route, the headings, which sections
     exist - and none of it is a figure the model might quote by key name.
   */
-  const { statewide, district, districtHistory, comparisonDistrict, ...pageContext } =
-    request.context;
+  const {
+    statewide,
+    statewideHistory,
+    statewideFinance,
+    district,
+    districtHistory,
+    comparisonDistrict,
+    comparisonDistrictHistory,
+    ...pageContext
+  } = request.context;
 
   parts.push(
     `Answer in ${languageName} (language code: ${request.language}).`,
@@ -120,6 +132,12 @@ function buildInput(request: CleanRequest): string {
 
   const statewideText = statewideSection(statewide);
   if (statewideText) parts.push('', statewideText);
+
+  const statewideHistoryText = statewideHistorySection(statewideHistory);
+  if (statewideHistoryText) parts.push('', statewideHistoryText);
+
+  const statewideFinanceText = statewideFinanceSection(statewideFinance);
+  if (statewideFinanceText) parts.push('', statewideFinanceText);
 
   const districtText = districtSection(district, 'primary');
   if (districtText) parts.push('', districtText);
@@ -135,6 +153,21 @@ function buildInput(request: CleanRequest): string {
 
   const comparisonText = districtSection(comparisonDistrict, 'comparison');
   if (comparisonText) parts.push('', comparisonText);
+
+  /*
+    The comparison district gets its year-by-year list too. Without it, a
+    question about an earlier year for a district the visitor merely named was
+    refused as "no record" - and answered correctly the moment that district's
+    own page was opened, from the same data.
+  */
+  const comparisonName =
+    comparisonDistrict && typeof comparisonDistrict === 'object' && 'name' in comparisonDistrict
+      ? String((comparisonDistrict as { name?: unknown }).name ?? '')
+      : '';
+  const comparisonHistoryText = comparisonName
+    ? districtHistorySection(comparisonDistrictHistory, comparisonName)
+    : null;
+  if (comparisonHistoryText) parts.push('', comparisonHistoryText);
 
   if (request.availableSources.length > 0) {
     parts.push(

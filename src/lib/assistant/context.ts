@@ -16,16 +16,48 @@ import {
   type AssistantPageContext,
   type ContextDistrict,
   type ContextDistrictYear,
+  type ContextDistrictFinance,
   type ContextSimulator,
   type ContextStatewide,
+  type ContextStatewideFinance,
+  type ContextStatewideYear,
 } from '@/lib/assistant/types';
 import { assistantSnapshot } from '@/lib/assistant/store';
 import { LATEST, YEARS, yearData } from '@/lib/data';
 import { oversightFor } from '@/data/oversight';
 import districtsData from '@/data/districts.json';
+import allocationData from '@/data/allocation.json';
+import spendingData from '@/data/spending.json';
+import levyData from '@/data/levy.json';
 
 const MAX_HEADINGS = 8;
 const MAX_EXCERPT_CHARS = 1_200;
+
+/*
+  allocation.json, spending.json and levy.json each describe one period, not
+  the whole series. Attaching them to whichever year the visitor happens to be
+  viewing would put 2024-25 spending under a 2021-22 heading - a real figure
+  under a wrong label, which is the one failure mode this context is built to
+  avoid. Each is gated on its own year and labelled with it.
+*/
+const ALLOCATION_YEAR = allocationData.schoolYear;
+const SPENDING_YEAR = spendingData.schoolYear;
+
+/**
+ * The levy workbook is keyed by collection (calendar) year; the site states it
+ * as the school year that money is spent in, so the assistant must too.
+ */
+function schoolYearOf(calendarYear: number): string {
+  return `${calendarYear - 1}-${String(calendarYear).slice(-2)}`;
+}
+const LEVY_SCHOOL_YEAR = schoolYearOf(levyData.calendarYear);
+
+type LevyRow = (typeof levyData.districts)[keyof typeof levyData.districts];
+type AllocationRow = (typeof allocationData.districts)[keyof typeof allocationData.districts];
+type SpendingRow = (typeof spendingData.districts)[keyof typeof spendingData.districts];
+const LEVY_ROWS = levyData.districts as Record<string, LevyRow>;
+const ALLOCATION_ROWS = allocationData.districts as Record<string, AllocationRow>;
+const SPENDING_ROWS = spendingData.districts as Record<string, SpendingRow>;
 
 function pct(part: number, whole: number): number {
   return whole > 0 ? Math.round((1000 * part) / whole) / 10 : 0;
@@ -60,7 +92,146 @@ export function statewideContext(schoolYear: string): ContextStatewide {
       median: Math.round(record.medianPerPupil),
       min: Math.round(record.minPerPupil),
       max: Math.round(record.maxPerPupil),
+      minDistrict: extremeDistrictName(year, 'min'),
+      maxDistrict: extremeDistrictName(year, 'max'),
     },
+  };
+}
+
+/** Which district holds the highest or lowest per-student figure that year. */
+function extremeDistrictName(year: string, end: 'min' | 'max'): string | null {
+  const districts = yearData(year).districts;
+  let best: { name: string; perPupil: number } | null = null;
+  for (const district of districts) {
+    if (!Number.isFinite(district.perPupil)) continue;
+    if (
+      !best ||
+      (end === 'min' ? district.perPupil < best.perPupil : district.perPupil > best.perPupil)
+    ) {
+      best = { name: district.name, perPupil: district.perPupil };
+    }
+  }
+  return best ? best.name : null;
+}
+
+/**
+ * Statewide headline figures for every year on record.
+ *
+ * The counterpart to districtHistoryContext, and it exists for the same
+ * reason: the site holds all six years, and withholding five of them turned
+ * "what was the total in 2019-20?" into a refusal that the year control - and
+ * nothing else - could lift.
+ */
+export function statewideHistoryContext(): ContextStatewideYear[] {
+  return YEARS.map((year) => {
+    const record = yearData(year).statewide;
+    return {
+      schoolYear: year,
+      revenueTotal: Math.round(record.revenues.total),
+      headcount: record.enrollment,
+      perPupilAverage: Math.round(record.avgPerPupil),
+      perPupilMedian: Math.round(record.medianPerPupil),
+    };
+  });
+}
+
+/**
+ * Statewide program spending and the levy limits.
+ *
+ * Both are single-period datasets, so both carry their own year rather than
+ * the one in view. The levy limits in particular are for a *later* school year
+ * than the spending actuals, and the site says so on every page that shows
+ * them.
+ */
+export function statewideFinanceContext(): ContextStatewideFinance {
+  const spending = spendingData.statewide;
+  const limits = levyData.assumptions;
+  return {
+    schoolYear: SPENDING_YEAR,
+    spending: spending
+      ? {
+          sped: Math.round(spending.sped),
+          spedPerStudent: Math.round(spending.spedPerStudent),
+          transportation: Math.round(spending.transportation),
+          transportationPerStudent: Math.round(spending.transportationPerStudent),
+          msoc: Math.round(spending.msoc),
+          msocPerStudent: Math.round(spending.msocPerStudent),
+        }
+      : null,
+    levyLimits: limits
+      ? {
+          levySchoolYear: LEVY_SCHOOL_YEAR,
+          leaThresholdPerPupil: limits.leaThresholdPerPupil,
+          leaMaxRate: limits.leaMaxRate,
+          maxLevyPerPupil: limits.maxLevyPerPupil,
+          maxLevyPerPupilLarge: limits.maxLevyPerPupilLarge,
+          maxLevyRate: limits.maxLevyRate,
+        }
+      : null,
+  };
+}
+
+/**
+ * A district's allocation, spending and levy position.
+ *
+ * Returns null for any year those datasets do not describe, rather than
+ * quietly attaching the latest year's figures to an older one.
+ */
+export function districtFinanceContext(
+  code: string,
+  schoolYear: string
+): ContextDistrictFinance | null {
+  const allocation = schoolYear === ALLOCATION_YEAR ? ALLOCATION_ROWS[code] : undefined;
+  const spending = schoolYear === SPENDING_YEAR ? SPENDING_ROWS[code] : undefined;
+  /*
+    The levy row is keyed to its own school year, so it travels with any year
+    the visitor is viewing - it is the district's levy position, labelled with
+    the year it belongs to, not a figure for the year on screen. `actualLea` is
+    the exception: it is an F-196 actual for the revenue year, and is labelled
+    as such.
+  */
+  const levy = LEVY_ROWS[code];
+  if (!allocation && !spending && !levy) return null;
+
+  return {
+    schoolYear,
+    allocation: allocation
+      ? {
+          salaries: Math.round(allocation.salaries),
+          benefits: Math.round(allocation.benefits),
+          msoc: Math.round(allocation.msoc),
+          basicEducation: Math.round(allocation.basicEducation),
+          specialEd: Math.round(allocation.specialEd),
+          transportation: Math.round(allocation.transportation),
+          bilingual: Math.round(allocation.bilingual),
+          learningAssistance: Math.round(allocation.learningAssistance),
+          highlyCapable: Math.round(allocation.highlyCapable),
+          levyEqualization: Math.round(allocation.levyEqualization),
+          total: Math.round(allocation.total),
+        }
+      : null,
+    spending: spending
+      ? {
+          sped: Math.round(spending.sped),
+          spedPerStudent: Math.round(spending.spedPerStudent),
+          transportation: Math.round(spending.transportation),
+          transportationPerStudent: Math.round(spending.transportationPerStudent),
+          msoc: Math.round(spending.msoc),
+          msocPerStudent: Math.round(spending.msocPerStudent),
+        }
+      : null,
+    levy: levy
+      ? {
+          levySchoolYear: LEVY_SCHOOL_YEAR,
+          voterApproved: Math.round(levy.levy),
+          levyRate: levy.levyRate,
+          maxLea: Math.round(levy.maxLea),
+          payableLea: Math.round(levy.payableLea),
+          eligible: levy.eligible,
+          actualLea: Math.round(levy.actualLea),
+          actualLeaSchoolYear: LATEST,
+        }
+      : null,
   };
 }
 
@@ -101,6 +272,7 @@ export function districtContext(
       highlyCapablePct: pct(record.demo.highlyCapable, record.enrollment),
     },
     oversight: oversight ? `${oversight.level}: ${oversight.detail}` : null,
+    finance: districtFinanceContext(code, year),
   };
 }
 
@@ -250,7 +422,17 @@ export function buildContext(options: {
     district,
     comparisonDistrict: comparison,
     districtHistory: district ? districtHistoryContext(district.code) : null,
+    /*
+      History follows whichever district is in the comparison slot too. It used
+      to be built for the primary district alone, so asking about an earlier
+      year for a district the visitor merely named - while another was selected
+      - was refused as "no record", and the same question answered correctly
+      once that district's own page was open. The site held the year either way.
+    */
+    comparisonDistrictHistory: comparison ? districtHistoryContext(comparison.code) : null,
     statewide: statewideContext(schoolYear),
+    statewideHistory: statewideHistoryContext(),
+    statewideFinance: statewideFinanceContext(),
     simulator: simulatorContext(),
     availableSections: availableSections(),
     dataCoverage: {

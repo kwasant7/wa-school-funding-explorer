@@ -18,15 +18,25 @@ export function commas(value: number): string {
   return value < 0 ? `-${grouped}` : grouped;
 }
 
+/*
+  The minus goes outside the dollar sign. A district with a negative fund
+  balance was reaching visitors as "$-693,821", which is not how the site
+  writes it and not how anyone reads money.
+*/
 export function dollars(value: number): string {
-  return `$${commas(value)}`;
+  return value < 0 ? `-$${commas(Math.abs(value))}` : `$${commas(value)}`;
 }
 
 /** Big totals read better abbreviated; the exact figure follows in parentheses. */
 export function bigDollars(value: number): string {
   const abs = Math.abs(value);
-  if (abs >= 1_000_000_000) return `$${(value / 1_000_000_000).toFixed(1)} billion (${dollars(value)})`;
-  if (abs >= 1_000_000) return `$${(value / 1_000_000).toFixed(1)} million (${dollars(value)})`;
+  const sign = value < 0 ? '-' : '';
+  if (abs >= 1_000_000_000) {
+    return `${sign}$${(abs / 1_000_000_000).toFixed(1)} billion (${dollars(value)})`;
+  }
+  if (abs >= 1_000_000) {
+    return `${sign}$${(abs / 1_000_000).toFixed(1)} million (${dollars(value)})`;
+  }
   return dollars(value);
 }
 
