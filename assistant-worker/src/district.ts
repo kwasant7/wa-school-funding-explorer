@@ -174,7 +174,7 @@ export function districtSection(
           fundBalance === null ? null : `${bigDollars(fundBalance)} fund balance at year end`,
           reserveRatio === null
             ? null
-            : `a reserve ratio of ${reserveRatio.toFixed(1)}% of annual spending (experts treat 4-5% as the safe minimum)`,
+            : `a reserve ratio of ${reserveRatio.toFixed(1)}% of annual spending, about ${Math.round((reserveRatio * 365) / 100)} days (the State Auditor's benchmark is at least 60 days, about 16.4%)`,
         ]
           .filter(Boolean)
           .join(', ') +
