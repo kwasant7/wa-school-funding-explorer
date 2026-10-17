@@ -113,12 +113,19 @@ type DistrictIndexEntry = {
   name: string;
   /** Name with "School District" and punctuation stripped, for loose matching. */
   simple: string;
+  /**
+   * `simple` without its disambiguating parenthetical, so a visitor who types
+   * only the shared part reaches every district that shares it. Equal to
+   * `simple` for the great majority of districts, which have no qualifier.
+   */
+  base: string;
 };
 
 const DISTRICT_INDEX: DistrictIndexEntry[] = districtsData.districts.map((district) => ({
   code: district.code,
   name: district.name,
   simple: simplifyDistrictName(district.name),
+  base: simplifyDistrictName(district.name.replace(/\([^)]*\)/g, ' ')),
 }));
 
 function simplifyDistrictName(name: string): string {
@@ -129,6 +136,13 @@ function simplifyDistrictName(name: string): string {
     .replace(/\bno\.?\s*\d+\b/g, '')
     .replace(/[^a-z0-9\s-]/g, ' ')
     .replace(/\s+/g, ' ')
+    .trim()
+    /*
+      A bare district number trails a few official names - "Index Elementary
+      School District 63". Nobody types it, and leaving it on the indexed name
+      made that district unreachable by any phrasing at all.
+    */
+    .replace(/\s+\d+$/, '')
     .trim();
 }
 
@@ -144,15 +158,43 @@ function simplifyDistrictName(name: string): string {
 export function findDistrictsInQuery(query: string, limit = 2): DistrictIndexEntry[] {
   const normalized = normalizeQuery(query).replace(/[^a-z0-9\s-]/g, ' ');
   const padded = ` ${normalized.replace(/\s+/g, ' ').trim()} `;
+  /*
+    The query reduced the same way the index is. A visitor who types a
+    district's full official name - "East Valley School District (Spokane)" -
+    has the words "School District" sitting between the two halves of the
+    indexed name, so nothing matched the district they actually named while
+    "Spokane" and "Valley" matched two unrelated districts and outranked it.
+  */
+  const simplified = ` ${simplifyDistrictName(normalized)} `;
   const hits: { entry: DistrictIndexEntry; score: number }[] = [];
 
   for (const entry of DISTRICT_INDEX) {
     if (!entry.simple) continue;
-    const needle = ` ${entry.simple} `;
-    if (padded.includes(needle)) {
+    /*
+      Scored on how much of the name the match consumed, doubled so that a
+      long name matched through its shared base still beats a short name that
+      happens to be a substring of it: "East Valley" must outrank the
+      unrelated "Valley School District" that sits inside it.
+    */
+    const full = ` ${entry.simple} `;
+    if (padded.includes(full) || simplified.includes(full)) {
       // Longer names are more specific: "Union Gap" should beat "Union".
-      hits.push({ entry, score: entry.simple.length + 10 });
+      hits.push({ entry, score: entry.simple.length * 2 + 20 });
       continue;
+    }
+    /*
+      Districts that share a name are told apart by a parenthetical - East
+      Valley (Spokane) and East Valley (Yakima). Someone naming only "East
+      Valley" means one of those two and no others, so both are returned and
+      the model asks which; picking one silently would answer with the wrong
+      district's money.
+    */
+    if (entry.base && entry.base !== entry.simple) {
+      const base = ` ${entry.base} `;
+      if (padded.includes(base) || simplified.includes(base)) {
+        hits.push({ entry, score: entry.base.length * 2 + 15 });
+        continue;
+      }
     }
     // Multi-word districts also match on their distinctive first token
     // ("Bellevue" for "Bellevue School District"), but only if it is long.

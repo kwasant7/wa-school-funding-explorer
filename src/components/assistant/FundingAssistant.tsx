@@ -107,6 +107,21 @@ function CloseIcon() {
  * and only then loads this module. Without it the visitor's first click would
  * merely mount a closed assistant and they would have to click again.
  */
+/**
+ * Actions that change what the page is showing run before actions that change
+ * a value on it. Anything not named here keeps its position after both.
+ */
+const ACTION_ORDER: Partial<Record<AssistantAction['type'], number>> = {
+  navigate: 0,
+  select_district: 1,
+  clear_district: 1,
+  set_school_year: 2,
+};
+
+function actionOrder(type: AssistantAction['type']): number {
+  return ACTION_ORDER[type] ?? 3;
+}
+
 export default function FundingAssistant({ initialOpen = false }: { initialOpen?: boolean }) {
   const pathname = usePathname();
   const language = useAssistantLanguage();
@@ -300,9 +315,10 @@ export default function FundingAssistant({ initialOpen = false }: { initialOpen?
         figures attached, so "how does Yakima compare?" is answered from data
         rather than declined.
       */
-      const namedDistrict = retrieved.districts.find(
+      const namedDistricts = retrieved.districts.filter(
         (entry) => entry.code !== snapshot.districtCode
       );
+      const namedDistrict = namedDistricts[0];
       const context = buildContext({
         pathname,
         language,
@@ -315,6 +331,25 @@ export default function FundingAssistant({ initialOpen = false }: { initialOpen?
           // Its year-by-year figures have to follow it, or a follow-up about
           // another year lands back on "this page only has one year".
           context.districtHistory = districtHistoryContext(extra.code);
+        }
+      }
+      /*
+        Washington has two East Valleys and two West Valleys, told apart only
+        by a parenthetical county. A visitor naming the shared part means one
+        of the pair, so the second one goes in the comparison slot with its own
+        figures - the model can then ask which they meant instead of picking a
+        district and quoting the wrong district's money.
+      */
+      const second = namedDistricts.find(
+        (entry) =>
+          entry.code !== context.district?.code &&
+          entry.code !== context.comparisonDistrict?.code
+      );
+      if (second && !context.comparisonDistrict) {
+        const other = extraDistrictContext(second.code, context.schoolYear);
+        if (other) {
+          context.comparisonDistrict = other;
+          context.comparisonDistrictHistory = districtHistoryContext(other.code);
         }
       }
 
@@ -370,7 +405,19 @@ export default function FundingAssistant({ initialOpen = false }: { initialOpen?
       const performed: string[] = [];
       const offered: { label: string; action: AssistantAction }[] = [];
 
-      for (const action of response.actions) {
+      /*
+        Selecting a district on the simulator resets every slider - a plan
+        belongs to the district it was built for. So a district change has to
+        happen before any control change in the same reply, or the reset wipes
+        the value that was just set and the visitor is told both were applied
+        while only one survived. Same for the year, which reloads the figures a
+        control reads from.
+      */
+      const ordered = [...response.actions].sort(
+        (a, b) => actionOrder(a.type) - actionOrder(b.type)
+      );
+
+      for (const action of ordered) {
         const label = describeAction(action, districtName, strings);
         if (shouldAutoRun(action, trimmed)) {
           const result = runAction(action, districtName, strings);

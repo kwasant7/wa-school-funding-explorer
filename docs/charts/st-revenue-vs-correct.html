@@ -1,0 +1,419 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Revenue Chart Check</title>
+<style>
+  :root {
+    color-scheme: light;
+    --page: #f9f9f7;
+    --surface: #fcfcfb;
+    --ink: #0b0b0b;
+    --ink-2: #52514e;
+    --grid: #e1e0d9;
+    --axis: #c3c2b7;
+    --series: #2a78d6;
+    --muted-series: #898781;
+    --border: rgba(11, 11, 11, 0.10);
+    --shadow: 0 4px 16px rgba(11, 11, 11, 0.10);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      color-scheme: dark;
+      --page: #0d0d0d;
+      --surface: #1a1a19;
+      --ink: #ffffff;
+      --ink-2: #c3c2b7;
+      --grid: #2c2c2a;
+      --axis: #383835;
+      --series: #3987e5;
+      --muted-series: #898781;
+      --border: rgba(255, 255, 255, 0.10);
+      --shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
+    }
+  }
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --page: #0d0d0d;
+    --surface: #1a1a19;
+    --ink: #ffffff;
+    --ink-2: #c3c2b7;
+    --grid: #2c2c2a;
+    --axis: #383835;
+    --series: #3987e5;
+    --muted-series: #898781;
+    --border: rgba(255, 255, 255, 0.10);
+    --shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    padding: 32px 16px;
+    background: var(--page);
+    color: var(--ink);
+    font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+  }
+  figure {
+    max-width: 760px;
+    margin: 0 auto;
+    padding: 28px 28px 22px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+  }
+  h1 { margin: 0 0 6px; font-size: 27px; font-weight: 800; line-height: 1.15; letter-spacing: -0.01em; }
+  .sub { margin: 0 0 14px; font-size: 17px; line-height: 1.35; color: var(--ink-2); }
+
+  .legend { display: flex; flex-wrap: wrap; gap: 6px 20px; margin: 0 0 14px; font-size: 14px; color: var(--ink-2); }
+  .legend span { display: inline-flex; align-items: center; gap: 8px; }
+  .key { display: inline-block; width: 16px; height: 2px; border-radius: 1px; }
+  .key-real { background: var(--series); }
+  .key-nominal { background: var(--muted-series); }
+
+  .plot { position: relative; border-radius: 4px; outline: none; }
+  .plot:focus-visible { box-shadow: 0 0 0 2px var(--series); }
+  .plot svg { display: block; overflow: visible; }
+  .grid { stroke: var(--grid); stroke-width: 1; shape-rendering: crispEdges; }
+  .baseline { stroke: var(--axis); stroke-width: 1; shape-rendering: crispEdges; }
+  .line { fill: none; stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }
+  .line-real { stroke: var(--series); }
+  .line-nominal { stroke: var(--muted-series); }
+  .dot-real { fill: var(--series); }
+  .dot-nominal { fill: var(--muted-series); }
+  .ring { fill: var(--surface); }
+  .crosshair { stroke: var(--axis); stroke-width: 1; shape-rendering: crispEdges; }
+  .tick { fill: var(--ink-2); font-size: 14px; font-variant-numeric: tabular-nums; }
+  .xlab { fill: var(--ink-2); font-size: 14px; font-weight: 700; }
+  .dlab { fill: var(--ink); font-size: 16px; font-weight: 500; }
+  .dlab-muted { fill: var(--ink-2); font-size: 16px; font-weight: 500; }
+  .narrow .tick, .narrow .xlab { font-size: 12px; }
+  .narrow .dlab, .narrow .dlab-muted { font-size: 14px; }
+  /* A surface-colored halo keeps labels legible where a gridline runs behind them */
+  .dlab, .dlab-muted { paint-order: stroke; stroke: var(--surface); stroke-width: 4px; stroke-linejoin: round; }
+
+  .tip {
+    position: absolute;
+    top: 0;
+    left: 0;
+    padding: 8px 10px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    box-shadow: var(--shadow);
+    font-size: 13px;
+    line-height: 1.4;
+    white-space: nowrap;
+    pointer-events: none;
+  }
+  .tip[hidden] { display: none; }
+  .tip-row { display: flex; align-items: center; gap: 6px; }
+  .tip-row strong { font-size: 15px; color: var(--ink); font-variant-numeric: tabular-nums; }
+  .tip-row span:last-child { color: var(--ink-2); }
+  .tip-key { width: 12px; height: 2px; border-radius: 1px; }
+  .tip-key.real { background: var(--series); }
+  .tip-key.nominal { background: var(--muted-series); }
+  .tip-year { margin-top: 2px; color: var(--ink-2); font-size: 12px; }
+
+  .source { margin: 14px 0 0; font-size: 13px; font-style: italic; line-height: 1.45; color: var(--ink-2); }
+
+  .table-toggle {
+    margin-top: 14px;
+    padding: 6px 12px;
+    font: inherit;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--ink);
+    background: transparent;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    cursor: pointer;
+  }
+  .table-toggle:hover { background: var(--grid); }
+  .table-toggle[hidden] { display: none; }
+  .data-table { width: 100%; margin-top: 12px; border-collapse: collapse; font-size: 14px; }
+  .data-table[hidden] { display: none; }
+  .data-table caption { text-align: left; font-size: 13px; color: var(--ink-2); padding-bottom: 6px; }
+  .data-table th, .data-table td { padding: 6px 8px; border-bottom: 1px solid var(--grid); }
+  .data-table thead th { font-size: 12px; font-weight: 600; color: var(--ink-2); text-align: right; }
+  .data-table thead th:first-child, .data-table tbody th { text-align: left; }
+  .data-table tbody th { font-weight: 600; white-space: nowrap; }
+  .data-table td { text-align: right; font-variant-numeric: tabular-nums; }
+
+  @media (max-width: 520px) {
+    figure { padding: 20px 16px 16px; }
+    h1 { font-size: 23px; }
+    .sub { font-size: 15px; }
+    .legend { font-size: 13px; }
+    .data-table { font-size: 13px; }
+    .data-table th, .data-table td { padding: 6px 4px; }
+  }
+
+  /* ?static - the export used for the PNG */
+  .static body { padding: 0; background: var(--surface); }
+  .static figure { border: 0; border-radius: 0; }
+  .static .table-toggle, .static .data-table { display: none; }
+</style>
+</head>
+<body>
+<figure>
+  <h1>Washington education revenue: Seattle Times vs. a correct inflation adjustment</h1>
+  <p class="sub">OSPI general fund revenue, in 2024-25 dollars. The Seattle Times' early years run about $0.4 billion low.</p>
+  <div class="legend">
+    <span><i class="key key-real"></i>Correct (CPI-U, school year)</span>
+    <span><i class="key key-nominal"></i>Seattle Times chart</span>
+  </div>
+  <div class="plot" id="plot" tabindex="0" role="img" aria-label="Line chart of Washington education revenue in 2024-25 dollars, 2012-13 to 2024-25: 2012-13 $13.88B, 2013-14 $14.69B, 2014-15 $15.43B, 2015-16 $16.85B, 2016-17 $17.35B, 2017-18 $18.48B, 2018-19 $20.57B, 2019-20 $20.86B, 2020-21 $20.70B, 2021-22 $20.82B, 2022-23 $20.76B, 2023-24 $20.85B, 2024-25 $21.04B. The Seattle Times chart shows $13.42B to $21.04B.">
+    <div class="tip" id="tip" hidden>
+      <div class="tip-row"><span class="tip-key real"></span><strong id="tip-real"></strong><span>correct</span></div>
+      <div class="tip-row"><span class="tip-key nominal"></span><strong id="tip-nominal"></strong><span>Seattle Times</span></div>
+      <div class="tip-year" id="tip-year"></div>
+    </div>
+  </div>
+  <p class="source">Source: OSPI 10-year F-196 data; Seattle Times chart (unlabeled years read from the chart). Correct line adjusted with the U.S. Bureau of Labor Statistics consumer price index, averaged July to June for each school year as NCES does.</p>
+  <button class="table-toggle" id="toggle" type="button" aria-expanded="true" aria-controls="table" hidden>Hide table</button>
+  <table class="data-table" id="table">
+    <caption>Washington general fund revenue, 2024-25 dollars (billions)</caption>
+    <thead>
+      <tr><th scope="col">School year</th><th scope="col">Correct</th><th scope="col">Seattle Times</th><th scope="col">CPI-U</th></tr>
+    </thead>
+    <tbody>
+        <tr><th scope="row">2012-13</th><td>$13.88B</td><td>$13.42B</td><td>231.352</td></tr>
+        <tr><th scope="row">2013-14</th><td>$14.69B</td><td>≈$14.34B</td><td>234.966</td></tr>
+        <tr><th scope="row">2014-15</th><td>$15.43B</td><td>≈$15.05B</td><td>236.677</td></tr>
+        <tr><th scope="row">2015-16</th><td>$16.85B</td><td>≈$16.37B</td><td>238.273</td></tr>
+        <tr><th scope="row">2016-17</th><td>$17.35B</td><td>$16.91B</td><td>242.656</td></tr>
+        <tr><th scope="row">2017-18</th><td>$18.48B</td><td>≈$18.09B</td><td>248.126</td></tr>
+        <tr><th scope="row">2018-19</th><td>$20.57B</td><td>$20.20B</td><td>253.268</td></tr>
+        <tr><th scope="row">2019-20</th><td>$20.86B</td><td>≈$20.55B</td><td>257.230</td></tr>
+        <tr><th scope="row">2020-21</th><td>$20.70B</td><td>≈$20.52B</td><td>263.151</td></tr>
+        <tr><th scope="row">2021-22</th><td>$20.82B</td><td>$20.99B</td><td>282.025</td></tr>
+        <tr><th scope="row">2022-23</th><td>$20.76B</td><td>≈$20.93B</td><td>299.685</td></tr>
+        <tr><th scope="row">2023-24</th><td>$20.85B</td><td>≈$20.85B</td><td>309.570</td></tr>
+        <tr><th scope="row">2024-25</th><td>$21.04B</td><td>$21.04B</td><td>317.731</td></tr>
+    </tbody>
+  </table>
+</figure>
+<script>
+(() => {
+  const DATA = [{"year":"2012-13","nominal":13420862622,"real":13881458905},{"year":"2013-14","nominal":14340000000,"real":14687095254},{"year":"2014-15","nominal":15050000000,"real":15433284174},{"year":"2015-16","nominal":16370000000,"real":16847232951},{"year":"2016-17","nominal":16905342309,"real":17347697876},{"year":"2017-18","nominal":18090000000,"real":18475212102},{"year":"2018-19","nominal":20199762914,"real":20569078379},{"year":"2019-20","nominal":20550000000,"real":20858894822},{"year":"2020-21","nominal":20520000000,"real":20699538372},{"year":"2021-22","nominal":20991849792,"real":20818256754},{"year":"2022-23","nominal":20930000000,"real":20759488903},{"year":"2023-24","nominal":20850000000,"real":20849576023},{"year":"2024-25","nominal":21042656915,"real":21042656915}];
+  const Y_MIN = 13e9, Y_MAX = 22e9, Y_STEP = 1e9;
+  const NS = 'http://www.w3.org/2000/svg';
+  const LAST = DATA.length - 1;
+  const PEAK = DATA.reduce((best, d, i) => (d.real > DATA[best].real ? i : best), 0);
+  const LOW = DATA.reduce((best, d, i) => (d.real < DATA[best].real ? i : best), 0);
+  const MCCLEARY = DATA.findIndex((d) => d.year === '2018-19');
+
+  const root = document.documentElement;
+  if (new URLSearchParams(location.search).has('static')) {
+    root.classList.add('static');
+    root.dataset.theme = 'light';
+  }
+
+  const plot = document.getElementById('plot');
+  const tip = document.getElementById('tip');
+  const tipReal = document.getElementById('tip-real');
+  const tipNominal = document.getElementById('tip-nominal');
+  const tipYear = document.getElementById('tip-year');
+  const toggle = document.getElementById('toggle');
+  const table = document.getElementById('table');
+
+  const money = (v) => '$' + (v / 1e9).toFixed(2) + 'B';
+  const tickText = (v) => '$' + v / 1e9 + 'B';
+  // "2019-20" -> "2019-’20" for the first year, "’20-’21" after, as the original does.
+  const axisYear = (y, i) => (i === 0 ? y.slice(0, 4) : '’' + y.slice(2, 4)) + '-’' + y.slice(5, 7);
+
+  function el(name, attrs, parent) {
+    const node = document.createElementNS(NS, name);
+    for (const k in attrs) node.setAttribute(k, attrs[k]);
+    if (parent) parent.appendChild(node);
+    return node;
+  }
+  function text(parent, cls, x, y, anchor, content, dy) {
+    const t = el('text', { class: cls, x, y, 'text-anchor': anchor }, parent);
+    if (dy) t.setAttribute('dy', dy);
+    t.textContent = content;
+    return t;
+  }
+  function measure(svg, cls, content) {
+    const t = text(svg, cls, -9999, -9999, 'start', content);
+    const w = t.getComputedTextLength();
+    t.remove();
+    return w;
+  }
+
+  let geom = null;
+  let active = null;
+  let lastWidth = 0;
+
+  function render() {
+    const W = plot.clientWidth;
+    if (!W || W === lastWidth) return;
+    lastWidth = W;
+    const narrow = W < 520;
+    const H = Math.round(Math.max(240, Math.min(400, W * 0.56)));
+
+    plot.querySelector('svg')?.remove();
+    const svg = el('svg', { width: W, height: H, viewBox: '0 0 ' + W + ' ' + H, 'aria-hidden': 'true' });
+    svg.classList.toggle('narrow', narrow);
+    plot.insertBefore(svg, tip);
+
+    // On a phone the starting values give their room to the lines; the tooltip and table keep them
+    const labelStart = !narrow;
+
+    const ticks = [];
+    for (let v = Y_MIN; v <= Y_MAX; v += Y_STEP) ticks.push(v);
+    const tickW = Math.max(...ticks.map((v) => measure(svg, 'tick', tickText(v))));
+    const startW = Math.max(measure(svg, 'dlab', money(DATA[0].real)), measure(svg, 'dlab-muted', money(DATA[0].nominal)));
+    const lastW = measure(svg, 'dlab', money(DATA[LAST].real));
+
+    const top = 12;
+    const bottom = H - 34;
+    const gridLeft = tickW + 12;
+    const xLast = W - lastW - 14;
+    const xFirst = gridLeft + (labelStart ? startW + 20 : 14);
+    const x = (i) => xFirst + (i * (xLast - xFirst)) / LAST;
+    const y = (v) => top + (1 - (v - Y_MIN) / (Y_MAX - Y_MIN)) * (bottom - top);
+
+    for (const v of ticks) {
+      el('line', { class: v === Y_MIN ? 'baseline' : 'grid', x1: gridLeft, x2: xLast + 8, y1: y(v), y2: y(v) }, svg);
+      text(svg, 'tick', gridLeft - 10, y(v), 'end', tickText(v), '0.35em');
+    }
+
+    // X labels: every year when they fit, otherwise every other year or sparser
+    const stepPx = (xLast - xFirst) / LAST;
+    const xLabW = DATA.map((d, i) => measure(svg, 'xlab', axisYear(d.year, i)));
+    const fits = (k) => {
+      for (let i = 0; i + k < DATA.length; i += k) {
+        if ((xLabW[i] + xLabW[i + k]) / 2 + 12 > k * stepPx) return false;
+      }
+      return true;
+    };
+    let every = 1;
+    while (every < LAST && !fits(every)) every++;
+    DATA.forEach((d, i) => {
+      if (i % every === 0) text(svg, 'xlab', x(i), H - 8, 'middle', axisYear(d.year, i));
+    });
+
+    const crosshair = el('line', { class: 'crosshair', x1: 0, x2: 0, y1: top, y2: bottom, visibility: 'hidden' }, svg);
+
+    const path = (key) => DATA.map((d, i) => (i ? 'L' : 'M') + x(i).toFixed(1) + ' ' + y(d[key]).toFixed(1)).join(' ');
+    el('path', { class: 'line line-nominal', d: path('nominal') }, svg);
+    el('path', { class: 'line line-real', d: path('real') }, svg);
+
+    function dot(parent, i, key) {
+      const g = el('g', {}, parent);
+      el('circle', { class: 'ring', cx: x(i), cy: y(DATA[i][key]), r: 6 }, g);
+      el('circle', { class: 'dot-' + key, cx: x(i), cy: y(DATA[i][key]), r: 4 }, g);
+      return g;
+    }
+
+    // Selective labels: where each line starts, the inflation-adjusted low, 2018-19 (once
+    // the McCleary money arrived), the peak, and the last year, where the lines meet
+    // because 2023-24 is the base year. A phone keeps only the last two.
+    if (labelStart) {
+      dot(svg, 0, 'nominal');
+      text(svg, 'dlab-muted', x(0) - 12, y(DATA[0].nominal), 'end', money(DATA[0].nominal), '0.35em');
+      dot(svg, 0, 'real');
+      text(svg, 'dlab', x(0) - 12, y(DATA[0].real), 'end', money(DATA[0].real), '0.35em');
+      if (LOW !== 0) {
+        dot(svg, LOW, 'real');
+        text(svg, 'dlab', x(LOW), y(DATA[LOW].real) + 26, 'middle', money(DATA[LOW].real));
+      }
+      if (MCCLEARY > 0 && Math.abs(MCCLEARY - PEAK) > 1) {
+        dot(svg, MCCLEARY, 'real');
+        text(svg, 'dlab', x(MCCLEARY) - 8, y(DATA[MCCLEARY].real) - 12, 'end', money(DATA[MCCLEARY].real));
+      }
+    }
+    if (PEAK !== 0 && PEAK !== LAST) {
+      dot(svg, PEAK, 'real');
+      text(svg, 'dlab', x(PEAK) - 8, y(DATA[PEAK].real) - 12, 'end', money(DATA[PEAK].real));
+    }
+    dot(svg, LAST, 'real');
+    text(svg, 'dlab', x(LAST) + 12, y(DATA[LAST].real), 'start', money(DATA[LAST].real), '0.35em');
+
+    const hover = el('g', { visibility: 'hidden' }, svg);
+    geom = { W, x, y, crosshair, hover, dot };
+    if (active !== null) show(active);
+  }
+
+  function show(i) {
+    active = i;
+    const { W, x, y, crosshair, hover, dot } = geom;
+    const d = DATA[i];
+    crosshair.setAttribute('x1', x(i));
+    crosshair.setAttribute('x2', x(i));
+    crosshair.setAttribute('visibility', 'visible');
+    hover.replaceChildren();
+    dot(hover, i, 'nominal');
+    dot(hover, i, 'real');
+    hover.setAttribute('visibility', 'visible');
+
+    tipReal.textContent = money(d.real);
+    tipNominal.textContent = money(d.nominal);
+    tipYear.textContent = d.year + ' school year';
+    tip.hidden = false;
+    // Beside the crosshair (flipping left near the right edge), centered between the two
+    // values, so it never covers the points being read
+    const tw = tip.offsetWidth, th = tip.offsetHeight;
+    let left = x(i) + 14;
+    if (left + tw > W) left = Math.max(x(i) - 14 - tw, 0);
+    const mid = (y(d.real) + y(d.nominal)) / 2;
+    const topPx = Math.min(Math.max(mid - th / 2, 0), plot.clientHeight - th);
+    tip.style.left = left + 'px';
+    tip.style.top = topPx + 'px';
+  }
+
+  function hide() {
+    active = null;
+    if (!geom) return;
+    geom.crosshair.setAttribute('visibility', 'hidden');
+    geom.hover.setAttribute('visibility', 'hidden');
+    tip.hidden = true;
+  }
+
+  function nearest(clientX) {
+    const px = clientX - plot.getBoundingClientRect().left;
+    let best = 0;
+    DATA.forEach((_, i) => {
+      if (Math.abs(geom.x(i) - px) < Math.abs(geom.x(best) - px)) best = i;
+    });
+    return best;
+  }
+
+  plot.addEventListener('pointermove', (e) => geom && show(nearest(e.clientX)));
+  plot.addEventListener('pointerleave', () => document.activeElement !== plot && hide());
+  plot.addEventListener('focus', () => geom && show(active ?? LAST));
+  plot.addEventListener('blur', hide);
+  plot.addEventListener('keydown', (e) => {
+    if (!geom) return;
+    const keys = { ArrowLeft: -1, ArrowRight: 1 };
+    if (e.key in keys) {
+      e.preventDefault();
+      show(Math.min(Math.max((active ?? LAST) + keys[e.key], 0), LAST));
+    } else if (e.key === 'Home' || e.key === 'End') {
+      e.preventDefault();
+      show(e.key === 'Home' ? 0 : LAST);
+    } else if (e.key === 'Escape') {
+      hide();
+    }
+  });
+
+  // The table is visible without JS; with JS it sits behind a toggle
+  table.hidden = true;
+  toggle.hidden = false;
+  toggle.textContent = 'Show table';
+  toggle.setAttribute('aria-expanded', 'false');
+  toggle.addEventListener('click', () => {
+    table.hidden = !table.hidden;
+    toggle.textContent = table.hidden ? 'Show table' : 'Hide table';
+    toggle.setAttribute('aria-expanded', String(!table.hidden));
+  });
+
+  new ResizeObserver(() => requestAnimationFrame(render)).observe(plot);
+  render();
+})();
+</script>
+</body>
+</html>

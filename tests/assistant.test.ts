@@ -8,7 +8,11 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 
-import { statewideContext } from '@/lib/assistant/context';
+import {
+  districtFinanceContext,
+  statewideContext,
+  statewideHistoryContext,
+} from '@/lib/assistant/context';
 import { LATEST, YEARS } from '@/lib/data';
 import {
   extractBillNumbers,
@@ -87,6 +91,101 @@ describe('district matching', () => {
 
   it('ignores ordinary funding questions', () => {
     assert.equal(findDistrictsInQuery('what does per-student funding include?').length, 0);
+  });
+
+  /*
+    Washington has two East Valleys and two West Valleys, told apart only by a
+    parenthetical county. Naming the shared part used to match neither: the
+    indexed name is "east valley spokane", and a visitor typing the official
+    name puts "School District" between those halves. What came back instead
+    were Spokane School District and Valley School District - two unrelated
+    districts, each a substring of what was typed, ranked above the one meant.
+  */
+  it('returns both districts that share a name, not the words inside it', () => {
+    const names = findDistrictsInQuery('Tell me about East Valley School District').map(
+      (hit) => hit.name
+    );
+    assert.deepEqual(names.sort(), [
+      'East Valley School District (Spokane)',
+      'East Valley School District (Yakima)',
+    ]);
+  });
+
+  it('matches a full official name, qualifier and all', () => {
+    const hits = findDistrictsInQuery('how is East Valley School District (Spokane) funded?');
+    assert.equal(hits[0]?.code, '32361');
+  });
+
+  it('matches a name that carries a bare district number', () => {
+    const hits = findDistrictsInQuery('Index Elementary School District 63');
+    assert.equal(hits[0]?.code, '31063');
+  });
+
+  it('still prefers the more specific of two overlapping names', () => {
+    const hits = findDistrictsInQuery('Union Gap School District');
+    assert.equal(hits[0]?.name, 'Union Gap School District');
+  });
+});
+
+describe('statewide history context', () => {
+  it('covers every school year the site holds', () => {
+    const history = statewideHistoryContext();
+    assert.deepEqual(
+      history.map((row) => row.schoolYear),
+      [...YEARS]
+    );
+  });
+
+  it('carries the figures a year-over-year question asks for', () => {
+    const latest = statewideHistoryContext().find((row) => row.schoolYear === LATEST);
+    const current = statewideContext(LATEST);
+    assert.equal(latest?.revenueTotal, current.revenue.total);
+    assert.equal(latest?.perPupilAverage, current.perPupil.average);
+    assert.equal(latest?.perPupilMedian, current.perPupil.median);
+  });
+});
+
+describe('district finance context', () => {
+  /*
+    allocation.json and spending.json describe one year. Attaching them to any
+    other year would put a real figure under a wrong label, which is worse than
+    omitting it.
+  */
+  it('omits allocation and spending for a year they do not describe', () => {
+    const older = districtFinanceContext('17001', YEARS[0]);
+    assert.equal(older?.allocation ?? null, null);
+    assert.equal(older?.spending ?? null, null);
+  });
+
+  it('carries allocation and spending for the year they do describe', () => {
+    const finance = districtFinanceContext('17001', LATEST);
+    assert.ok(finance?.allocation, 'expected an allocation for the latest year');
+    assert.ok(finance?.spending, 'expected spending for the latest year');
+  });
+
+  it('labels the levy with its own school year, not the year in view', () => {
+    const finance = districtFinanceContext('17001', LATEST);
+    assert.ok(finance?.levy);
+    assert.notEqual(finance.levy.levySchoolYear, LATEST);
+    assert.match(finance.levy.levySchoolYear, /^\d{4}-\d{2}$/);
+  });
+
+  /*
+    Entitlement and receipt are different figures for different years, and the
+    gap is wide enough that presenting one as the other misstates a district's
+    position by millions.
+  */
+  it('keeps payable and actual Local Effort Assistance apart', () => {
+    const spokane = districtFinanceContext('32081', LATEST);
+    assert.ok(spokane?.levy);
+    assert.equal(spokane.levy.eligible, true);
+    assert.notEqual(spokane.levy.payableLea, spokane.levy.actualLea);
+  });
+
+  it('reports a district that does not qualify for LEA as ineligible', () => {
+    const seattle = districtFinanceContext('17001', LATEST);
+    assert.equal(seattle?.levy?.eligible, false);
+    assert.equal(seattle?.levy?.actualLea, 0);
   });
 });
 

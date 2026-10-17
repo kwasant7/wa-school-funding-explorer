@@ -121,7 +121,111 @@ export type ContextStatewide = {
   expenditures: number;
   surplus: number;
   /** Across districts, not across students: an unweighted per-district spread. */
-  perPupil: { average: number; median: number; min: number; max: number };
+  perPupil: {
+    average: number;
+    median: number;
+    min: number;
+    max: number;
+    /*
+      Which district sits at each end. The spread used to arrive unattributed,
+      and the model went from "not in this block" to telling visitors the site
+      does not publish which districts they are - while every district's
+      figure is on the map and in the District Explorer.
+    */
+    minDistrict: string | null;
+    maxDistrict: string | null;
+  };
+};
+
+/**
+ * One school year of statewide headline figures.
+ *
+ * The statewide block carries only the year in view, so "what was it in
+ * 2019-20?" was answered with "the context does not include that" until the
+ * visitor moved the year control themselves - for a figure the site holds for
+ * all six years. Same reasoning as ContextDistrictYear, and the same thinness.
+ */
+export type ContextStatewideYear = {
+  schoolYear: string;
+  revenueTotal: number;
+  headcount: number;
+  perPupilAverage: number;
+  perPupilMedian: number;
+};
+
+/**
+ * Statewide figures that exist for one year only: program spending actuals,
+ * and the levy and Local Effort Assistance limits.
+ *
+ * Separate from ContextStatewide because these do not vary with the year
+ * control - attaching them to a year they do not describe is how a correct
+ * figure becomes a wrong answer.
+ */
+export type ContextStatewideFinance = {
+  schoolYear: string;
+  spending: {
+    sped: number;
+    spedPerStudent: number;
+    transportation: number;
+    transportationPerStudent: number;
+    msoc: number;
+    msocPerStudent: number;
+  } | null;
+  levyLimits: {
+    /** The school year the levy limits apply to, which is not the data year. */
+    levySchoolYear: string;
+    leaThresholdPerPupil: number;
+    leaMaxRate: number;
+    maxLevyPerPupil: number;
+    maxLevyPerPupilLarge: number;
+    maxLevyRate: number;
+  } | null;
+};
+
+/**
+ * What the formula allocated, what the district actually spent, and where it
+ * stands on levies - the three quantities the site keeps deliberately apart.
+ *
+ * Held only for the latest year, so it is attached only when the visitor is
+ * looking at that year. Every field is labelled with the year it describes:
+ * the levy figures are for a different school year than the spending actuals,
+ * and merging the two labels would be worse than omitting both.
+ */
+export type ContextDistrictFinance = {
+  schoolYear: string;
+  allocation: {
+    salaries: number;
+    benefits: number;
+    msoc: number;
+    basicEducation: number;
+    specialEd: number;
+    transportation: number;
+    bilingual: number;
+    learningAssistance: number;
+    highlyCapable: number;
+    levyEqualization: number;
+    total: number;
+  } | null;
+  spending: {
+    sped: number;
+    spedPerStudent: number;
+    transportation: number;
+    transportationPerStudent: number;
+    msoc: number;
+    msocPerStudent: number;
+  } | null;
+  levy: {
+    levySchoolYear: string;
+    /** What voters actually approved, which is not the same as the cap. */
+    voterApproved: number;
+    levyRate: number;
+    maxLea: number;
+    payableLea: number;
+    eligible: boolean;
+    /** F-196 revenue code 3300 - what it actually received, a different year. */
+    actualLea: number;
+    actualLeaSchoolYear: string;
+  } | null;
 };
 
 export type ContextDistrict = {
@@ -146,6 +250,8 @@ export type ContextDistrict = {
     highlyCapablePct: number;
   };
   oversight: string | null;
+  /** Allocation, spending and levy figures, when the year in view has them. */
+  finance: ContextDistrictFinance | null;
 };
 
 /**
@@ -207,7 +313,12 @@ export type AssistantPageContext = {
    * another year is answered rather than deflected to the year control.
    */
   districtHistory: ContextDistrictYear[] | null;
+  /** The same, for the district in `comparisonDistrict`. */
+  comparisonDistrictHistory: ContextDistrictYear[] | null;
   statewide: ContextStatewide;
+  /** Every year the site holds, so another year is answered, not deflected. */
+  statewideHistory: ContextStatewideYear[];
+  statewideFinance: ContextStatewideFinance | null;
   simulator: ContextSimulator | null;
   availableSections: AllowedSectionId[];
   dataCoverage: { firstYear: string; latestYear: string; districtCount: number };

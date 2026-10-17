@@ -71,6 +71,124 @@ export function districtHistorySection(value: unknown, name: string): string | n
 }
 
 /**
+ * What the formula allocated, what the district spent, and its levy position.
+ *
+ * These three quantities are the ones the prompt works hardest to keep apart,
+ * and none of them used to reach the model at all: the guide told visitors the
+ * site does not publish a special-education allocation while the district's
+ * own page rendered that exact figure in a table. Each line names which of the
+ * three it is, and names its own year - the levy figures describe a different
+ * school year than the spending actuals, and merging those labels would turn a
+ * correct figure into a wrong answer.
+ *
+ * Folded into the district's own fact sheet rather than given a block of its
+ * own, so that with two districts in play a figure cannot drift from the
+ * district it belongs to.
+ */
+function financeLines(value: unknown): string[] {
+  const f = record(value);
+  if (!f) return [];
+  const lines: string[] = [];
+  const year = typeof f.schoolYear === 'string' ? f.schoolYear : null;
+
+  const alloc = record(f.allocation);
+  if (alloc && year) {
+    const parts = labelled(
+      [
+        ['basic education', alloc.basicEducation],
+        ['special education', alloc.specialEd],
+        ['transportation', alloc.transportation],
+        ['bilingual/multilingual', alloc.bilingual],
+        ['learning assistance', alloc.learningAssistance],
+        ['highly capable', alloc.highlyCapable],
+        ['levy equalization', alloc.levyEqualization],
+      ],
+      bigDollars
+    );
+    const total = num(alloc.total);
+    if (parts.length > 0) {
+      lines.push(
+        `What the state formula allocated it for ${year}` +
+          (total === null ? '' : `, ${bigDollars(total)} in total`) +
+          `: ${parts.join('; ')}. An allocation is what the formula sends, not what the ` +
+          'district actually spent and not its total revenue.'
+      );
+    }
+  }
+
+  const spend = record(f.spending);
+  if (spend && year) {
+    const parts = [
+      num(spend.sped) === null
+        ? null
+        : `special education ${bigDollars(num(spend.sped)!)}` +
+          (num(spend.spedPerStudent) === null
+            ? ''
+            : ` (${dollars(num(spend.spedPerStudent)!)} per student served)`),
+      num(spend.transportation) === null
+        ? null
+        : `transportation ${bigDollars(num(spend.transportation)!)}`,
+      num(spend.msoc) === null
+        ? null
+        : `materials, supplies and operating costs ${bigDollars(num(spend.msoc)!)}`,
+    ].filter(Boolean);
+    if (parts.length > 0) {
+      lines.push(
+        `What it actually spent in ${year}, from F-196 actuals: ${parts.join('; ')}. ` +
+          'Spending above the matching allocation is money the district covered from elsewhere.'
+      );
+    }
+  }
+
+  const levy = record(f.levy);
+  if (levy) {
+    const levyYear =
+      typeof levy.levySchoolYear === 'string' ? levy.levySchoolYear : 'the levy year';
+    const approved = num(levy.voterApproved);
+    const rate = num(levy.levyRate);
+    if (approved !== null) {
+      lines.push(
+        `Local enrichment levy for ${levyYear}: voters approved ${bigDollars(approved)}` +
+          (rate === null ? '' : `, a rate of $${rate.toFixed(4)} per $1,000 of assessed value`) +
+          '. What voters approved is not the same as what the statutory cap allows, and ' +
+          'neither is the same as what the district actually collects.'
+      );
+    }
+
+    /*
+      Eligibility, entitlement and receipt are three different things, and the
+      gap between the last two is wide enough for one to be mistaken for the
+      other - a district can be entitled to several times what it took in. Both
+      are stated, each with its own year.
+    */
+    const eligible = typeof levy.eligible === 'boolean' ? levy.eligible : null;
+    const payable = num(levy.payableLea);
+    const actual = num(levy.actualLea);
+    const actualYear =
+      typeof levy.actualLeaSchoolYear === 'string' ? levy.actualLeaSchoolYear : null;
+    if (eligible === false) {
+      lines.push(
+        `Local Effort Assistance: this district does not qualify for ${levyYear} - its property ` +
+          'base raises more than the statewide goal at the standard rate - so its LEA is $0. ' +
+          'LEA is state equalization money, not local levy revenue.'
+      );
+    } else if (eligible === true) {
+      lines.push(
+        'Local Effort Assistance (state equalization money, not local levy revenue): it ' +
+          `qualifies for ${levyYear}` +
+          (payable === null ? '' : `, entitled to ${bigDollars(payable)}`) +
+          (actual === null
+            ? '.'
+            : `. It actually received ${bigDollars(actual)} in ${actualYear ?? 'the revenue year'}` +
+              ', a different figure for a different year - do not give one as the other.')
+      );
+    }
+  }
+
+  return lines;
+}
+
+/**
  * One district as a labelled fact sheet.
  *
  * `role` distinguishes the district the page is showing from one the visitor
@@ -197,6 +315,8 @@ export function districtSection(
 
   const oversight = typeof d.oversight === 'string' ? d.oversight : null;
   if (oversight) lines.push(`State financial oversight: ${oversight}.`);
+
+  lines.push(...financeLines(d.finance));
 
   if (lines.length === 0) return null;
 

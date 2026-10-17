@@ -14,8 +14,13 @@ import { isFailure, LIMITS, validateRequest } from '../src/validation.ts';
 import { isAllowedOrigin, parseAllowedOrigins } from '../src/cors.ts';
 import { RESPONSE_SCHEMA, RESPONSE_SCHEMA_NAME } from '../src/schema.ts';
 import { SYSTEM_PROMPT } from '../src/systemPrompt.ts';
-import { statewideSection } from '../src/statewide.ts';
+import {
+  statewideFinanceSection,
+  statewideHistorySection,
+  statewideSection,
+} from '../src/statewide.ts';
 import { districtHistorySection, districtSection } from '../src/district.ts';
+import { bigDollars, dollars } from '../src/format.ts';
 import { atLeast } from '../src/openai.ts';
 import { phraseNotes } from '../src/phrases.ts';
 
@@ -309,8 +314,28 @@ describe('statewide rendering', () => {
     assert.match(statewideSection(STATEWIDE) ?? '', /2024-25/);
   });
 
-  it('says the spread does not identify a district', () => {
-    assert.match(statewideSection(STATEWIDE) ?? '', /do not identify which district/);
+  it('marks the spread as a spread, not any one district\'s figure', () => {
+    assert.match(statewideSection(STATEWIDE) ?? '', /not any one district's figure/);
+  });
+
+  /*
+    The extremes used to arrive unattributed, and the model turned "this block
+    does not name them" into telling visitors the site does not publish which
+    districts they are - while every district's figure is in the District
+    Explorer. Supplied, they must be stated.
+  */
+  it('names the districts at each end of the spread when it is given them', () => {
+    const text =
+      statewideSection({
+        ...STATEWIDE,
+        perPupil: {
+          ...STATEWIDE.perPupil,
+          minDistrict: 'Starbuck School District',
+          maxDistrict: 'Lumen Public School',
+        },
+      }) ?? '';
+    assert.match(text, /lowest is Starbuck School District/);
+    assert.match(text, /highest is Lumen Public School/);
   });
 
   it('returns null rather than a hollow section when figures are missing', () => {
@@ -495,5 +520,211 @@ describe('question disambiguation', () => {
     assert.equal(phraseNotes('explain the prototypical school model'), null);
     // A bare mention of FTE is not a request for dollars.
     assert.equal(phraseNotes('what does funding FTE mean'), null);
+  });
+});
+
+
+describe('money with a minus in it', () => {
+  /*
+    A negative fund balance reached visitors as "$-693,821". The site writes it
+    the way money is read, and so must the figures handed to the model.
+  */
+  it('puts the minus outside the dollar sign', () => {
+    assert.equal(dollars(-693_821), '-$693,821');
+    assert.equal(dollars(693_821), '$693,821');
+  });
+
+  it('keeps the sign on an abbreviated total and its exact figure', () => {
+    assert.equal(bigDollars(-35_845_864), '-$35.8 million (-$35,845,864)');
+  });
+});
+
+describe('statewide history section', () => {
+  const HISTORY = [
+    {
+      schoolYear: '2019-20',
+      revenueTotal: 16_884_697_491,
+      headcount: 1_146_047,
+      perPupilAverage: 15_319,
+      perPupilMedian: 15_773,
+    },
+    {
+      schoolYear: '2024-25',
+      revenueTotal: 21_040_139_133,
+      headcount: 1_105_545,
+      perPupilAverage: 19_753,
+      perPupilMedian: 20_083,
+    },
+  ];
+
+  it('carries every year it is given, abbreviated the way the site writes totals', () => {
+    const text = statewideHistorySection(HISTORY) ?? '';
+    assert.match(text, /2019-20: \$16\.9 billion \(\$16,884,697,491\)/);
+    assert.match(text, /2024-25: \$21\.0 billion/);
+  });
+
+  it('never abbreviates a per-student figure', () => {
+    const text = statewideHistorySection(HISTORY) ?? '';
+    assert.match(text, /\$15,319 average per student/);
+    assert.doesNotMatch(text, /\$15\.\d+ thousand/);
+  });
+
+  /*
+    The refusal this section exists to stop: the figure was on the site for all
+    six years, and the guide sent the visitor to the year control instead.
+  */
+  it('forbids sending the visitor to the year control', () => {
+    assert.match(statewideHistorySection(HISTORY) ?? '', /Never tell the visitor to change the/);
+  });
+
+  it('returns null rather than an empty section', () => {
+    assert.equal(statewideHistorySection([]), null);
+    assert.equal(statewideHistorySection(null), null);
+  });
+});
+
+describe('statewide finance section', () => {
+  const FINANCE = {
+    schoolYear: '2024-25',
+    spending: {
+      sped: 3_149_541_272,
+      spedPerStudent: 17_435,
+      transportation: 856_113_998,
+      transportationPerStudent: 774,
+      msoc: 1_891_421_559,
+      msocPerStudent: 1_776,
+    },
+    levyLimits: {
+      levySchoolYear: '2026-27',
+      leaThresholdPerPupil: 2_431.77,
+      leaMaxRate: 1.5,
+      maxLevyPerPupil: 4_077.38,
+      maxLevyPerPupilLarge: 4_786.63,
+      maxLevyRate: 2.5,
+    },
+  };
+
+  it('states statewide program spending as spending, not revenue', () => {
+    const text = statewideFinanceSection(FINANCE) ?? '';
+    assert.match(text, /special education \$3\.1 billion/);
+    assert.match(text, /This is spending, not what the state allocated and not revenue/);
+  });
+
+  it('labels the levy limits with their own school year', () => {
+    const text = statewideFinanceSection(FINANCE) ?? '';
+    assert.match(text, /Enrichment levy limits for 2026-27/);
+    assert.match(text, /\$4,077 per student/);
+  });
+
+  it('calls Local Effort Assistance state money, not levy revenue', () => {
+    assert.match(
+      statewideFinanceSection(FINANCE) ?? '',
+      /state equalization money paid by the state, not local levy revenue/
+    );
+  });
+
+  it('returns null when it has nothing', () => {
+    assert.equal(statewideFinanceSection(null), null);
+    assert.equal(statewideFinanceSection({ schoolYear: '2024-25' }), null);
+  });
+});
+
+describe('district finance lines', () => {
+  const FINANCE = {
+    schoolYear: '2024-25',
+    allocation: {
+      salaries: 323_753_375,
+      benefits: 117_688_522,
+      msoc: 72_189_609,
+      basicEducation: 551_717_191,
+      specialEd: 154_492_563,
+      transportation: 44_070_681,
+      bilingual: 14_610_205,
+      learningAssistance: 21_255_582,
+      highlyCapable: 1_796_927,
+      levyEqualization: 0,
+      total: 801_666_193,
+    },
+    spending: {
+      sped: 258_342_148,
+      spedPerStudent: 27_797,
+      transportation: 63_526_255,
+      transportationPerStudent: 1_241,
+      msoc: 68_949_824,
+      msocPerStudent: 1_384,
+    },
+    levy: {
+      levySchoolYear: '2026-27',
+      voterApproved: 249_000_000,
+      levyRate: 0.8144,
+      maxLea: 0,
+      payableLea: 0,
+      eligible: false,
+      actualLea: 0,
+      actualLeaSchoolYear: '2024-25',
+    },
+  };
+
+  /*
+    None of these figures used to reach the model at all: the guide told
+    visitors the site does not publish a special-education allocation while
+    that district's own page rendered the figure in a table.
+  */
+  it('states what the formula allocated, kept apart from spending', () => {
+    const text = districtSection({ ...DISTRICT, finance: FINANCE }, 'primary') ?? '';
+    assert.match(text, /special education \$154\.5 million \(\$154,492,563\)/);
+    assert.match(text, /An allocation is what the formula sends, not what the district actually spent/);
+  });
+
+  it('states what the district actually spent, with its year', () => {
+    const text = districtSection({ ...DISTRICT, finance: FINANCE }, 'primary') ?? '';
+    assert.match(text, /What it actually spent in 2024-25/);
+    assert.match(text, /special education \$258\.3 million/);
+  });
+
+  it('separates what voters approved from the cap and from collections', () => {
+    const text = districtSection({ ...DISTRICT, finance: FINANCE }, 'primary') ?? '';
+    assert.match(text, /voters approved \$249\.0 million/);
+    assert.match(text, /not the same as what the statutory cap allows/);
+  });
+
+  it('says plainly when a district does not qualify for LEA', () => {
+    const text = districtSection({ ...DISTRICT, finance: FINANCE }, 'primary') ?? '';
+    assert.match(text, /does not qualify for 2026-27/);
+    assert.match(text, /its LEA is \$0/);
+  });
+
+  /*
+    Spokane is entitled to several times what it actually received. Presenting
+    one as the other misstates its position by millions.
+  */
+  it('keeps LEA entitlement and LEA received apart, each with its year', () => {
+    const eligible = {
+      ...FINANCE,
+      levy: {
+        ...FINANCE.levy,
+        eligible: true,
+        maxLea: 12_990_709,
+        payableLea: 12_990_709,
+        actualLea: 2_320_150,
+      },
+    };
+    const text = districtSection({ ...DISTRICT, finance: eligible }, 'primary') ?? '';
+    assert.match(text, /entitled to \$13\.0 million/);
+    assert.match(text, /actually received \$2\.3 million \(\$2,320,150\) in 2024-25/);
+    assert.match(text, /do not give one as the other/);
+  });
+
+  it('leaks no field name for the model to quote back', () => {
+    const text = districtSection({ ...DISTRICT, finance: FINANCE }, 'primary') ?? '';
+    for (const key of ['payableLea', 'actualLea', 'levyEqualization', 'basicEducation']) {
+      assert.doesNotMatch(text, new RegExp(key), `leaked field name: ${key}`);
+    }
+  });
+
+  it('renders the district unchanged when it has no finance block', () => {
+    const text = districtSection(DISTRICT, 'primary') ?? '';
+    assert.doesNotMatch(text, /Local Effort Assistance/);
+    assert.match(text, /Funding FTE/);
   });
 });

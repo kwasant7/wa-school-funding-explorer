@@ -93,7 +93,10 @@ function cleanContext(value: unknown): Record<string, unknown> {
     'district',
     'districtHistory',
     'comparisonDistrict',
+    'comparisonDistrictHistory',
     'statewide',
+    'statewideHistory',
+    'statewideFinance',
     'simulator',
     'dataCoverage',
   ]) {

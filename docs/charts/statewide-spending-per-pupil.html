@@ -1,0 +1,369 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Statewide Spending per Pupil</title>
+<style>
+  :root {
+    color-scheme: light;
+    --page: #f9f9f7;
+    --surface: #fcfcfb;
+    --ink: #0b0b0b;
+    --ink-2: #52514e;
+    --grid: #e1e0d9;
+    --axis: #c3c2b7;
+    --series: #2a78d6;
+    --border: rgba(11, 11, 11, 0.10);
+    --shadow: 0 4px 16px rgba(11, 11, 11, 0.10);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      color-scheme: dark;
+      --page: #0d0d0d;
+      --surface: #1a1a19;
+      --ink: #ffffff;
+      --ink-2: #c3c2b7;
+      --grid: #2c2c2a;
+      --axis: #383835;
+      --series: #3987e5;
+      --border: rgba(255, 255, 255, 0.10);
+      --shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
+    }
+  }
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --page: #0d0d0d;
+    --surface: #1a1a19;
+    --ink: #ffffff;
+    --ink-2: #c3c2b7;
+    --grid: #2c2c2a;
+    --axis: #383835;
+    --series: #3987e5;
+    --border: rgba(255, 255, 255, 0.10);
+    --shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    padding: 32px 16px;
+    background: var(--page);
+    color: var(--ink);
+    font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+  }
+  figure {
+    max-width: 760px;
+    margin: 0 auto;
+    padding: 28px 28px 22px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+  }
+  h1 { margin: 0 0 6px; font-size: 27px; font-weight: 800; line-height: 1.15; letter-spacing: -0.01em; }
+  .sub { margin: 0 0 20px; font-size: 17px; line-height: 1.35; color: var(--ink-2); }
+
+  .plot { position: relative; border-radius: 4px; outline: none; }
+  .plot:focus-visible { box-shadow: 0 0 0 2px var(--series); }
+  .plot svg { display: block; overflow: visible; }
+  .grid { stroke: var(--grid); stroke-width: 1; shape-rendering: crispEdges; }
+  .baseline { stroke: var(--axis); stroke-width: 1; shape-rendering: crispEdges; }
+  .line { fill: none; stroke: var(--series); stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }
+  .dot { fill: var(--series); }
+  .ring { fill: var(--surface); }
+  .crosshair { stroke: var(--axis); stroke-width: 1; shape-rendering: crispEdges; }
+  .tick { fill: var(--ink-2); font-size: 14px; font-variant-numeric: tabular-nums; }
+  .xlab { fill: var(--ink-2); font-size: 14px; font-weight: 700; }
+  .dlab { fill: var(--ink); font-size: 16px; font-weight: 500; }
+  .narrow .tick, .narrow .xlab { font-size: 12px; }
+  .narrow .dlab { font-size: 14px; }
+
+  .tip {
+    position: absolute;
+    top: 0;
+    left: 0;
+    padding: 8px 10px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    box-shadow: var(--shadow);
+    font-size: 13px;
+    line-height: 1.4;
+    white-space: nowrap;
+    pointer-events: none;
+  }
+  .tip[hidden] { display: none; }
+  .tip-value { display: flex; align-items: center; gap: 6px; font-size: 16px; font-weight: 700; color: var(--ink); }
+  .tip-key { width: 12px; height: 2px; border-radius: 1px; background: var(--series); }
+  .tip-year { color: var(--ink-2); }
+  .tip-calc { color: var(--ink-2); font-size: 12px; font-variant-numeric: tabular-nums; }
+
+  .source { margin: 14px 0 0; font-size: 13px; font-style: italic; line-height: 1.45; color: var(--ink-2); }
+
+  .table-toggle {
+    margin-top: 14px;
+    padding: 6px 12px;
+    font: inherit;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--ink);
+    background: transparent;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    cursor: pointer;
+  }
+  .table-toggle:hover { background: var(--grid); }
+  .table-toggle[hidden] { display: none; }
+  .data-table { width: 100%; margin-top: 12px; border-collapse: collapse; font-size: 14px; }
+  .data-table[hidden] { display: none; }
+  .data-table caption { text-align: left; font-size: 13px; color: var(--ink-2); padding-bottom: 6px; }
+  .data-table th, .data-table td { padding: 6px 8px; border-bottom: 1px solid var(--grid); }
+  .data-table thead th { font-size: 12px; font-weight: 600; color: var(--ink-2); text-align: right; }
+  .data-table thead th:first-child, .data-table tbody th { text-align: left; }
+  .data-table tbody th { font-weight: 600; white-space: nowrap; }
+  .data-table td { text-align: right; font-variant-numeric: tabular-nums; }
+
+  @media (max-width: 520px) {
+    figure { padding: 20px 16px 16px; }
+    h1 { font-size: 23px; }
+    .sub { font-size: 15px; }
+    .data-table { font-size: 13px; }
+    .data-table th, .data-table td { padding: 6px 4px; }
+  }
+
+  /* ?static - the export used for the PNG */
+  .static body { padding: 0; background: var(--surface); }
+  .static figure { border: 0; border-radius: 0; }
+  .static .table-toggle, .static .data-table { display: none; }
+</style>
+</head>
+<body>
+<figure>
+  <h1>Statewide spending per pupil</h1>
+  <p class="sub">Per pupil spending includes state, local and federal dollars. Not adjusted for inflation.</p>
+  <div class="plot" id="plot" tabindex="0" role="img" aria-label="Line chart of statewide spending per pupil, 2019-20 to 2024-25: 2019-20 $14,422, 2020-21 $15,463, 2021-22 $16,923, 2022-23 $18,038, 2023-24 $18,437, 2024-25 $19,064">
+    <div class="tip" id="tip" hidden>
+      <div class="tip-value"><span class="tip-key"></span><span id="tip-value"></span></div>
+      <div class="tip-year" id="tip-year"></div>
+      <div class="tip-calc" id="tip-calc"></div>
+    </div>
+  </div>
+  <p class="source">Source: Washington Office of Superintendent of Public Instruction. Statewide general fund expenditures (F-196) divided by October enrollment (Report Card).</p>
+  <button class="table-toggle" id="toggle" type="button" aria-expanded="true" aria-controls="table" hidden>Hide table</button>
+  <table class="data-table" id="table">
+    <caption>Statewide general fund spending and October enrollment, nominal dollars</caption>
+    <thead>
+      <tr><th scope="col">School year</th><th scope="col">Per pupil</th><th scope="col">Total spending</th><th scope="col">Enrollment</th></tr>
+    </thead>
+    <tbody>
+        <tr><th scope="row">2019-20</th><td>$14,422</td><td>$16.53B</td><td>1,146,047</td></tr>
+        <tr><th scope="row">2020-21</th><td>$15,463</td><td>$16.90B</td><td>1,092,990</td></tr>
+        <tr><th scope="row">2021-22</th><td>$16,923</td><td>$18.47B</td><td>1,091,299</td></tr>
+        <tr><th scope="row">2022-23</th><td>$18,038</td><td>$19.78B</td><td>1,096,651</td></tr>
+        <tr><th scope="row">2023-24</th><td>$18,437</td><td>$20.27B</td><td>1,099,445</td></tr>
+        <tr><th scope="row">2024-25</th><td>$19,064</td><td>$21.08B</td><td>1,105,545</td></tr>
+    </tbody>
+  </table>
+</figure>
+<script>
+(() => {
+  const DATA = [{"year":"2019-20","perPupil":14422,"expenditures":16527940948,"enrollment":1146047},{"year":"2020-21","perPupil":15463,"expenditures":16901193153,"enrollment":1092990},{"year":"2021-22","perPupil":16923,"expenditures":18467525484,"enrollment":1091299},{"year":"2022-23","perPupil":18038,"expenditures":19781640237,"enrollment":1096651},{"year":"2023-24","perPupil":18437,"expenditures":20270501743,"enrollment":1099445},{"year":"2024-25","perPupil":19064,"expenditures":21075984997,"enrollment":1105545}];
+  const Y_MIN = 14000, Y_MAX = 20000, Y_STEP = 1000;
+  const NS = 'http://www.w3.org/2000/svg';
+
+  const root = document.documentElement;
+  if (new URLSearchParams(location.search).has('static')) {
+    root.classList.add('static');
+    root.dataset.theme = 'light';
+  }
+
+  const plot = document.getElementById('plot');
+  const tip = document.getElementById('tip');
+  const tipValue = document.getElementById('tip-value');
+  const tipYear = document.getElementById('tip-year');
+  const tipCalc = document.getElementById('tip-calc');
+  const toggle = document.getElementById('toggle');
+  const table = document.getElementById('table');
+
+  const money = (v) => '$' + v.toLocaleString('en-US');
+  const billions = (v) => '$' + (v / 1e9).toFixed(2) + 'B';
+  const tickText = (v) => (v === Y_MAX ? '$' : '') + v.toLocaleString('en-US');
+  // "2019-20" -> "2019-’20" for the first year, "’20-’21" after, as the original does.
+  const axisYear = (y, i) => (i === 0 ? y.slice(0, 4) : '’' + y.slice(2, 4)) + '-’' + y.slice(5, 7);
+
+  function el(name, attrs, parent) {
+    const node = document.createElementNS(NS, name);
+    for (const k in attrs) node.setAttribute(k, attrs[k]);
+    if (parent) parent.appendChild(node);
+    return node;
+  }
+  function text(parent, cls, x, y, anchor, content, dy) {
+    const t = el('text', { class: cls, x, y, 'text-anchor': anchor }, parent);
+    if (dy) t.setAttribute('dy', dy);
+    t.textContent = content;
+    return t;
+  }
+  function measure(svg, cls, content) {
+    const t = text(svg, cls, -9999, -9999, 'start', content);
+    const w = t.getComputedTextLength();
+    t.remove();
+    return w;
+  }
+
+  let geom = null;
+  let active = null;
+  let lastWidth = 0;
+
+  function render() {
+    const W = plot.clientWidth;
+    if (!W || W === lastWidth) return;
+    lastWidth = W;
+    const narrow = W < 520;
+    const H = Math.round(Math.max(240, Math.min(400, W * 0.56)));
+
+    plot.querySelector('svg')?.remove();
+    const svg = el('svg', { width: W, height: H, viewBox: '0 0 ' + W + ' ' + H, 'aria-hidden': 'true' });
+    svg.classList.toggle('narrow', narrow);
+    plot.insertBefore(svg, tip);
+
+    // Selective direct labels: the first year, 2022-23 (labeled on the original too) and
+    // the last year. On a phone the first label's room is worth more to the line itself.
+    const labeled = narrow ? [3, DATA.length - 1] : [0, 3, DATA.length - 1];
+
+    const ticks = [];
+    for (let v = Y_MIN; v <= Y_MAX; v += Y_STEP) ticks.push(v);
+    const tickW = Math.max(...ticks.map((v) => measure(svg, 'tick', tickText(v))));
+    const firstW = measure(svg, 'dlab', money(DATA[0].perPupil));
+    const lastW = measure(svg, 'dlab', money(DATA[DATA.length - 1].perPupil));
+
+    const top = 12;
+    const bottom = H - 34;
+    const gridLeft = tickW + 12;
+    const xLast = W - lastW - 14;
+    const xFirst = gridLeft + (labeled.includes(0) ? firstW + 20 : 14);
+    const x = (i) => xFirst + (i * (xLast - xFirst)) / (DATA.length - 1);
+    const y = (v) => top + (1 - (v - Y_MIN) / (Y_MAX - Y_MIN)) * (bottom - top);
+
+    // Gridlines and y ticks - the baseline one step darker than the rest
+    for (const v of ticks) {
+      el('line', { class: v === Y_MIN ? 'baseline' : 'grid', x1: gridLeft, x2: xLast + 8, y1: y(v), y2: y(v) }, svg);
+      text(svg, 'tick', gridLeft - 10, y(v), 'end', tickText(v), '0.35em');
+    }
+
+    // X labels: every year when they fit, otherwise every other year (as the original does)
+    // or sparser still on the narrowest screens
+    const stepPx = (xLast - xFirst) / (DATA.length - 1);
+    const xLabW = DATA.map((d, i) => measure(svg, 'xlab', axisYear(d.year, i)));
+    const fits = (k) => {
+      for (let i = 0; i + k < DATA.length; i += k) {
+        if ((xLabW[i] + xLabW[i + k]) / 2 + 12 > k * stepPx) return false;
+      }
+      return true;
+    };
+    let every = 1;
+    while (every < DATA.length - 1 && !fits(every)) every++;
+    DATA.forEach((d, i) => {
+      if (i % every === 0) text(svg, 'xlab', x(i), H - 8, 'middle', axisYear(d.year, i));
+    });
+
+    const crosshair = el('line', { class: 'crosshair', x1: 0, x2: 0, y1: top, y2: bottom, visibility: 'hidden' }, svg);
+
+    el('path', {
+      class: 'line',
+      d: DATA.map((d, i) => (i ? 'L' : 'M') + x(i).toFixed(1) + ' ' + y(d.perPupil).toFixed(1)).join(' '),
+    }, svg);
+
+    function dot(parent, i) {
+      const g = el('g', {}, parent);
+      el('circle', { class: 'ring', cx: x(i), cy: y(DATA[i].perPupil), r: 6 }, g);
+      el('circle', { class: 'dot', cx: x(i), cy: y(DATA[i].perPupil), r: 4 }, g);
+      return g;
+    }
+
+    for (const i of labeled) {
+      dot(svg, i);
+      const v = DATA[i].perPupil;
+      if (i === 0) text(svg, 'dlab', x(i) - 12, y(v), 'end', money(v), '0.35em');
+      else if (i === DATA.length - 1) text(svg, 'dlab', x(i) + 12, y(v), 'start', money(v), '0.35em');
+      else text(svg, 'dlab', x(i) - 8, y(v) - 12, 'end', money(v));
+    }
+
+    const hoverDot = el('g', { visibility: 'hidden' }, svg);
+    geom = { W, x, y, crosshair, hoverDot, dot };
+    if (active !== null) show(active);
+  }
+
+  function show(i) {
+    active = i;
+    const { W, x, y, crosshair, hoverDot, dot } = geom;
+    const d = DATA[i];
+    crosshair.setAttribute('x1', x(i));
+    crosshair.setAttribute('x2', x(i));
+    crosshair.setAttribute('visibility', 'visible');
+    hoverDot.replaceChildren(dot(hoverDot, i));
+    hoverDot.setAttribute('visibility', 'visible');
+
+    tipValue.textContent = money(d.perPupil);
+    tipYear.textContent = d.year + ' school year';
+    tipCalc.textContent = billions(d.expenditures) + ' ÷ ' + d.enrollment.toLocaleString('en-US') + ' students';
+    tip.hidden = false;
+    const tw = tip.offsetWidth, th = tip.offsetHeight;
+    const left = Math.min(Math.max(x(i) - tw / 2, 0), W - tw);
+    let topPx = y(d.perPupil) - th - 14;
+    if (topPx < 0) topPx = y(d.perPupil) + 14;
+    tip.style.left = left + 'px';
+    tip.style.top = topPx + 'px';
+  }
+
+  function hide() {
+    active = null;
+    if (!geom) return;
+    geom.crosshair.setAttribute('visibility', 'hidden');
+    geom.hoverDot.setAttribute('visibility', 'hidden');
+    tip.hidden = true;
+  }
+
+  function nearest(clientX) {
+    const px = clientX - plot.getBoundingClientRect().left;
+    let best = 0;
+    DATA.forEach((_, i) => {
+      if (Math.abs(geom.x(i) - px) < Math.abs(geom.x(best) - px)) best = i;
+    });
+    return best;
+  }
+
+  plot.addEventListener('pointermove', (e) => geom && show(nearest(e.clientX)));
+  plot.addEventListener('pointerleave', () => document.activeElement !== plot && hide());
+  plot.addEventListener('focus', () => geom && show(active ?? DATA.length - 1));
+  plot.addEventListener('blur', hide);
+  plot.addEventListener('keydown', (e) => {
+    if (!geom) return;
+    const keys = { ArrowLeft: -1, ArrowRight: 1 };
+    if (e.key in keys) {
+      e.preventDefault();
+      show(Math.min(Math.max((active ?? DATA.length - 1) + keys[e.key], 0), DATA.length - 1));
+    } else if (e.key === 'Home' || e.key === 'End') {
+      e.preventDefault();
+      show(e.key === 'Home' ? 0 : DATA.length - 1);
+    } else if (e.key === 'Escape') {
+      hide();
+    }
+  });
+
+  // The table is visible without JS; with JS it sits behind a toggle
+  table.hidden = true;
+  toggle.hidden = false;
+  toggle.textContent = 'Show table';
+  toggle.setAttribute('aria-expanded', 'false');
+  toggle.addEventListener('click', () => {
+    table.hidden = !table.hidden;
+    toggle.textContent = table.hidden ? 'Show table' : 'Hide table';
+    toggle.setAttribute('aria-expanded', String(!table.hidden));
+  });
+
+  new ResizeObserver(() => requestAnimationFrame(render)).observe(plot);
+  render();
+})();
+</script>
+</body>
+</html>
