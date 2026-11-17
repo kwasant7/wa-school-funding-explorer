@@ -189,19 +189,20 @@ describe('brief PDF content', () => {
 });
 
 describe('brief PDF filename', () => {
-  it('is filesystem-safe and identifies the district and year', () => {
+  it('is the district name itself', () => {
     const brief = briefFor(BELLEVUE);
     assert.ok(brief);
-    assert.equal(
-      briefFileName(brief, '2024-25'),
-      'bellevue-school-district-brief-2024-25.pdf'
-    );
+    assert.equal(briefFileName(brief), 'Bellevue School District.pdf');
   });
 
-  it('handles a district name with punctuation', () => {
-    const seattle = briefFor('17001');
-    assert.ok(seattle);
-    const name = briefFileName(seattle, '2024-25');
-    assert.match(name, /^[a-z0-9-]+\.pdf$/);
+  it('replaces characters a file name cannot hold', () => {
+    const named = (name: string) => briefFileName({ name } as DistrictBrief);
+    assert.equal(
+      named('Impact | Black River Elementary'),
+      'Impact - Black River Elementary.pdf'
+    );
+    assert.equal(named('Summit Public School: Atlas'), 'Summit Public School - Atlas.pdf');
+    assert.equal(named('Mt. Baker School District'), 'Mt. Baker School District.pdf');
+    assert.equal(named('  Odd / name.  '), 'Odd - name.pdf');
   });
 });

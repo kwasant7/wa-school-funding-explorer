@@ -795,13 +795,21 @@ export function buildBriefPdf(brief: DistrictBrief, meta: BriefPdfMeta): Blob {
   return pdf.build(`${brief.name} - ${meta.year} - ${meta.siteUrl}`);
 }
 
-/** A filesystem-safe name, e.g. "bellevue-school-district-brief-2024-25.pdf". */
-export function briefFileName(brief: DistrictBrief, year: string): string {
-  const slug = brief.name
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '');
-  return `${slug}-brief-${year}.pdf`;
+/**
+ * The district's own name, as a filesystem-safe file name, e.g.
+ * "Tacoma School District.pdf". Characters that Windows and macOS refuse in a
+ * file name (a few charter schools are called "Summit Public School: Atlas" or
+ * "Impact | Black River Elementary") become a dash; everything else is kept so
+ * the file reads as the district it is about.
+ */
+export function briefFileName(brief: DistrictBrief): string {
+  const name = brief.name
+    .replace(/[\u0000-\u001f]/g, ' ')
+    .replace(/\s*[\\/:*?"<>|]+\s*/g, ' - ')
+    .replace(/\s+/g, ' ')
+    // Windows drops trailing dots and spaces, which would silently rename it.
+    .replace(/^[\s.-]+|[\s.]+$/g, '');
+  return `${name || 'School District'}.pdf`;
 }
 
 /**
@@ -820,7 +828,7 @@ export function downloadBriefPdf(brief: DistrictBrief, meta: BriefPdfMeta) {
   const url = URL.createObjectURL(blob);
   const link = document.createElement('a');
   link.href = url;
-  link.download = briefFileName(brief, meta.year);
+  link.download = briefFileName(brief);
   link.rel = 'noopener';
   document.body.appendChild(link);
   link.click();
