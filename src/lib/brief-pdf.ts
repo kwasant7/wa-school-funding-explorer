@@ -247,22 +247,59 @@ type TextOptions = {
 };
 
 /**
- * A page drawn at absolute positions.
+ * A document drawn at absolute positions, a page at a time.
  *
- * The brief is one sheet, so the layout is a set of boxes placed by hand
- * rather than text flowing down a column and breaking across pages. Every
- * method takes `top`, the distance down from the top edge, because that is how
- * a layout is read; this converts to PDF's bottom-up coordinates in one place.
+ * The layout is a set of boxes placed by hand rather than text flowing down a
+ * column, so every method takes `top`, the distance down from the top edge of
+ * the current page, and converts to PDF's bottom-up coordinates in one place.
+ *
+ * Everything is drawn in layout units and scaled up once per page by `scale`:
+ * the page is laid out as though it were 1/scale as wide and as tall, then
+ * magnified, so every size in the layout - type included - prints that much
+ * larger without a single number in it changing. Tuning how large the brief
+ * reads is therefore one constant, not a hundred.
  */
 class Pdf {
-  private ops: string[] = [];
+  private pages: string[][] = [[]];
+  private current = 0;
+
+  private readonly scale: number;
+
+  constructor(scale: number) {
+    this.scale = scale;
+  }
+
+  /** Page width and height in layout units. */
+  get width() {
+    return PAGE_W / this.scale;
+  }
+  get height() {
+    return PAGE_H / this.scale;
+  }
+  get pageCount() {
+    return this.pages.length;
+  }
 
   private push(op: string) {
-    this.ops.push(op);
+    this.pages[this.current].push(op);
   }
 
   private colour(rgb: Rgb) {
     this.push(`${rgb[0].toFixed(3)} ${rgb[1].toFixed(3)} ${rgb[2].toFixed(3)} rg`);
+  }
+
+  /** Start a new page and draw on it from now on. */
+  newPage() {
+    this.pages.push([]);
+    this.current = this.pages.length - 1;
+  }
+
+  /** Draw on an earlier page, then return - for stamping "Page 1 of 2" once the count is known. */
+  onPage(index: number, draw: () => void) {
+    const was = this.current;
+    this.current = index;
+    draw();
+    this.current = was;
   }
 
   /**
@@ -321,7 +358,7 @@ class Pdf {
           if (index > 0) cursor += space;
           for (const piece of chunk) {
             this.colour(piece.colour);
-            const baseline = PAGE_H - top - row * leading - size;
+            const baseline = this.height - top - row * leading - size;
             this.push(
               `BT ${piece.font === 'bold' ? '/F2' : '/F1'} ${size} Tf 1 0 0 1 ${cursor.toFixed(2)} ${baseline.toFixed(2)} Tm (${pdfString(piece.text)}) Tj ET`
             );
@@ -345,7 +382,7 @@ class Pdf {
 
   box(x: number, top: number, w: number, h: number, colour: Rgb) {
     this.colour(colour);
-    this.push(`${x.toFixed(2)} ${(PAGE_H - top - h).toFixed(2)} ${w.toFixed(2)} ${h.toFixed(2)} re f`);
+    this.push(`${x.toFixed(2)} ${(this.height - top - h).toFixed(2)} ${w.toFixed(2)} ${h.toFixed(2)} re f`);
   }
 
   /** A filled rectangle with rounded corners, drawn as four curves and four edges. */
@@ -354,8 +391,8 @@ class Pdf {
     const k = 0.5523 * r;
     const left = x;
     const right = x + w;
-    const bottom = PAGE_H - top - h;
-    const up = PAGE_H - top;
+    const bottom = this.height - top - h;
+    const up = this.height - top;
     const f = (n: number) => n.toFixed(2);
     this.colour(colour);
     this.push(
@@ -377,36 +414,29 @@ class Pdf {
     this.round(x + 0.7, top + 0.7, w - 1.4, h - 1.4, Math.max(0, r - 0.7), fill);
   }
 
-  /**
-   * Finish the document. `footer` is stamped bottom-left, or left off when the
-   * page draws its own.
-   */
-  build(footer: string | null): Blob {
-    const content = this.ops.join('\n');
-    const stamp = footer
-      ? [
-          `${LINE[0].toFixed(3)} ${LINE[1].toFixed(3)} ${LINE[2].toFixed(3)} rg`,
-          `${MARGIN} ${MARGIN - 2} ${CONTENT_W} 0.7 re f`,
-          `${INK_MUTED[0].toFixed(3)} ${INK_MUTED[1].toFixed(3)} ${INK_MUTED[2].toFixed(3)} rg`,
-          `BT /F1 7.5 Tf 1 0 0 1 ${MARGIN} ${MARGIN - 16} Tm (${pdfString(footer)}) Tj ET`,
-        ].join('\n')
-      : '';
-    const stream = stamp ? `${content}\n${stamp}` : content;
+  /** Finish the document. */
+  build(): Blob {
+    const s = this.scale.toFixed(4);
+    const streams = this.pages.map((ops) => `q ${s} 0 0 ${s} 0 0 cm\n${ops.join('\n')}\nQ`);
 
     /*
-      Objects: 1 catalog, 2 page tree, 3-4 fonts, 5 the page, 6 its content
-      stream. The xref table needs each object's byte offset, so the body is
-      assembled while the offsets are recorded.
+      Objects: 1 catalog, 2 page tree, 3-4 fonts, then a page and its content
+      stream per page. The xref table needs each object's byte offset, so the
+      body is assembled while the offsets are recorded.
     */
     const objects: string[] = [];
+    const pageIds = streams.map((_, index) => 5 + index * 2);
     objects[1] = '<< /Type /Catalog /Pages 2 0 R >>';
-    objects[2] = '<< /Type /Pages /Kids [5 0 R] /Count 1 >>';
+    objects[2] = `<< /Type /Pages /Kids [${pageIds.map((id) => `${id} 0 R`).join(' ')}] /Count ${streams.length} >>`;
     objects[3] = '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>';
     objects[4] = '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold /Encoding /WinAnsiEncoding >>';
-    objects[5] =
-      `<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ${PAGE_W} ${PAGE_H}] ` +
-      `/Resources << /Font << /F1 3 0 R /F2 4 0 R >> >> /Contents 6 0 R >>`;
-    objects[6] = `<< /Length ${stream.length} >>\nstream\n${stream}\nendstream`;
+    streams.forEach((stream, index) => {
+      const pageId = pageIds[index];
+      objects[pageId] =
+        `<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ${PAGE_W} ${PAGE_H}] ` +
+        `/Resources << /Font << /F1 3 0 R /F2 4 0 R >> >> /Contents ${pageId + 1} 0 R >>`;
+      objects[pageId + 1] = `<< /Length ${stream.length} >>\nstream\n${stream}\nendstream`;
+    });
 
     let body = '%PDF-1.4\n';
     const offsets: number[] = [];
@@ -434,10 +464,19 @@ class Pdf {
  * Layout
  * ------------------------------------------------------------------ */
 
-const PAD_X = 36;
-const PAGE_TOP = 30;
-const FOOT_BOTTOM = 22;
-const COL_W = PAGE_W - PAD_X * 2;
+/**
+ * How much larger than its layout units the brief prints. The layout is
+ * written for a page 1/PDF_SCALE as wide, then magnified, so raising this makes
+ * every size - type included - bigger and the layout reflows to fit. It is the
+ * single control for how large the brief reads; the tests prove every district
+ * still fits in MAX_PAGES at this value.
+ */
+const PDF_SCALE = 1.4;
+/** The brief is built to fit this many pages. */
+const MAX_PAGES = 2;
+const PAD_X = 28;
+const PAGE_TOP = 24;
+const FOOT_BOTTOM = 16;
 
 /**
  * A bar label, matching the web renderer exactly.
@@ -533,12 +572,17 @@ function miniVisual(
       return 2 * MINI_ROW + 10;
 
     case 'gauge': {
-      if (measureOnly) return 20;
       const reading = `${visual.value.toFixed(1)}%`;
       const labelW = Math.min(110, measure(visual.label, 'regular', 6.6) + 4);
       const valueW = measure(reading, 'bold', 6.6) + 2;
       const barX = x + labelW + 5;
       const barW = width - labelW - valueW - 10;
+      // The note can take two lines on a narrow column; the gauge is as tall as it is.
+      const noteText = `Black line: ${visual.safeLabel} (${visual.safe}% of a year's spending).`;
+      const noteH = pdf.at(noteText, {
+        x: barX, top: 0, width: barW, size: 6.2, leading: 7.6, measureOnly: true,
+      });
+      if (measureOnly) return 11.5 + noteH + 1;
       const min = Math.min(0, visual.value);
       const max = Math.max(visual.safe * 1.5, visual.value, 15);
       const span = max - min || 1;
@@ -560,14 +604,15 @@ function miniVisual(
         colour: visual.value < 0 ? CRITICAL : INK,
         align: 'right',
       });
-      pdf.at(`Black line: ${visual.safeLabel} (${visual.safe}% of a year's spending).`, {
+      pdf.at(noteText, {
         x: barX,
         top: top + 11.5,
         width: barW,
         size: 6.2,
         colour: INK_MUTED,
+        leading: 7.6,
       });
-      return 20;
+      return 11.5 + noteH + 1;
     }
 
     case 'steps': {
@@ -597,16 +642,15 @@ function miniVisual(
   }
 }
 
-/** What was left off the sheet to make it fit, from least to most important. */
-type Attempt = { message: boolean; trend: boolean; problems: number };
+/** What was left off to keep the brief to two pages, from least to most important. */
+type Attempt = { message: boolean; problems: number };
 
 const ATTEMPTS: Attempt[] = [
-  { message: true, trend: true, problems: 3 },
-  { message: false, trend: true, problems: 3 },
-  { message: false, trend: false, problems: 3 },
-  { message: false, trend: false, problems: 2 },
-  { message: false, trend: false, problems: 1 },
-  { message: false, trend: false, problems: 0 },
+  { message: true, problems: 3 },
+  { message: false, problems: 3 },
+  { message: false, problems: 2 },
+  { message: false, problems: 1 },
+  { message: false, problems: 0 },
 ];
 
 export type BriefPdfMeta = {
@@ -617,155 +661,215 @@ export type BriefPdfMeta = {
 };
 
 /**
- * Lay the sheet out. Returns where the content ends and the lowest point it may
- * reach (the footer's top edge), so the caller can tell whether it fit.
+ * Lay the brief out: page one is where the district stands (the Explorer's
+ * numbers and the Big 3), page two is what to do about it (the asks, who to
+ * ask, and something to say). Block heights are measured before anything is
+ * drawn, so a block that would straddle a page boundary moves whole to the
+ * next page instead.
  */
-function drawOnePage(
+function drawBrief(
   pdf: Pdf,
   page: OnePage,
   meta: BriefPdfMeta,
   attempt: Attempt
-): { bottom: number; limit: number } {
+): { overflow: boolean } {
   const X = PAD_X;
-  const W = COL_W;
+  const W = pdf.width - PAD_X * 2;
   const siteHost = meta.siteUrl.replace(/^https?:\/\//, '');
   let y = PAGE_TOP;
+  let overflow = false;
 
+  // --- Footer geometry: the same on every page, so measured once ------------------
+  const footer =
+    `All numbers come from OSPI records for ${meta.year}` +
+    (page.big3
+      ? '; the Big 3 figures are those of the AESD Big 3 dashboard, built from OSPI F-196 actuals and apportionment.'
+      : '.') +
+    ' Each district is compared with the other 314 in Washington. Not an official fiscal or legal source: ' +
+    'an independent civic education project, not affiliated with OSPI or the Washington State Legislature. ' +
+    `Sources: ${siteHost}/sources`;
+  const pageLabelW = 40;
+  const footerH = pdf.at(footer, {
+    x: X, top: 0, width: W - pageLabelW, size: 6, leading: 7.8, measureOnly: true,
+  });
+  const footerTop = pdf.height - FOOT_BOTTOM - footerH - 4;
+  const limit = footerTop - 8;
+
+  // --- Page flow ----------------------------------------------------------------------
+  const runningHeader = () => {
+    pdf.at(page.name, { x: X, top: PAGE_TOP, width: W * 0.6, size: 8.6, bold: true, colour: INK });
+    pdf.at(`Funding brief ${meta.year}  ·  ${siteHost}`, {
+      x: X, top: PAGE_TOP + 1.4, width: W, size: 6.6, colour: INK_MUTED, align: 'right',
+    });
+    pdf.box(X, PAGE_TOP + 13, W, 0.7, LINE);
+  };
+  const continuePage = () => {
+    pdf.newPage();
+    runningHeader();
+    y = PAGE_TOP + 22;
+  };
+  /** Make room for a block of height `h`, moving to a fresh page if it will not fit here. */
+  const need = (h: number) => {
+    if (y + h > limit) {
+      if (y > PAGE_TOP + 24) continuePage();
+      if (y + h > limit) overflow = true;
+    }
+  };
+
+  const headingHeight = (title: string, subtitle: string) => {
+    const subW = W - measure(title, 'bold', 9.6) - 6;
+    const subH = subtitle
+      ? pdf.at(subtitle, { x: 0, top: 0, width: subW, size: 7, leading: 8.6, measureOnly: true })
+      : 0;
+    return Math.max(13, 2.2 + subH + 3);
+  };
   const heading = (title: string, subtitle: string) => {
     pdf.at(title, { x: X, top: y, width: W, size: 9.6, bold: true, colour: INK });
     if (subtitle) {
       pdf.at(subtitle, {
-        x: X + measure(title, 'bold', 9.6) + 5,
+        x: X + measure(title, 'bold', 9.6) + 6,
         top: y + 2.2,
-        width: W - measure(title, 'bold', 9.6) - 5,
+        width: W - measure(title, 'bold', 9.6) - 6,
         size: 7,
         colour: INK_MUTED,
+        leading: 8.6,
       });
     }
-    y += 13;
+    y += headingHeight(title, subtitle);
   };
 
-  // --- Header ---------------------------------------------------------------
-  const nameW = W - 110;
-  let titleSize = 21;
-  while (measure(page.name, 'bold', titleSize) > nameW && titleSize > 12) titleSize -= 0.5;
+  // =========================== PAGE ONE: where the district stands ====================
+  // --- Header ---------------------------------------------------------------------------
+  const urlW = 90;
+  const nameW = W - urlW - 8;
+  let titleSize = 22;
+  while (measure(page.name, 'bold', titleSize) > nameW && titleSize > 13) titleSize -= 0.5;
 
   pdf.at(`WA SCHOOL FUNDING EXPLORER  ·  FUNDING BRIEF ${meta.year}`, {
     x: X, top: y, width: nameW, size: 6.6, bold: true, colour: ACCENT,
   });
-  pdf.at(siteHost, { x: X + W - 100, top: y + 2, width: 100, size: 7.4, bold: true, colour: ACCENT, align: 'right' });
-  pdf.at('Print and share', { x: X + W - 100, top: y + 12, width: 100, size: 7, colour: INK_MUTED, align: 'right' });
-  y += 9;
-  pdf.at(page.name, { x: X, top: y, width: nameW, size: titleSize, bold: true, colour: INK, leading: titleSize * 1.1 });
-  y += titleSize * 1.1 + 2;
+  pdf.at(siteHost, { x: X + W - urlW, top: y + 1, width: urlW, size: 7.6, bold: true, colour: ACCENT, align: 'right' });
+  pdf.at('Print and share', { x: X + W - urlW, top: y + 11, width: urlW, size: 7, colour: INK_MUTED, align: 'right' });
+  y += 10;
+  y += pdf.at(page.name, { x: X, top: y, width: nameW, size: titleSize, bold: true, colour: INK, leading: titleSize * 1.12 }) + 2;
   const sub = [`${page.county} County`, page.esd, `${fmtInt(page.fundedStudents)} funded students`]
     .filter(Boolean)
     .join('  ·  ');
-  pdf.at(sub, { x: X, top: y, width: nameW, size: 8, colour: INK_SECONDARY });
-  y += 11 + 3;
-  y += pdf.at(page.summary, { x: X, top: y, width: W, size: 8.4, colour: INK, leading: 11 }) + 5;
+  y += pdf.at(sub, { x: X, top: y, width: W, size: 8.2, colour: INK_SECONDARY, leading: 10.4 }) + 5;
+  y += pdf.at(page.summary, { x: X, top: y, width: W, size: 9, colour: INK, leading: 12 }) + 7;
 
-  // --- The District Explorer's headline numbers ----------------------------------
+  // --- The District Explorer's headline numbers: a roomy 2 x 2 -------------------------
   const tileGap = 6;
-  const tileW = (W - tileGap * (page.tiles.length - 1)) / page.tiles.length;
-  const tileH = 41;
+  const tileCols = 2;
+  const tileW = (W - tileGap * (tileCols - 1)) / tileCols;
+  const tileH = 48;
   page.tiles.forEach((tile, i) => {
-    const tx = X + i * (tileW + tileGap);
-    pdf.ring(tx, y, tileW, tileH, 3.5, LINE, TILE);
-    pdf.at(tile.label, { x: tx + 6, top: y + 5, width: tileW - 12, size: 7, colour: INK_SECONDARY });
+    const tx = X + (i % tileCols) * (tileW + tileGap);
+    const ty = y + Math.floor(i / tileCols) * (tileH + tileGap);
+    pdf.ring(tx, ty, tileW, tileH, 3.5, LINE, TILE);
+    pdf.at(tile.label, { x: tx + 8, top: ty + 6, width: tileW - 16, size: 7.4, colour: INK_SECONDARY });
     pdf.at(tile.value, {
-      x: tx + 6, top: y + 13.5, width: tileW - 12, size: 15, bold: true,
-      colour: tile.tone === 'critical' ? CRITICAL : INK, leading: 17,
+      x: tx + 8, top: ty + 15, width: tileW - 16, size: 17, bold: true,
+      colour: tile.tone === 'critical' ? CRITICAL : INK, leading: 19,
     });
-    pdf.at(tile.note, { x: tx + 6, top: y + 31, width: tileW - 12, size: 6.8, colour: INK_MUTED });
+    pdf.at(tile.note, { x: tx + 8, top: ty + 36, width: tileW - 16, size: 7, colour: INK_MUTED });
   });
-  y += tileH + 8;
+  y += Math.ceil(page.tiles.length / tileCols) * (tileH + tileGap) + 4;
 
-  // --- Where the money comes from, and how revenue per student has moved ----------
-  const panelGap = 14;
+  // --- Where the money comes from, and how revenue per student has moved ----------------
+  const panelGap = 16;
   const panelW = (W - panelGap) / 2;
   const mixX = X;
-  pdf.at('Where the money comes from', { x: mixX, top: y, width: panelW, size: 7, bold: true, colour: INK });
+  pdf.at('Where the money comes from', { x: mixX, top: y, width: panelW, size: 7.6, bold: true, colour: INK });
   pdf.at(`${fmtMoney(page.revenue.total)} in ${meta.year}`, {
-    x: mixX, top: y, width: panelW, size: 7, colour: INK_SECONDARY, align: 'right',
+    x: mixX, top: y + 0.4, width: panelW, size: 7, colour: INK_SECONDARY, align: 'right',
   });
   let segX = mixX;
-  const barTop = y + 11;
+  const barTop = y + 13;
   const totalRevenue = page.revenue.total || 1;
   page.revenue.parts.forEach((part) => {
     const segW = (panelW * part.amount) / totalRevenue;
     if (segW <= 0) return;
-    pdf.box(segX, barTop, segW, 13, SERIES[part.key]);
+    pdf.box(segX, barTop, segW, 15, SERIES[part.key]);
     // A label goes inside only where it fits - the full "Local 15%" if there
     // is room, else just the percent; the legend below names every part.
     if (part.key === 'state' || part.key === 'local') {
       const full = `${part.label} ${part.percent}%`;
-      const label = measure(full, 'bold', 6.6) + 8 <= segW ? full : `${part.percent}%`;
-      if (measure(label, 'bold', 6.6) + 8 <= segW) {
-        pdf.at(label, {
-          x: segX + 4, top: barTop + 3.4, width: segW - 4, size: 6.6, bold: true, colour: WHITE,
-        });
+      const label = measure(full, 'bold', 7) + 8 <= segW ? full : `${part.percent}%`;
+      if (measure(label, 'bold', 7) + 8 <= segW) {
+        pdf.at(label, { x: segX + 4, top: barTop + 3.8, width: segW - 4, size: 7, bold: true, colour: WHITE });
       }
     }
     segX += segW;
   });
+  // The legend wraps onto a second row when four names will not share one.
   let legendX = mixX;
+  let legendTop = barTop + 20;
   page.revenue.parts.forEach((part) => {
     const text = `${part.label} ${fmtMoney(part.amount)}`;
-    pdf.box(legendX, barTop + 17.5, 6, 6, SERIES[part.key]);
-    pdf.at(text, { x: legendX + 9, top: barTop + 17, width: panelW, size: 6.6, colour: INK_SECONDARY });
-    legendX += 9 + measure(text, 'regular', 6.6) + 9;
+    const itemW = 9 + measure(text, 'regular', 7) + 10;
+    if (legendX > mixX && legendX + itemW > mixX + panelW) {
+      legendX = mixX;
+      legendTop += 10.5;
+    }
+    pdf.box(legendX, legendTop + 0.8, 6, 6, SERIES[part.key]);
+    pdf.at(text, { x: legendX + 9, top: legendTop, width: panelW, size: 7, colour: INK_SECONDARY });
+    legendX += itemW;
   });
 
-  let panelH = 38;
-  if (attempt.trend) {
-    const tx = X + panelW + panelGap;
-    pdf.at('Revenue per student, six years', { x: tx, top: y, width: panelW, size: 7, bold: true, colour: INK });
-    const keyText = `${page.shortName}  -  state median`;
-    pdf.at(keyText, { x: tx, top: y + 0.4, width: panelW, size: 6.2, colour: INK_MUTED, align: 'right' });
-
+  const trendX = X + panelW + panelGap;
+  pdf.at('Revenue per student, six years', { x: trendX, top: y, width: panelW, size: 7.6, bold: true, colour: INK });
+  // The key sits on its own line under the title: beside it, a long district
+  // name left no gap between the two.
+  // A very long name would run the key out of its panel; "This district" says the same.
+  const keyWidth = (name: string) => 9 + measure(name, 'regular', 6.8) + 10 + 11 + measure('state median', 'regular', 6.8);
+  const keyName = keyWidth(page.shortName) <= panelW ? page.shortName : 'This district';
+  pdf.box(trendX, y + 13.6, 6, 6, ACCENT);
+  pdf.at(keyName, { x: trendX + 9, top: y + 13, width: panelW, size: 6.8, colour: INK_SECONDARY });
+  {
+    const keyX = trendX + 9 + measure(keyName, 'regular', 6.8) + 10;
+    pdf.box(keyX, y + 16.2, 8, 1.4, INK);
+    pdf.at('state median', { x: keyX + 11, top: y + 13, width: panelW, size: 6.8, colour: INK_SECONDARY });
+  }
+  {
     const { years, values, median } = page.trend;
     const columns = years.length;
     const colGap = 6;
     const colW = (panelW - colGap * (columns - 1)) / columns;
     const maxValue = Math.max(...values.filter((v): v is number => v != null), ...median, 1);
-    const maxBar = 30;
-    const base = y + 11 + 8 + maxBar;
+    const maxBar = 38;
+    const base = y + 22 + 9 + maxBar;
     years.forEach((year, i) => {
-      const cx = tx + i * (colW + colGap);
+      const cx = trendX + i * (colW + colGap);
       const value = values[i];
       if (value != null) {
         const h = (value / maxValue) * maxBar;
         pdf.box(cx, base - h, colW, h, ACCENT);
         pdf.at(`$${(value / 1000).toFixed(1)}K`, {
-          x: cx - 3, top: base - h - 8, width: colW + 6, size: 6.3, bold: true, colour: INK,
+          x: cx - 3, top: base - h - 9, width: colW + 6, size: 6.8, bold: true, colour: INK,
         });
       }
       const medianH = (median[i] / maxValue) * maxBar;
-      pdf.box(cx - 1, base - medianH - 0.65, colW + 2, 1.3, INK);
-      pdf.at(year, { x: cx - 3, top: base + 1.5, width: colW + 6, size: 6.2, colour: INK_MUTED });
+      pdf.box(cx - 1, base - medianH - 0.7, colW + 2, 1.4, INK);
+      pdf.at(year, { x: cx - 3, top: base + 2, width: colW + 6, size: 6.6, colour: INK_MUTED });
     });
-    panelH = 11 + 8 + maxBar + 10;
+    y += 22 + 9 + maxBar + 13;
   }
-  y += panelH + 3;
 
-  // --- The Big 3 --------------------------------------------------------------
+  // --- The Big 3 --------------------------------------------------------------------------
   if (page.big3) {
-    y += 7;
-    heading(
-      'The “Big 3” funding gaps',
-      `${page.big3.year}  ·  where funding falls furthest short of what running a district costs`
-    );
-    const colGap3 = 9;
+    y += 8;
+    const big3Subtitle = `${page.big3.year}  ·  where funding falls furthest short of what it costs`;
+    need(headingHeight('The “Big 3” funding gaps', big3Subtitle) + 130);
+    heading('The “Big 3” funding gaps', big3Subtitle);
+    const colGap3 = 10;
     const colW3 = (W - colGap3 * 2) / 3;
     let bottom3 = y;
     page.big3.columns.forEach((col, i) => {
       const cx = X + i * (colW3 + colGap3);
       let cy = y;
-      pdf.at(col.title, { x: cx, top: cy, width: colW3, size: 8.8, bold: true, colour: INK });
-      cy += 11;
-      pdf.at(col.detail, { x: cx, top: cy, width: colW3, size: 6.6, colour: INK_MUTED });
-      cy += 9.5;
+      cy += pdf.at(col.title, { x: cx, top: cy, width: colW3, size: 8.8, bold: true, colour: INK, leading: 10.6 }) + 1;
+      cy += pdf.at(col.detail, { x: cx, top: cy, width: colW3, size: 6.8, colour: INK_MUTED, leading: 8.2 }) + 3;
 
       // Larger figure first and full width, as on the web card; the amounts are
       // snapped onto one grid so the two bars subtract to the caption.
@@ -781,26 +885,26 @@ function drawOnePage(
             { label: 'Funding it receives', amount: pair.b, fill: ACCENT_SOFT },
           ];
       rows.forEach((row) => {
-        pdf.at(row.label, { x: cx, top: cy, width: colW3, size: 6.8, colour: INK_SECONDARY });
+        pdf.at(row.label, { x: cx, top: cy, width: colW3, size: 7, colour: INK_SECONDARY });
         pdf.at(fmtMoneyOnGrid(row.amount, pair.step), {
-          x: cx, top: cy, width: colW3, size: 6.8, bold: true, colour: INK, align: 'right',
+          x: cx, top: cy, width: colW3, size: 7, bold: true, colour: INK, align: 'right',
         });
-        cy += 8.5;
-        pdf.box(cx, cy, colW3, 7, PAPER);
-        pdf.box(cx, cy, Math.max(1.5, (colW3 * row.amount) / (pair.a || 1)), 7, row.fill);
-        cy += 9.5;
+        cy += 9.4;
+        pdf.box(cx, cy, colW3, 8, PAPER);
+        pdf.box(cx, cy, Math.max(1.5, (colW3 * row.amount) / (pair.a || 1)), 8, row.fill);
+        cy += 11;
       });
       pdf.at(covered ? 'Covered by its funding' : `${fmtMoneyOnGrid(pair.gap, pair.step)} short`, {
-        x: cx, top: cy + 0.5, width: colW3, size: 8.6, bold: true, colour: covered ? GOOD : CRITICAL,
+        x: cx, top: cy + 0.5, width: colW3, size: 9, bold: true, colour: covered ? GOOD : CRITICAL,
       });
-      cy += 13;
+      cy += 14;
       const noteRuns: Run[] = col.isAsk
         ? [{ text: 'Ask:', bold: true, colour: DEEP }, { text: ` ${col.note}` }]
         : [{ text: col.note }];
-      cy += pdf.rich(noteRuns, { x: cx, top: cy, width: colW3, size: 7, colour: INK_SECONDARY, leading: 9 });
+      cy += pdf.rich(noteRuns, { x: cx, top: cy, width: colW3, size: 7.2, colour: INK_SECONDARY, leading: 9.4 });
       bottom3 = Math.max(bottom3, cy);
     });
-    y = bottom3 + 4;
+    y = bottom3 + 5;
 
     // The total, and what "funding" counts - the one thing a reader cannot
     // guess, and the reason this differs from a state-money-only figure.
@@ -814,192 +918,210 @@ function drawOnePage(
             { text: ` — that ${page.shortName} covers from local levies and other local money.` },
           ]
         : [{ text: 'Funding covers the cost of all three programs here.' }];
-    const leadW = W - 14;
+    const boxW = W - 16;
     const note =
       '“Funding” counts every revenue line for these programs: state, federal special education (IDEA) and Medicaid money, and payments from other districts.';
-    const leadH = pdf.rich(lead, { x: 0, top: 0, width: leadW, size: 7.6, colour: INK, leading: 9.6, measureOnly: true });
-    const noteH = pdf.at(note, { x: 0, top: 0, width: leadW, size: 6.3, leading: 8, measureOnly: true });
-    const totalH = 4 + leadH + 1 + noteH + 3;
-    pdf.ring(X, y, W, totalH, 3.5, ACCENT_SOFT, WASH);
-    pdf.rich(lead, { x: X + 7, top: y + 4, width: leadW, size: 7.6, colour: INK, leading: 9.6 });
-    pdf.at(note, { x: X + 7, top: y + 4 + leadH + 1, width: leadW, size: 6.3, colour: INK_MUTED, leading: 8 });
-    y += totalH;
+    const leadH = pdf.rich(lead, { x: 0, top: 0, width: boxW, size: 8, colour: INK, leading: 10.4, measureOnly: true });
+    const noteH = pdf.at(note, { x: 0, top: 0, width: boxW, size: 6.6, leading: 8.4, measureOnly: true });
+    const boxH = 5 + leadH + 2 + noteH + 4;
+    need(boxH);
+    pdf.ring(X, y, W, boxH, 3.5, ACCENT_SOFT, WASH);
+    pdf.rich(lead, { x: X + 8, top: y + 5, width: boxW, size: 8, colour: INK, leading: 10.4 });
+    pdf.at(note, { x: X + 8, top: y + 5 + leadH + 2, width: boxW, size: 6.6, colour: INK_MUTED, leading: 8.4 });
+    y += boxH;
   }
 
-  // --- What else needs to change, and what to ask for ----------------------------
-  const cap = page.big3 ? attempt.problems : attempt.problems + 1;
-  const problems = page.problems.slice(0, cap);
+  // =========================== PAGE TWO: what to do about it ===========================
+  // The asks start a fresh page so that it can be taken to a legislator on its own.
+  const problems = page.problems.slice(0, page.big3 ? attempt.problems : attempt.problems + 1);
+  if (y > PAGE_TOP + 24) continuePage();
+
   if (problems.length > 0) {
-    y += 13;
     heading('What else needs to change', 'and what to ask your legislators for');
     pdf.box(X, y - 1, W, 0.7, LINE);
     y += 2;
 
-    const badge = 13;
-    const leftX = X + badge + 7;
-    const askW = 150;
-    const leftW = W - badge - 7 - askW - 7;
+    const badge = 14;
+    const leftX = X + badge + 8;
+    const askW = Math.round(W * 0.35);
+    const leftW = W - badge - 8 - askW - 8;
     const askX = X + W - askW;
-    problems.forEach((problem, index) => {
-      const rowTop = y;
-      if (index > 0) pdf.box(X, rowTop, W, 0.7, LINE);
-      const top = rowTop + 6;
+    const askInner = askW - 9.4;
 
-      // Left: title, fact, picture, and what the district has already done.
+    // Draws one row, or only measures it - the height decides whether it fits.
+    const row = (problem: OnePage['problems'][number], index: number, top: number, draw: boolean) => {
+      const m = !draw;
       let ly = top;
-      ly += pdf.at(problem.title, { x: leftX, top: ly, width: leftW, size: 8.8, bold: true, colour: INK, leading: 10.6 });
-      ly += 1.5;
-      ly += pdf.at(problem.fact, { x: leftX, top: ly, width: leftW, size: 8, colour: INK_SECONDARY, leading: 10.4 });
-      ly += 2.5;
-      ly += miniVisual(pdf, problem.visual, leftX, ly, leftW, false);
+      ly += pdf.at(problem.title, { x: leftX, top: ly, width: leftW, size: 9.2, bold: true, colour: INK, leading: 11, measureOnly: m }) + 1.5;
+      ly += pdf.at(problem.fact, { x: leftX, top: ly, width: leftW, size: 8.2, colour: INK_SECONDARY, leading: 10.8, measureOnly: m }) + 3;
+      ly += miniVisual(pdf, problem.visual, leftX, ly, leftW, m);
       if (problem.response) {
-        ly += 1.5;
+        ly += 2;
         ly += pdf.rich(
           [{ text: 'Already done:', bold: true, colour: GOOD }, { text: ` ${problem.response}` }],
-          { x: leftX, top: ly, width: leftW, size: 6.6, colour: INK_SECONDARY, leading: 8.4 }
+          { x: leftX, top: ly, width: leftW, size: 7, colour: INK_SECONDARY, leading: 9, measureOnly: m }
         );
       }
 
-      // Right: the ask, with the bills and statutes behind it.
-      const askInner = askW - 8.2;
-      const textH = pdf.at(problem.ask, { x: 0, top: 0, width: askInner, size: 8, bold: true, leading: 9.8, measureOnly: true });
+      const textH = pdf.at(problem.ask, { x: askX + 9.4, top: 0, width: askInner, size: 8.6, bold: true, leading: 10.6, measureOnly: true });
       const citeH = problem.cite
-        ? pdf.at(problem.cite, { x: 0, top: 0, width: askInner, size: 6.4, leading: 8, measureOnly: true })
+        ? pdf.at(problem.cite, { x: 0, top: 0, width: askInner, size: 6.8, leading: 8.4, measureOnly: true })
         : 0;
-      const askH = 3.5 + 7.4 + textH + (citeH ? 1.5 + citeH : 0) + 3.5;
-      pdf.box(askX, top, askW, askH, WASH);
-      pdf.box(askX, top, 2.2, askH, ACCENT);
-      let ay = top + 3.5;
-      pdf.at('ASK', { x: askX + 8.2, top: ay, width: askInner, size: 6.2, bold: true, colour: ACCENT });
-      ay += 7.4;
-      ay += pdf.at(problem.ask, { x: askX + 8.2, top: ay, width: askInner, size: 8, bold: true, colour: INK, leading: 9.8 });
-      if (problem.cite) {
-        pdf.at(problem.cite, { x: askX + 8.2, top: ay + 1.5, width: askInner, size: 6.4, colour: INK_MUTED, leading: 8 });
+      const askH = 4.5 + 8 + textH + (citeH ? 2 + citeH : 0) + 4.5;
+
+      if (draw) {
+        pdf.box(askX, top, askW, askH, WASH);
+        pdf.box(askX, top, 2.4, askH, ACCENT);
+        let ay = top + 4.5;
+        pdf.at('ASK', { x: askX + 9.4, top: ay, width: askInner, size: 6.6, bold: true, colour: ACCENT });
+        ay += 8;
+        ay += pdf.at(problem.ask, { x: askX + 9.4, top: ay, width: askInner, size: 8.6, bold: true, colour: INK, leading: 10.6 });
+        if (problem.cite) {
+          pdf.at(problem.cite, { x: askX + 9.4, top: ay + 2, width: askInner, size: 6.8, colour: INK_MUTED, leading: 8.4 });
+        }
+
+        // The number badge: a circle with the numeral set on its optical centre.
+        const numeral = String(index + 1);
+        const numeralSize = 8;
+        const capHeight = numeralSize * 0.717;
+        pdf.round(X, top + 1, badge, badge, badge / 2, ACCENT);
+        pdf.at(numeral, {
+          x: X + (badge - measure(numeral, 'bold', numeralSize)) / 2,
+          top: top + 1 + badge / 2 + capHeight / 2 - numeralSize,
+          width: badge,
+          size: numeralSize,
+          bold: true,
+          colour: WHITE,
+        });
       }
+      return Math.max(ly - top, askH);
+    };
 
-      // The number badge: a circle with the numeral set on its optical centre.
-      const numeral = String(index + 1);
-      const numeralSize = 7.5;
-      const capHeight = numeralSize * 0.717;
-      pdf.round(X, top + 1, badge, badge, badge / 2, ACCENT);
-      pdf.at(numeral, {
-        x: X + (badge - measure(numeral, 'bold', numeralSize)) / 2,
-        top: top + 1 + badge / 2 + capHeight / 2 - numeralSize,
-        width: badge,
-        size: numeralSize,
-        bold: true,
-        colour: WHITE,
-      });
-
-      y = top + Math.max(ly - top, askH) + 6;
+    problems.forEach((problem, index) => {
+      const h = row(problem, index, 0, false);
+      need(h + 14);
+      if (index > 0) pdf.box(X, y, W, 0.7, LINE);
+      row(problem, index, y + 7, true);
+      y += h + 14;
     });
   }
 
-  // --- Who to ask -----------------------------------------------------------------
-  y += 11;
+  // --- Who to ask ------------------------------------------------------------------------------
+  y += 8;
   const total = page.delegations.length + page.moreDelegations;
+  const whoSubtitle = `${page.shortName} is represented by ${total === 1 ? 'one legislative delegation' : `${total} legislative delegations`}`;
   if (page.delegations.length > 0) {
-    heading(
-      'Who to ask',
-      `${page.shortName} is represented by ${total === 1 ? 'one legislative delegation' : `${total} legislative delegations`}`
-    );
     const legGap = 7;
     const legW = (W - legGap * 2) / 3;
     const mostMembers = Math.max(...page.delegations.map((d) => d.members.length));
-    const legH = 4.5 + 10.5 + mostMembers * 9.4 + 3;
+    const legH = 5 + 11.5 + mostMembers * 10.4 + 3.5;
+    need(headingHeight('Who to ask', whoSubtitle) + legH + 30);
+    heading('Who to ask', whoSubtitle);
     page.delegations.forEach((d, i) => {
       const lx = X + i * (legW + legGap);
       pdf.ring(lx, y, legW, legH, 3.5, LINE, TILE);
       const head = `${ordinal(d.district)} District`;
-      pdf.at(head, { x: lx + 6, top: y + 4.5, width: legW - 12, size: 7.8, bold: true, colour: INK });
-      pdf.at(`·  ${d.percent}% of ${page.shortName}`, {
-        x: lx + 6 + measure(head, 'bold', 7.8) + 4, top: y + 5.5, width: legW, size: 6.6, colour: INK_MUTED,
-      });
-      d.members.forEach((member, row) => {
-        const my = y + 4.5 + 10.5 + row * 9.4;
-        pdf.at(member.chamber, { x: lx + 6, top: my, width: 24, size: 7.4, bold: true, colour: INK });
-        pdf.at(member.name, { x: lx + 6 + 22, top: my, width: legW - 30, size: 7.4, colour: INK_SECONDARY });
+      pdf.at(head, { x: lx + 7, top: y + 5, width: legW - 14, size: 8.2, bold: true, colour: INK });
+      // The share reads "74% of Tacoma" where it fits and just "74%" where a
+      // long district name would run out of the box.
+      const room = legW - 14 - measure(head, 'bold', 8.2) - 8;
+      const full = `·  ${d.percent}% of ${page.shortName}`;
+      const share = measure(full, 'regular', 7) <= room ? full : `·  ${d.percent}%`;
+      pdf.at(share, { x: lx + 7 + measure(head, 'bold', 8.2) + 5, top: y + 6, width: room + 2, size: 7, colour: INK_MUTED });
+      d.members.forEach((member, r) => {
+        const my = y + 5 + 11.5 + r * 10.4;
+        pdf.at(member.chamber, { x: lx + 7, top: my, width: 26, size: 8, bold: true, colour: INK });
+        pdf.at(member.name, { x: lx + 7 + 25, top: my, width: legW - 34, size: 8, colour: INK_SECONDARY });
       });
     });
-    y += legH + 4;
+    y += legH + 5;
   }
   const how: Run[] = [
     { text: 'School and legislative boundaries do not match, so ' },
     { text: 'confirm yours from your home address at app.leg.wa.gov/DistrictFinder', bold: true, colour: INK },
     { text: '. Contact details: ' },
     { text: 'leg.wa.gov/legislators', bold: true, colour: INK },
-    { text: page.moreDelegations > 0
-        ? `. ${page.shortName} also overlaps ${page.moreDelegations} more legislative ${page.moreDelegations === 1 ? 'district' : 'districts'}; see ${siteHost}/take-action.`
-        : '.' },
+    {
+      text:
+        page.moreDelegations > 0
+          ? `. ${page.shortName} also overlaps ${page.moreDelegations} more legislative ${page.moreDelegations === 1 ? 'district' : 'districts'}; see ${siteHost}/take-action.`
+          : '.',
+    },
   ];
-  y += pdf.rich(how, { x: X, top: y, width: W, size: 7, colour: INK_SECONDARY, leading: 9 });
+  const howH = pdf.rich(how, { x: X, top: 0, width: W, size: 7.6, leading: 9.8, measureOnly: true });
+  need(howH);
+  y += pdf.rich(how, { x: X, top: y, width: W, size: 7.6, colour: INK_SECONDARY, leading: 9.8 });
 
-  // --- Something to say -------------------------------------------------------------
+  // --- Something to say -----------------------------------------------------------------------------
   if (attempt.message) {
-    y += 5;
-    const innerW = W - 8.2 - 6;
+    y += 7;
+    const innerW = W - 9.4 - 8;
     const quote = `“${page.message}”`;
-    const quoteH = pdf.at(quote, { x: 0, top: 0, width: innerW, size: 7.8, leading: 10.2, measureOnly: true });
-    const boxH = 4.5 + 7.6 + quoteH + 4.5;
+    const quoteH = pdf.at(quote, { x: 0, top: 0, width: innerW, size: 8.4, leading: 11, measureOnly: true });
+    const boxH = 5 + 8.4 + quoteH + 5;
+    need(boxH);
     pdf.box(X, y, W, boxH, WASH);
-    pdf.box(X, y, 2.2, boxH, ACCENT);
-    pdf.at('SAY IT IN THIRTY SECONDS', { x: X + 8.2, top: y + 4.5, width: innerW, size: 6.4, bold: true, colour: ACCENT });
-    pdf.at(quote, { x: X + 8.2, top: y + 4.5 + 7.6, width: innerW, size: 7.8, colour: INK, leading: 10.2 });
+    pdf.box(X, y, 2.4, boxH, ACCENT);
+    pdf.at('SAY IT IN THIRTY SECONDS', { x: X + 9.4, top: y + 5, width: innerW, size: 6.8, bold: true, colour: ACCENT });
+    pdf.at(quote, { x: X + 9.4, top: y + 5 + 8.4, width: innerW, size: 8.4, colour: INK, leading: 11 });
     y += boxH;
   }
 
-  // --- Footer ---------------------------------------------------------------------------
-  const footer =
-    `All numbers come from OSPI records for ${meta.year}` +
-    (page.big3
-      ? '; the Big 3 figures are those of the AESD Big 3 dashboard, built from OSPI F-196 actuals and apportionment.'
-      : '.') +
-    ' Each district is compared with the other 314 in Washington. Not an official fiscal or legal source: ' +
-    'an independent civic education project, not affiliated with OSPI or the Washington State Legislature. ' +
-    `Sources: ${siteHost}/sources`;
-  const footerH = pdf.at(footer, { x: X, top: 0, width: W, size: 5.9, leading: 7.7, measureOnly: true });
-  const footerTop = PAGE_H - FOOT_BOTTOM - footerH - 4;
-  pdf.box(X, footerTop, W, 0.7, LINE);
-  pdf.at(footer, { x: X, top: footerTop + 3.5, width: W, size: 5.9, colour: INK_MUTED, leading: 7.7 });
+  // --- Footer, once the page count is known ---------------------------------------------------------
+  const pages = pdf.pageCount;
+  for (let i = 0; i < pages; i += 1) {
+    pdf.onPage(i, () => {
+      pdf.box(X, footerTop, W, 0.7, LINE);
+      pdf.at(footer, { x: X, top: footerTop + 3.5, width: W - pageLabelW, size: 6, colour: INK_MUTED, leading: 7.8 });
+      pdf.at(`Page ${i + 1} of ${pages}`, {
+        x: X + W - pageLabelW, top: footerTop + 3.5, width: pageLabelW, size: 6, colour: INK_MUTED, align: 'right',
+      });
+    });
+  }
 
-  return { bottom: y, limit: footerTop - 6 };
+  return { overflow };
 }
 
 export type SheetFit = {
   /** Index into ATTEMPTS; 0 means nothing had to be left off. */
   attempt: number;
-  bottom: number;
-  limit: number;
+  pages: number;
   fits: boolean;
 };
 
 /**
- * Draw the sheet, dropping the least important parts one at a time until it
- * fits on the page: the spoken message first, then the trend chart, then the
- * lowest-ranked problems. Almost every district fits whole.
+ * Draw the brief, dropping the least important parts one at a time until it
+ * fits on two pages: the spoken message first, then the lowest-ranked
+ * problems. Almost every district fits whole.
  */
-function renderSheet(page: OnePage, meta: BriefPdfMeta): { pdf: Pdf; fit: SheetFit } {
+function renderBrief(page: OnePage, meta: BriefPdfMeta): { pdf: Pdf; fit: SheetFit } {
   let result: { pdf: Pdf; fit: SheetFit } | null = null;
   for (let attempt = 0; attempt < ATTEMPTS.length; attempt += 1) {
-    const pdf = new Pdf();
-    const { bottom, limit } = drawOnePage(pdf, page, meta, ATTEMPTS[attempt]);
-    result = { pdf, fit: { attempt, bottom, limit, fits: bottom <= limit } };
+    const pdf = new Pdf(PDF_SCALE);
+    const { overflow } = drawBrief(pdf, page, meta, ATTEMPTS[attempt]);
+    result = {
+      pdf,
+      fit: { attempt, pages: pdf.pageCount, fits: pdf.pageCount <= MAX_PAGES && !overflow },
+    };
     if (result.fit.fits) break;
   }
   return result!;
 }
 
-/** Exposed so the tests can prove every district fits on one sheet. */
+/** Exposed so the tests can prove every district fits in two pages. */
 export function sheetFitForTest(code: string, meta: BriefPdfMeta): SheetFit | null {
   const page = onePageFor(code);
-  return page ? renderSheet(page, meta).fit : null;
+  return page ? renderBrief(page, meta).fit : null;
 }
+
+/** How much larger than its layout units the brief prints; for the overflow test. */
+export const pdfScaleForTest = PDF_SCALE;
 
 /** Build the PDF. Returns a Blob ready to download. */
 export function buildBriefPdf(brief: DistrictBrief, meta: BriefPdfMeta): Blob {
   const page = onePageFor(brief.code);
   if (!page) throw new Error(`No one-page brief for district ${brief.code}`);
-  return renderSheet(page, meta).pdf.build(null);
+  return renderBrief(page, meta).pdf.build();
 }
 
 /**
@@ -1020,11 +1142,10 @@ export function briefFileName(brief: DistrictBrief): string {
 }
 
 /**
- * Trigger a direct download of the brief. The button normally opens the PDF in
- * a tab (`window.open` on an object URL from `buildBriefPdf`), where it can be
- * read, printed or saved; this is the fallback for when that tab could not be
- * opened (a strict popup blocker, most often) - a reader who wanted the brief
- * should still get the file rather than nothing.
+ * Hand the brief to the browser as a download, saved as the district's own name.
+ * A download is how the file gets that name: a PDF opened in a tab from a blob
+ * address has none, and saving it from the viewer leaves the reader to rename a
+ * string of hex digits. It also opens no tab, so nothing can be blocked.
  *
  * The object URL is revoked on the next tick rather than immediately: Safari
  * reads the blob asynchronously after the synthetic click, and revoking too

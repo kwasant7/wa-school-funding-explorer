@@ -43,91 +43,82 @@ function PrinterIcon() {
   );
 }
 
+function DownloadIcon() {
+  return (
+    <svg
+      aria-hidden
+      viewBox="0 0 24 24"
+      className="h-5 w-5 shrink-0"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.9"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M12 3.5v11" />
+      <path d="m7.5 10.5 4.5 4.5 4.5-4.5" />
+      <path d="M4.5 17.5v2.2c0 .5.4.8.8.8h13.4c.4 0 .8-.3.8-.8v-2.2" />
+    </svg>
+  );
+}
+
 /**
- * Open the brief as a PDF in a new tab, so it lands where a link would - a
- * page the reader can read, print, or save on their own terms - rather than
- * an unannounced file dropping into their downloads folder.
+ * Download the brief as a PDF, saved under the district's own name.
+ *
+ * The file is handed to the browser as a download rather than opened in a tab.
+ * A PDF opened from a blob address has no file name of its own - saving it from
+ * the viewer gave a string of hex digits and left the reader to rename it - but
+ * a download carries the name with it, so "Tacoma School District.pdf" lands in
+ * the downloads folder ready to print or attach. It also needs no new tab, so
+ * there is nothing for a popup blocker to refuse.
  *
  * It is drawn as a full-width panel with a solid button because the printed
  * copy is the point of the brief - the thing a parent carries to a board
  * meeting - and a pale outlined chip beside the heading was easy to miss.
  *
- * The PDF is built in the background once the panel mounts, and the click
- * opens its address directly. The tab used to be opened blank first - before
- * the generator had even loaded - to stay inside the click for popup blockers,
- * which left an about:blank tab sitting there while the file was made. With
- * the PDF already built, the click can open the real thing synchronously.
- * The generator still loads as a separate chunk after the page is up, so it
- * adds nothing to the page's first load.
+ * The generator loads as a separate chunk once the panel is on screen, so the
+ * click can build and hand over the file at once, inside the gesture that
+ * asked for it, and the page's first load carries none of it.
  */
 type PdfLib = typeof import('@/lib/brief-pdf');
 
 function DownloadBriefButton({ brief }: { brief: Brief }) {
   const [state, setState] = useState<'idle' | 'working' | 'error'>('idle');
-  // The generator module and a ready-made PDF's object URL, held for the click.
   const lib = useRef<PdfLib | null>(null);
-  const pdfUrl = useRef<string | null>(null);
-
-  const metaNow = useCallback(
-    () => ({
-      year: DIAGNOSIS_YEAR,
-      siteUrl: `${window.location.origin}${BASE_PATH}`,
-    }),
-    []
-  );
 
   useEffect(() => {
     let cancelled = false;
-    let url: string | null = null;
     import('@/lib/brief-pdf')
       .then((mod) => {
-        if (cancelled) return;
-        lib.current = mod;
-        url = URL.createObjectURL(mod.buildBriefPdf(brief, metaNow()));
-        pdfUrl.current = url;
+        if (!cancelled) lib.current = mod;
       })
       .catch(() => {
-        // Nothing to report yet: a click before this finished builds it again,
-        // and says so if that fails too.
+        // A click before this finished loads it again, and says so if that fails too.
       });
     return () => {
       cancelled = true;
-      pdfUrl.current = null;
-      if (url) {
-        // Not revoked at once: a tab opened from it may still be loading.
-        const stale = url;
-        window.setTimeout(() => URL.revokeObjectURL(stale), 60_000);
-      }
     };
-  }, [brief, metaNow]);
+  }, []);
 
-  const openBrief = useCallback(async () => {
-    const meta = metaNow();
-    let ready =
-      lib.current && pdfUrl.current ? { mod: lib.current, url: pdfUrl.current } : null;
-
-    if (!ready) {
-      // Clicked before the background build finished, or it failed: build now.
-      setState('working');
-      try {
-        const mod = await import('@/lib/brief-pdf');
-        const url = URL.createObjectURL(mod.buildBriefPdf(brief, meta));
-        window.setTimeout(() => URL.revokeObjectURL(url), 60_000);
-        ready = { mod, url };
-      } catch {
-        setState('error');
-        return;
+  const download = useCallback(async () => {
+    const meta = {
+      year: DIAGNOSIS_YEAR,
+      siteUrl: `${window.location.origin}${BASE_PATH}`,
+    };
+    try {
+      let mod = lib.current;
+      if (!mod) {
+        // Clicked before the generator arrived: wait for it.
+        setState('working');
+        mod = await import('@/lib/brief-pdf');
+        lib.current = mod;
       }
+      mod.downloadBriefPdf(brief, meta);
+      setState('idle');
+    } catch {
+      setState('error');
     }
-
-    // A tab opened straight onto the PDF, so the reader can read, print or
-    // save it. If a strict popup blocker refuses it, fall back to a direct
-    // download so they still get the file instead of nothing.
-    if (!window.open(ready.url, '_blank')) {
-      ready.mod.downloadBriefPdf(brief, meta);
-    }
-    setState('idle');
-  }, [brief, metaNow]);
+  }, [brief]);
 
   return (
     <div className="mt-5 flex flex-col gap-4 rounded-2xl border-2 border-accent bg-accent-wash p-4 sm:flex-row sm:items-center sm:justify-between sm:p-5">
@@ -143,21 +134,21 @@ function DownloadBriefButton({ brief }: { brief: Brief }) {
             Print this brief
           </p>
           <p className="mt-0.5 text-sm text-ink-secondary">
-            A one-page, print-ready PDF: this district&apos;s numbers, its Big 3
-            funding gaps, what to ask for, and who to ask. Bring a copy to a
-            school board meeting or hand it to your legislator.
+            A print-ready, two-page PDF: where this district stands on page
+            one, and what to ask for and who to ask on page two. Bring a copy
+            to a school board meeting or hand it to your legislator.
           </p>
         </div>
       </div>
       <div className="shrink-0">
         <button
           type="button"
-          onClick={() => void openBrief()}
+          onClick={() => void download()}
           disabled={state === 'working'}
           className="inline-flex min-h-[48px] w-full items-center justify-center gap-2.5 rounded-xl bg-accent px-6 py-3 text-base font-bold text-white shadow-sm transition-colors hover:bg-accent-deep disabled:cursor-not-allowed disabled:opacity-70 sm:w-auto"
         >
-          <PrinterIcon />
-          {state === 'working' ? 'Preparing…' : 'Open printable PDF'}
+          <DownloadIcon />
+          {state === 'working' ? 'Preparing…' : 'Download PDF'}
         </button>
         {/* Announced rather than only coloured, so the failure is not silent. */}
         <p role="status" aria-live="polite" className="sr-only">
@@ -165,7 +156,7 @@ function DownloadBriefButton({ brief }: { brief: Brief }) {
         </p>
         {state === 'error' && (
           <p className="mt-1.5 text-xs text-critical">
-            Could not open the PDF. Try again, or print this page instead.
+            Could not create the PDF. Try again, or print this page instead.
           </p>
         )}
       </div>

@@ -1,5 +1,5 @@
 /**
- * Tests for the one-page brief PDF.
+ * Tests for the two-page brief PDF.
  *
  * A malformed PDF fails in the reader, not at build time, so these assert the
  * structural invariants a viewer depends on - chiefly that every xref offset
@@ -7,9 +7,10 @@
  * which is exactly the kind of thing that breaks silently when the generator
  * changes and is invisible until someone opens the download.
  *
- * The brief is meant to be one sheet of paper for every district, so the
- * layout is checked against all of them rather than a sample: whether it fits
- * depends on how many problems, delegations and words a district has.
+ * The brief is meant to be two pages for every district, in type large enough
+ * to read comfortably, so the layout is checked against all of them rather than
+ * a sample: whether it fits depends on how many problems, delegations and words
+ * a district has.
  */
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
@@ -20,6 +21,7 @@ import {
   buildBriefPdf,
   briefFileName,
   measureForTest,
+  pdfScaleForTest,
   pdfStringForTest,
   sheetFitForTest,
 } from '@/lib/brief-pdf';
@@ -70,6 +72,11 @@ function readable(pdf: string): string {
   return drawnText(pdf)
     .map((piece) => piece.text)
     .join(' ');
+}
+
+/** The text of each page, in order: every page is its own content stream. */
+function pageTexts(pdf: string): string[] {
+  return Array.from(pdf.matchAll(/stream\n([\s\S]*?)\nendstream/g), (m) => readable(m[1]));
 }
 
 describe('brief PDF structure', () => {
@@ -124,13 +131,26 @@ describe('brief PDF structure', () => {
     assert.equal(pdf.includes('/FontFile'), false);
   });
 
-  it('is exactly one US Letter page, whatever the district', async () => {
+  it('is two US Letter pages, whatever the district', async () => {
     for (const code of [TACOMA, BELLEVUE, SEATTLE, STEADY, ENHANCED_OVERSIGHT, NO_BIG3]) {
       const pdf = await bytesFor(code);
-      assert.equal((pdf.match(/\/Type \/Page\b/g) ?? []).length, 1, `${code} is not one page`);
-      assert.ok(pdf.includes('/Count 1'));
+      assert.equal((pdf.match(/\/Type \/Page\b/g) ?? []).length, 2, `${code} is not two pages`);
+      assert.ok(pdf.includes('/Count 2'));
       assert.ok(pdf.includes('/MediaBox [0 0 612 792]'));
     }
+  });
+
+  it('puts where the district stands on page one and what to do about it on page two', async () => {
+    const [one, two] = pageTexts(await bytesFor(TACOMA));
+    for (const expected of ['Where the money comes from', 'funding gaps', 'Page 1 of 2']) {
+      assert.ok(one.includes(expected), `page one is missing "${expected}"`);
+    }
+    for (const expected of ['What else needs to change', 'Who to ask', 'SAY IT IN THIRTY SECONDS', 'Page 2 of 2']) {
+      assert.ok(two.includes(expected), `page two is missing "${expected}"`);
+    }
+    // And not the other way round: the asks are a page that can travel alone.
+    assert.equal(one.includes('What else needs to change'), false);
+    assert.equal(two.includes('Where the money comes from'), false);
   });
 
   it('is small enough to be a reasonable download', async () => {
@@ -139,20 +159,19 @@ describe('brief PDF structure', () => {
   });
 });
 
-describe('brief PDF fits on one sheet for every district', () => {
-  it('lays all 315 out above the footer, nearly all without dropping anything', () => {
+describe('brief PDF fits in two pages for every district', () => {
+  it('lays all 315 out in two pages, nearly all without dropping anything', () => {
     const dropped: string[] = [];
     for (const code of ALL_CODES) {
       const fit = sheetFitForTest(code, META);
-      assert.ok(fit, `no sheet for ${code}`);
-      assert.ok(
-        fit.fits,
-        `${code} does not fit: content ends at ${fit.bottom.toFixed(1)}pt, limit ${fit.limit.toFixed(1)}pt`
-      );
+      assert.ok(fit, `no brief for ${code}`);
+      assert.ok(fit.fits, `${code} does not fit: ${fit.pages} pages after dropping ${fit.attempt} things`);
+      assert.ok(fit.pages <= 2, `${code} runs to ${fit.pages} pages`);
       if (fit.attempt > 0) dropped.push(code);
     }
-    // Leaving out the spoken message or the trend chart is the designed
-    // fallback, but it should be the exception, not how the sheet usually looks.
+    // Leaving out the spoken message or the lowest-ranked problems is the
+    // designed fallback, but it should be the exception, not how the brief
+    // usually looks.
     assert.ok(
       dropped.length <= ALL_CODES.length * 0.05,
       `${dropped.length} districts had to drop something: ${dropped.slice(0, 10).join(', ')}`
@@ -163,21 +182,34 @@ describe('brief PDF fits on one sheet for every district', () => {
     /*
       The whole point of the metrics table: if a width is wrong, text runs off
       the page and the reader gives no warning. Re-measure each drawn word from
-      its own font, size and x-position.
+      its own font, size and x-position. Positions are in layout units, which
+      the page magnifies by the scale; the margins are checked in points.
     */
+    const scale = pdfScaleForTest;
     const LEFT_EDGE = 36 - 0.5;
     const RIGHT_EDGE = 612 - 36 + 0.5; // page width less the margin, with rounding slack
     for (const code of ALL_CODES) {
       const words = drawnText(await bytesFor(code));
-      assert.ok(words.length > 80, `${code}: expected many drawn words, saw ${words.length}`);
+      assert.ok(words.length > 150, `${code}: expected many drawn words, saw ${words.length}`);
       for (const word of words) {
-        const right = word.x + measureForTest(word.text, word.font, word.size);
+        const left = word.x * scale;
+        const right = (word.x + measureForTest(word.text, word.font, word.size)) * scale;
         assert.ok(
-          word.x >= LEFT_EDGE && right <= RIGHT_EDGE,
-          `${code}: "${word.text.slice(0, 40)}" spans ${word.x.toFixed(1)}-${right.toFixed(1)}pt, outside ${LEFT_EDGE}-${RIGHT_EDGE}`
+          left >= LEFT_EDGE && right <= RIGHT_EDGE,
+          `${code}: "${word.text.slice(0, 40)}" spans ${left.toFixed(1)}-${right.toFixed(1)}pt, outside ${LEFT_EDGE}-${RIGHT_EDGE}`
         );
       }
     }
+  });
+
+  it('prints type large enough to read: nothing under 8pt, body text over 10pt', async () => {
+    // One page of seven-point type is what this replaced.
+    const words = drawnText(await bytesFor(TACOMA));
+    const sizes = words.map((w) => w.size * pdfScaleForTest);
+    assert.ok(Math.min(...sizes) >= 8, `smallest type is ${Math.min(...sizes).toFixed(1)}pt`);
+    const fact = words.find((w) => w.text === 'voted');
+    assert.ok(fact, 'levy-cap sentence not found');
+    assert.ok(fact.size * pdfScaleForTest >= 10, `body type is ${(fact.size * pdfScaleForTest).toFixed(1)}pt`);
   });
 });
 
