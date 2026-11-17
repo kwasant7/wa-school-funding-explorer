@@ -6,7 +6,7 @@ import { LATEST } from '@/lib/years';
 import regionalizationJson from '@/data/regionalization.json';
 import DistrictCombobox from '@/components/DistrictCombobox';
 import { fmtInt, fmtMoneyFull } from '@/lib/format';
-import { RESERVE_BENCHMARK_PCT, RESERVE_THIN_PCT } from '@/lib/reserves';
+import { RESERVE_BENCHMARK_PCT, RESERVE_THIN_PCT, reserveDays } from '@/lib/reserves';
 
 type MapFile = {
   w: number;
@@ -875,9 +875,10 @@ export default function WaMap({
           </>
         ) : (
           <>
-            <span className="font-medium text-ink">Reserve ratio ({year}):</span>
+            <span className="font-medium text-ink">
+              Savings, as days of spending ({year}):
+            </span>
             <span className="flex items-center gap-2">
-              <span className="text-critical font-medium">no cushion</span>
               <span className="relative mb-5 inline-block h-3 w-40 md:w-56 rounded-sm" aria-hidden>
                 <span
                   className="absolute inset-0 rounded-sm"
@@ -897,10 +898,16 @@ export default function WaMap({
                   guessed: every stop sits where the map's own colour scale
                   puts it, and the open district is marked at its own value.
                 */}
-                {RESERVE_LEGEND_TICKS.map(([value, label]) => (
+                {RESERVE_LEGEND_TICKS.map(([value, label], i) => (
                   <span
                     key={label}
-                    className="absolute top-full mt-1.5 -translate-x-1/2 whitespace-nowrap text-[10px] leading-none text-ink-muted"
+                    // The last number is right-aligned so it stays under the bar
+                    // instead of running into the text beside it.
+                    className={`absolute top-full mt-1.5 whitespace-nowrap text-[10px] leading-none text-ink-muted ${
+                      i === RESERVE_LEGEND_TICKS.length - 1
+                        ? '-translate-x-full'
+                        : '-translate-x-1/2'
+                    }`}
                     style={{ left: `${reserveLegendAt(value)}%` }}
                   >
                     {label}
@@ -916,11 +923,10 @@ export default function WaMap({
                   />
                 )}
               </span>
-              <span className="text-good font-medium">strong savings</span>
             </span>
             <span className="text-ink-muted">
-              | tick = 60 days of spending (about 16%), the State Auditor&apos;s
-              benchmark
+              Red: little or none · Green: plenty · Black line: 60 days, the State
+              Auditor&apos;s goal
             </span>
           </>
         )}
@@ -935,8 +941,17 @@ export default function WaMap({
               style={{ background: selectedFill ?? 'transparent' }}
               aria-hidden
             />
-            <span data-no-translate>{selectedName}</span> (open below, in full color; the
-            rest are lightened)
+            <span>
+              <span data-no-translate className="font-medium text-ink">
+                {selectedName}
+              </span>
+              {metric === 'reserveRatio' && selectedReserve != null
+                ? selectedReserve < 0
+                  ? `: no savings left (${selectedReserve.toFixed(1)}%)`
+                  : `: ${reserveDays(selectedReserve)} days of savings (${selectedReserve.toFixed(1)}%)`
+                : ' (open below)'}
+              . Other districts are shown lighter.
+            </span>
           </span>
         )}
         <span className="text-ink-muted">
