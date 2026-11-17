@@ -107,12 +107,21 @@ const RESERVE_STOPS: [number, string][] = [
   [RESERVE_BENCHMARK_PCT, '#5faa4a'], // the Auditor's 60 days
   [24.7, '#0b7a28'], // 90 days - strong reserves
 ];
-const RESERVE_LO = RESERVE_STOPS[0][0];
+/*
+  The legend bar starts at zero. The map's scale reaches down to -5% so a
+  district that has spent more than it saved still gets a colour (the darkest
+  red), but on the bar that stretch was an unlabelled sixth of its width, which
+  put a district with 2 days of savings well in from the left end. Anything
+  below zero now sits at the bar's left end, and the legend text names the
+  darkest red.
+*/
+const RESERVE_LEGEND_LO = 0;
 const RESERVE_HI = RESERVE_STOPS[RESERVE_STOPS.length - 1][0];
+const RESERVE_LEGEND_STOPS = RESERVE_STOPS.filter(([v]) => v >= RESERVE_LEGEND_LO);
 /** Where a reserve ratio falls along the legend bar, in percent. */
 const reserveLegendAt = (rr: number) =>
-  ((rr - RESERVE_LO) / (RESERVE_HI - RESERVE_LO)) * 100;
-/** The numbers printed under the legend bar: no cushion, then 30, 60 and 90 days. */
+  ((rr - RESERVE_LEGEND_LO) / (RESERVE_HI - RESERVE_LEGEND_LO)) * 100;
+/** The numbers printed under the legend bar: none, then 30, 60 and 90 days. */
 const RESERVE_LEGEND_TICKS: [number, string][] = [
   [0, '0'],
   [RESERVE_THIN_PCT, '30 days'],
@@ -883,7 +892,7 @@ export default function WaMap({
                 <span
                   className="absolute inset-0 rounded-sm"
                   style={{
-                    background: `linear-gradient(to right, ${RESERVE_STOPS.map(
+                    background: `linear-gradient(to right, ${RESERVE_LEGEND_STOPS.map(
                       ([v, c]) => `${legendTone(c)} ${reserveLegendAt(v)}%`
                     ).join(', ')})`,
                   }}
@@ -901,12 +910,14 @@ export default function WaMap({
                 {RESERVE_LEGEND_TICKS.map(([value, label], i) => (
                   <span
                     key={label}
-                    // The last number is right-aligned so it stays under the bar
+                    // The end numbers hug the bar's ends so they stay under it
                     // instead of running into the text beside it.
                     className={`absolute top-full mt-1.5 whitespace-nowrap text-[10px] leading-none text-ink-muted ${
-                      i === RESERVE_LEGEND_TICKS.length - 1
-                        ? '-translate-x-full'
-                        : '-translate-x-1/2'
+                      i === 0
+                        ? ''
+                        : i === RESERVE_LEGEND_TICKS.length - 1
+                          ? '-translate-x-full'
+                          : '-translate-x-1/2'
                     }`}
                     style={{ left: `${reserveLegendAt(value)}%` }}
                   >
@@ -925,8 +936,8 @@ export default function WaMap({
               </span>
             </span>
             <span className="text-ink-muted">
-              Red: little or none · Green: plenty · Black line: 60 days, the State
-              Auditor&apos;s goal
+              Red: little or none (darkest: less than zero) · Green: plenty · Black
+              line: 60 days, the State Auditor&apos;s goal
             </span>
           </>
         )}
