@@ -112,6 +112,13 @@ const RESERVE_HI = RESERVE_STOPS[RESERVE_STOPS.length - 1][0];
 /** Where a reserve ratio falls along the legend bar, in percent. */
 const reserveLegendAt = (rr: number) =>
   ((rr - RESERVE_LO) / (RESERVE_HI - RESERVE_LO)) * 100;
+/** The numbers printed under the legend bar: no cushion, then 30, 60 and 90 days. */
+const RESERVE_LEGEND_TICKS: [number, string][] = [
+  [0, '0'],
+  [RESERVE_THIN_PCT, '30 days'],
+  [RESERVE_BENCHMARK_PCT, '60 days'],
+  [RESERVE_STOPS[RESERVE_STOPS.length - 1][0], '90 days'],
+];
 
 function reserveColor(rr: number) {
   const stops = RESERVE_STOPS;
@@ -305,6 +312,19 @@ export default function WaMap({
   const selectedName = selectedShape
     ? info.get(selectedShape.code)?.name ?? selectedShape.name
     : null;
+  const selectedReserve = selectedShape
+    ? info.get(selectedShape.code)?.reserveRatio ?? null
+    : null;
+  // The open district keeps its true colour; the rest of the map is lightened.
+  const selectedFill = selectedShape ? fills.get(selectedShape.code) ?? null : null;
+  /*
+    The legend is drawn the way the map is. Lightening shifts how a colour
+    reads, not just how strong it is - an olive green washed toward the page
+    colour looks like pale yellow - so a full-strength legend beside a lightened
+    map put the same value in a greener place on the bar than on the map.
+  */
+  const legendTone = (color: string) =>
+    selectedShape ? lerpColor(color, SPOTLIGHT_TOWARD, SPOTLIGHT_FADE) : color;
 
   const fadedFills = useMemo(() => {
     const faded = new Map<string, string>();
@@ -818,7 +838,7 @@ export default function WaMap({
               </span>
               <span
                 className="inline-block h-3 w-32 md:w-44 rounded-sm"
-                style={{ background: `linear-gradient(to right, ${RAMP.join(', ')})` }}
+                style={{ background: `linear-gradient(to right, ${RAMP.map(legendTone).join(', ')})` }}
                 aria-hidden
               />
               <span className="font-medium" style={{ color: RAMP_HIGH_LABEL }}>
@@ -840,7 +860,9 @@ export default function WaMap({
               </span>
               <span
                 className="inline-block h-3 w-40 md:w-56 rounded-sm"
-                style={{ background: `linear-gradient(to right, ${REGION_RAMP.join(', ')})` }}
+                style={{
+                  background: `linear-gradient(to right, ${REGION_RAMP.map(legendTone).join(', ')})`,
+                }}
                 aria-hidden
               />
               <span className="font-medium" style={{ color: REGION_HIGH_LABEL }}>
@@ -856,12 +878,12 @@ export default function WaMap({
             <span className="font-medium text-ink">Reserve ratio ({year}):</span>
             <span className="flex items-center gap-2">
               <span className="text-critical font-medium">no cushion</span>
-              <span className="relative inline-block h-3 w-40 md:w-56 rounded-sm" aria-hidden>
+              <span className="relative mb-5 inline-block h-3 w-40 md:w-56 rounded-sm" aria-hidden>
                 <span
                   className="absolute inset-0 rounded-sm"
                   style={{
                     background: `linear-gradient(to right, ${RESERVE_STOPS.map(
-                      ([v, c]) => `${c} ${reserveLegendAt(v)}%`
+                      ([v, c]) => `${legendTone(c)} ${reserveLegendAt(v)}%`
                     ).join(', ')})`,
                   }}
                 />
@@ -870,6 +892,29 @@ export default function WaMap({
                   className="absolute -top-1 -bottom-1 w-px bg-ink"
                   style={{ left: `${reserveLegendAt(RESERVE_BENCHMARK_PCT)}%` }}
                 />
+                {/*
+                  Numbers under the bar, so a position can be read rather than
+                  guessed: every stop sits where the map's own colour scale
+                  puts it, and the open district is marked at its own value.
+                */}
+                {RESERVE_LEGEND_TICKS.map(([value, label]) => (
+                  <span
+                    key={label}
+                    className="absolute top-full mt-1.5 -translate-x-1/2 whitespace-nowrap text-[10px] leading-none text-ink-muted"
+                    style={{ left: `${reserveLegendAt(value)}%` }}
+                  >
+                    {label}
+                  </span>
+                ))}
+                {selectedReserve != null && selectedFill && (
+                  <span
+                    className="absolute top-1/2 h-4 w-4 -translate-x-1/2 -translate-y-1/2 rounded-sm border-2 border-ink"
+                    style={{
+                      left: `${Math.min(100, Math.max(0, reserveLegendAt(selectedReserve)))}%`,
+                      background: selectedFill,
+                    }}
+                  />
+                )}
               </span>
               <span className="text-good font-medium">strong savings</span>
             </span>
@@ -886,10 +931,12 @@ export default function WaMap({
         {selectedName && (
           <span className="flex items-center gap-1.5">
             <span
-              className="inline-block w-3 h-3 rounded-sm border-2 border-ink bg-transparent"
+              className="inline-block w-3 h-3 rounded-sm border-2 border-ink"
+              style={{ background: selectedFill ?? 'transparent' }}
               aria-hidden
             />
-            <span data-no-translate>{selectedName}</span> (open below)
+            <span data-no-translate>{selectedName}</span> (open below, in full color; the
+            rest are lightened)
           </span>
         )}
         <span className="text-ink-muted">
