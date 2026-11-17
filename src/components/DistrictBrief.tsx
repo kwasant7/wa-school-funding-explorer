@@ -11,7 +11,7 @@
  * words; it was accurate and almost nobody would have finished it.
  */
 
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import StatTile from '@/components/StatTile';
 import IssueVisual from '@/components/brief/IssueVisual';
@@ -52,43 +52,82 @@ function PrinterIcon() {
  * copy is the point of the brief - the thing a parent carries to a board
  * meeting - and a pale outlined chip beside the heading was easy to miss.
  *
- * The generator is imported on click rather than with the page. It is only
- * needed by the fraction of visitors who actually want the file, and this page
- * already carries the heaviest bundle on the site - there is no reason to make
- * everyone pay for it up front.
+ * The PDF is built in the background once the panel mounts, and the click
+ * opens its address directly. The tab used to be opened blank first - before
+ * the generator had even loaded - to stay inside the click for popup blockers,
+ * which left an about:blank tab sitting there while the file was made. With
+ * the PDF already built, the click can open the real thing synchronously.
+ * The generator still loads as a separate chunk after the page is up, so it
+ * adds nothing to the page's first load.
  */
+type PdfLib = typeof import('@/lib/brief-pdf');
+
 function DownloadBriefButton({ brief }: { brief: Brief }) {
   const [state, setState] = useState<'idle' | 'working' | 'error'>('idle');
+  // The generator module and a ready-made PDF's object URL, held for the click.
+  const lib = useRef<PdfLib | null>(null);
+  const pdfUrl = useRef<string | null>(null);
+
+  const metaNow = useCallback(
+    () => ({
+      year: DIAGNOSIS_YEAR,
+      siteUrl: `${window.location.origin}${BASE_PATH}`,
+    }),
+    []
+  );
+
+  useEffect(() => {
+    let cancelled = false;
+    let url: string | null = null;
+    import('@/lib/brief-pdf')
+      .then((mod) => {
+        if (cancelled) return;
+        lib.current = mod;
+        url = URL.createObjectURL(mod.buildBriefPdf(brief, metaNow()));
+        pdfUrl.current = url;
+      })
+      .catch(() => {
+        // Nothing to report yet: a click before this finished builds it again,
+        // and says so if that fails too.
+      });
+    return () => {
+      cancelled = true;
+      pdfUrl.current = null;
+      if (url) {
+        // Not revoked at once: a tab opened from it may still be loading.
+        const stale = url;
+        window.setTimeout(() => URL.revokeObjectURL(stale), 60_000);
+      }
+    };
+  }, [brief, metaNow]);
 
   const openBrief = useCallback(async () => {
-    setState('working');
-    /*
-      Opened synchronously, before the PDF exists or the generator module has
-      even loaded - see the comment on openBriefPdf(). By the time the
-      dynamic import below resolves, this click is no longer "live" as far as
-      a popup blocker is concerned, so the tab has to already exist.
-    */
-    const tab = window.open('', '_blank');
-    try {
-      const meta = {
-        year: DIAGNOSIS_YEAR,
-        siteUrl: `${window.location.origin}${BASE_PATH}`,
-      };
-      if (tab) {
-        const { openBriefPdf } = await import('@/lib/brief-pdf');
-        openBriefPdf(brief, meta, tab);
-      } else {
-        // Popup blocked - fall back to a direct download so the reader still
-        // gets the file instead of nothing.
-        const { downloadBriefPdf } = await import('@/lib/brief-pdf');
-        downloadBriefPdf(brief, meta);
+    const meta = metaNow();
+    let ready =
+      lib.current && pdfUrl.current ? { mod: lib.current, url: pdfUrl.current } : null;
+
+    if (!ready) {
+      // Clicked before the background build finished, or it failed: build now.
+      setState('working');
+      try {
+        const mod = await import('@/lib/brief-pdf');
+        const url = URL.createObjectURL(mod.buildBriefPdf(brief, meta));
+        window.setTimeout(() => URL.revokeObjectURL(url), 60_000);
+        ready = { mod, url };
+      } catch {
+        setState('error');
+        return;
       }
-      setState('idle');
-    } catch {
-      tab?.close();
-      setState('error');
     }
-  }, [brief]);
+
+    // A tab opened straight onto the PDF, so the reader can read, print or
+    // save it. If a strict popup blocker refuses it, fall back to a direct
+    // download so they still get the file instead of nothing.
+    if (!window.open(ready.url, '_blank')) {
+      ready.mod.downloadBriefPdf(brief, meta);
+    }
+    setState('idle');
+  }, [brief, metaNow]);
 
   return (
     <div className="mt-5 flex flex-col gap-4 rounded-2xl border-2 border-accent bg-accent-wash p-4 sm:flex-row sm:items-center sm:justify-between sm:p-5">
@@ -197,7 +236,9 @@ function IssueCard({ issue, index }: { issue: Issue; index: number }) {
 }
 
 export default function DistrictBrief({ code }: { code: string }) {
-  const brief: Brief | null = briefFor(code);
+  // Memoised so the print button's ready-made PDF is rebuilt only when the
+  // district changes, not on every render.
+  const brief: Brief | null = useMemo(() => briefFor(code), [code]);
   if (!brief) return null;
 
   return (

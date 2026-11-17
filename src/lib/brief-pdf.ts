@@ -805,31 +805,11 @@ export function briefFileName(brief: DistrictBrief, year: string): string {
 }
 
 /**
- * Open the brief as a PDF in an already-open tab, rather than forcing it
- * straight to the downloads folder. `target` has to come from a
- * `window.open('', '_blank')` called synchronously inside the click handler,
- * before the PDF is built or this module is even imported - a blob URL
- * assigned after an `await` no longer counts as a direct response to the
- * click, and Safari in particular blocks it as an unrequested popup. Building
- * the PDF first and only then opening the tab looked like the natural order
- * and was exactly backwards.
- *
- * The object URL is revoked well after the assignment rather than
- * immediately: the new tab still has to fetch and render it, and revoking
- * while that is in flight hands the reader a broken tab.
- */
-export function openBriefPdf(brief: DistrictBrief, meta: BriefPdfMeta, target: Window) {
-  const blob = buildBriefPdf(brief, meta);
-  const url = URL.createObjectURL(blob);
-  target.location.href = url;
-  window.setTimeout(() => URL.revokeObjectURL(url), 60_000);
-}
-
-/**
- * Trigger a direct download instead. Kept as the fallback for when the tab in
- * `openBriefPdf` above could not be opened (a strict popup blocker, most
- * often) - a reader who wanted the brief should still get the file rather
- * than nothing.
+ * Trigger a direct download of the brief. The button normally opens the PDF in
+ * a tab (`window.open` on an object URL from `buildBriefPdf`), where it can be
+ * read, printed or saved; this is the fallback for when that tab could not be
+ * opened (a strict popup blocker, most often) - a reader who wanted the brief
+ * should still get the file rather than nothing.
  *
  * The object URL is revoked on the next tick rather than immediately: Safari
  * reads the blob asynchronously after the synthetic click, and revoking too
