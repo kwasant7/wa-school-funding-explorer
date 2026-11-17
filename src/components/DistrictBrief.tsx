@@ -24,19 +24,21 @@ import {
 
 const BASE_PATH = process.env.NEXT_PUBLIC_BASE_PATH ?? '';
 
-function OpenIcon() {
+function PrinterIcon() {
   return (
     <svg
       aria-hidden
-      viewBox="0 0 16 16"
-      className="h-4 w-4 shrink-0"
+      viewBox="0 0 24 24"
+      className="h-5 w-5 shrink-0"
       fill="none"
       stroke="currentColor"
-      strokeWidth="1.7"
+      strokeWidth="1.8"
       strokeLinecap="round"
       strokeLinejoin="round"
     >
-      <path d="M6.5 3H3v10h10V9.5M8.5 2.5h5v5M13.2 2.8 7.5 8.5" />
+      <path d="M7 9V3.5h10V9" />
+      <path d="M7 17H4.5A1.5 1.5 0 0 1 3 15.5v-5A1.5 1.5 0 0 1 4.5 9h15a1.5 1.5 0 0 1 1.5 1.5v5a1.5 1.5 0 0 1-1.5 1.5H17" />
+      <path d="M7 14h10v6.5H7z" />
     </svg>
   );
 }
@@ -45,6 +47,10 @@ function OpenIcon() {
  * Open the brief as a PDF in a new tab, so it lands where a link would - a
  * page the reader can read, print, or save on their own terms - rather than
  * an unannounced file dropping into their downloads folder.
+ *
+ * It is drawn as a full-width panel with a solid button because the printed
+ * copy is the point of the brief - the thing a parent carries to a board
+ * meeting - and a pale outlined chip beside the heading was easy to miss.
  *
  * The generator is imported on click rather than with the page. It is only
  * needed by the fraction of visitors who actually want the file, and this page
@@ -85,26 +91,44 @@ function DownloadBriefButton({ brief }: { brief: Brief }) {
   }, [brief]);
 
   return (
-    <div className="shrink-0">
-      <button
-        type="button"
-        onClick={() => void openBrief()}
-        disabled={state === 'working'}
-        className="inline-flex items-center gap-2 rounded-xl border border-accent-soft bg-accent-wash px-3.5 py-2 text-sm font-semibold text-accent-deep transition-colors hover:border-accent disabled:cursor-not-allowed disabled:opacity-70"
-      >
-        <OpenIcon />
-        {state === 'working' ? 'Preparing…' : 'Open this brief'}
-        <span className="font-normal text-ink-muted">PDF</span>
-      </button>
-      {/* Announced rather than only coloured, so the failure is not silent. */}
-      <p role="status" aria-live="polite" className="sr-only">
-        {state === 'working' ? 'Preparing the PDF' : ''}
-      </p>
-      {state === 'error' && (
-        <p className="mt-1.5 text-xs text-critical">
-          Could not open the PDF. Try again, or print this page instead.
+    <div className="mt-5 flex flex-col gap-4 rounded-2xl border-2 border-accent bg-accent-wash p-4 sm:flex-row sm:items-center sm:justify-between sm:p-5">
+      <div className="flex items-start gap-3.5">
+        <span
+          aria-hidden
+          className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-accent text-white"
+        >
+          <PrinterIcon />
+        </span>
+        <div>
+          <p className="text-lg font-bold leading-snug text-accent-deep">
+            Print this brief
+          </p>
+          <p className="mt-0.5 text-sm text-ink-secondary">
+            A print-ready PDF of this brief. Bring a copy to a school board
+            meeting or hand it to your legislator.
+          </p>
+        </div>
+      </div>
+      <div className="shrink-0">
+        <button
+          type="button"
+          onClick={() => void openBrief()}
+          disabled={state === 'working'}
+          className="inline-flex min-h-[48px] w-full items-center justify-center gap-2.5 rounded-xl bg-accent px-6 py-3 text-base font-bold text-white shadow-sm transition-colors hover:bg-accent-deep disabled:cursor-not-allowed disabled:opacity-70 sm:w-auto"
+        >
+          <PrinterIcon />
+          {state === 'working' ? 'Preparing…' : 'Open printable PDF'}
+        </button>
+        {/* Announced rather than only coloured, so the failure is not silent. */}
+        <p role="status" aria-live="polite" className="sr-only">
+          {state === 'working' ? 'Preparing the PDF' : ''}
         </p>
-      )}
+        {state === 'error' && (
+          <p className="mt-1.5 text-xs text-critical">
+            Could not open the PDF. Try again, or print this page instead.
+          </p>
+        )}
+      </div>
     </div>
   );
 }
@@ -178,17 +202,14 @@ export default function DistrictBrief({ code }: { code: string }) {
 
   return (
     <section data-assistant-section="district-brief" className="mt-8">
-      <div className="flex items-end justify-between gap-4 flex-wrap">
-        <div className="min-w-0">
-          <h2 className="text-2xl md:text-3xl font-bold">
-            What needs to change in{' '}
-            <span data-no-translate>{brief.name}</span>
-          </h2>
-        </div>
-        <DownloadBriefButton brief={brief} />
-      </div>
+      <h2 className="text-2xl md:text-3xl font-bold">
+        What needs to change in{' '}
+        <span data-no-translate>{brief.name}</span>
+      </h2>
 
       <p className="mt-2 text-ink-secondary">{brief.summary}</p>
+
+      <DownloadBriefButton brief={brief} />
 
       <div className="mt-5 grid grid-cols-2 gap-3 lg:grid-cols-4">
         {brief.stats.map((stat) => (
