@@ -12,14 +12,17 @@
 #
 # WHY CY2027 AND NOT CY2026: the CY2027 workbook's "Voter Approved" column is
 # the first one that reflects the February 10 and April 28, 2026 levy
-# elections - it is stamped "updated final as of june 26, 2026". The CY2026
+# elections. OSPI reissued the workbook on October 19, 2026 (version date; the
+# "Voter Approved" sheet is stamped "updated as of Oct 7, 2026") after an
+# earlier June 26 edition. The CY2026
 # voter-approved amounts are byte-identical to the previous workbook, so
 # staying on CY2026 would mean the site never shows what districts just voted
 # on. CY2027 is also the last year OSPI models with real inputs rather than
 # pure projection: assessed valuation is the actual CY2025 AV (the previous
-# workbook only had a projection of it), and enrollment is March 2025-26
-# AAFTE. Out-years 2028-2031 are caseload-forecast projections and are
-# deliberately not published here.
+# workbook only had a projection of it), and enrollment is the August 2025-26
+# AAFTE (the June edition used March, and CPI for levy was a March estimate;
+# the October edition uses September 2026 CPI and IPD). Out-years 2028-2031 are
+# caseload-forecast projections and are deliberately not published here.
 #
 # The formula (matches OSPI's LevyCalc sheet rows Q, R, T, V, X):
 #   enrollment K       = total AAFTE - transfer out + transfer in
@@ -75,22 +78,26 @@ AV_YEAR = 2026
 # LevyCalc assumptions, CY2027 column C. Each is OSPI's own rounded output
 # from the base values on the workbook's Sheet1 - reproduced here so the
 # numbers on the site can be traced back to a formula, not a magic constant.
-LEVY_CPI = 0.0623  # LevyCalc E.1, CPI for levy as of March 2026
-LEA_IPD = 0.027  # LevyCalc E.2, IPD for LEA as of March 2026
-LEA_THRESHOLD = 2431.77  # C. LEA Max Per Pupil = round(2221.78 * 1.027 + 150, 2)
+LEVY_CPI = 0.0773  # LevyCalc E.1, CPI for levy as of September 2026: 4.4% + the 3.33% small-district enhancement
+LEA_IPD = 0.035  # LevyCalc E.2, IPD for LEA as of September 2026
+LEA_THRESHOLD = 2449.54  # C. LEA Max Per Pupil = round(2221.78 * 1.035 + 150, 2)
 LEA_MAX_RATE = 1.50  # D. LEA max tax rate ($ per $1,000 AV)
-MAX_LEVY_PER_PUPIL = 4077.38  # A. = round(3838.26 * 1.0623, 2)
+MAX_LEVY_PER_PUPIL = 4134.96  # A. = round(3838.26 * 1.0773, 2)
 MAX_LEVY_RATE = 2.50  # B. max levy tax rate
 
 # RCW 84.52.0531 sets a higher per-pupil levy limit for districts with 40,000+
 # FTE students, and Seattle (17001) is the only one. OSPI's LevyCalc cell C18
 # hardcodes exactly that split:
-#   IF(A1="17001", ROUND(Sheet1!J4*(1+CPI),2), ROUND(Sheet1!J3*(1+CPI),2))
-# with Sheet1!J3 = 3838.26 and Sheet1!J4 = 4505.91 (the CY2026 limits) and the
-# CY2027 levy CPI of 6.23%, giving 4077.38 and 4786.63 respectively.
+#   IF(A1="17001", ROUND(Values!J4*(1+CPI),2), ROUND(Values!J3*(1+CPI),2))
+# with Values!J3 = 3838.26 and Values!J4 = 4505.91 (the CY2026 limits) and the
+# CY2027 levy CPI of 7.73% (4.4% plus the 3.33% enhancement), giving 4134.96
+# for everyone but Seattle. Applying 7.73% to Seattle would give 4854.22, but
+# the 3.3% enhancement is for districts under 40,000 students only (ESHB 2049),
+# and OSPI's own Values!K4 - the CY2027 limit it carries into 2028 - is 4704.17
+# (4505.91 * 1.044, CPI alone). Seattle uses that published figure.
 # The two converge at a flat $5,035 in 2031, when the statute drops the split.
 LARGE_DISTRICT_CODES = ['17001']
-MAX_LEVY_PER_PUPIL_LARGE = 4786.63
+MAX_LEVY_PER_PUPIL_LARGE = 4704.17
 
 # The LEA inflation enhancement drops from $250 to $150 in CY2027 (2026
 # session), and it is a one-year add-on rather than a new base - which is why
@@ -269,9 +276,10 @@ def main():
             'workbook': WORKBOOK_URL,
             'note': (
                 'OSPI Enrichment Levy Pre-Ballot Approval worksheet, CY2027 '
-                '(LevyCalc rows Q, R, T, V, X). Voter-approved levy amounts '
-                'are final as of June 26, 2026 and include the February 10 '
-                "and April 28, 2026 elections. 'actualLea' is F-196 revenue "
+                '(LevyCalc rows Q, R, T, V, X), version of October 19, 2026. '
+                'Voter-approved levy amounts are updated as of October 7, '
+                '2026 and include the February 10 and April 28, 2026 '
+                "elections. 'actualLea' is F-196 revenue "
                 'code 3300, Local Effort Assistance, school year '
                 f'{ACTUAL_LEA_SCHOOL_YEAR}.'
             ),
@@ -292,8 +300,8 @@ def main():
     sample = districts.get('14005')
     if sample:
         print(
-            'Aberdeen check vs OSPI LevyCalc CY2027 (expect capacity 1367.92, '
-            'maxLea/pupil 1063.85, rate 2.27, payable 3,056,164):'
+            'Aberdeen check vs OSPI LevyCalc CY2027 (expect capacity 1358.84, '
+            'maxLea/pupil 1090.70, rate 2.27, payable 3,154,217):'
         )
         print(
             '  ',

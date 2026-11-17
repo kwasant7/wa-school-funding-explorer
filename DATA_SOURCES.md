@@ -185,11 +185,13 @@ OSPI rounds to 2 decimals at each of Q, R, and V, and feeds the rounded value
 into the next row; the script does the same, or district totals drift by a few
 dollars against OSPI's own output.
 
-CY2027 assumptions: LEA guarantee **$2,431.77** per student, LEA rate **$1.50**,
-maximum levy **$4,077.38** per student (**$4,786.63** for districts of 40,000+
-FTE, i.e. Seattle alone) or **$2.50** per $1,000 AV, whichever is less. Verified
-against the workbook's own output for Aberdeen (capacity $1,367.92, max LEA per
-pupil $1,063.85, levy rate $2.27, payable $3,056,164 - an exact match).
+CY2027 assumptions (OSPI workbook version of October 19, 2026): LEA guarantee
+**$2,449.54** per student, LEA rate **$1.50**, maximum levy **$4,134.96** per
+student (**$4,704.17** for districts of 40,000+ FTE, i.e. Seattle alone - OSPI's
+own CY2027 figure for that group, which gets CPI but not the 3.3% small-district
+enhancement) or **$2.50** per $1,000 AV, whichever is less. Verified against the
+workbook's own output for Aberdeen (capacity $1,358.84, max LEA per pupil
+$1,090.70, levy rate $2.27, payable $3,154,217 - an exact match).
 
 The LEA guarantee includes a one-year inflation enhancement that the 2026
 session cut from $250 to $150, which is why the guarantee steps back down to

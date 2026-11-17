@@ -397,7 +397,7 @@ export default function SourcesPage() {
             {money2(LEA.maxLevyPerPupilLarge)} for districts of 40,000 or more
             FTE students, which under RCW 84.52.0531 means Seattle and no one
             else. The voter-approved levy amounts are OSPI&apos;s{' '}
-            {levyData.calendarYear} column, final as of June 26, 2026, so they
+            {levyData.calendarYear} column, updated as of October 7, 2026, so they
             include the results of the February 10 and April 28, 2026 levy
             elections. Script:{' '}
             <code className="text-ink">scripts/build-levy-lea.py</code>.

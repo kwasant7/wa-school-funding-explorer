@@ -265,7 +265,7 @@ export const KNOWLEDGE: readonly Chunk[] = [
   {
     id: 'levy-cap',
     title: 'The enrichment levy cap',
-    text: "Local school levies are capped by state law. A district may collect the lesser of a rate limit ($2.50 per $1,000 of assessed value) and a per-student limit. The per-student cap reaches $4,077 in 2027, then a flat $5,035 in 2031, when the statute drops the district-size split. Until then districts of 40,000 or more students - Seattle is the only one - get a higher cap, $4,787 in 2027. Because the cap binds after voters vote, 75 districts have approved levies larger than they may legally collect: raising the cap would release money voters already approved without any new election. Beyond that point, collecting more would take a new levy vote.",
+    text: "Local school levies are capped by state law. A district may collect the lesser of a rate limit ($2.50 per $1,000 of assessed value) and a per-student limit. The per-student cap reaches $4,135 in 2027, then a flat $5,035 in 2031, when the statute drops the district-size split. Until then districts of 40,000 or more students - Seattle is the only one - get a higher cap, $4,704 in 2027. Because the cap binds after voters vote, 67 districts have approved levies larger than they may legally collect: raising the cap would release money voters already approved without any new election. Beyond that point, collecting more would take a new levy vote.",
     sourceIds: ['site-simulator', 'rcw-84-52-0531', 'eshb-2049', 'ehb-2242'],
     keywords: ['levy', 'levy cap', 'levy lid', 'enrichment', 'local levy', 'cap', 'ballot', 'voters', 'election'],
   },

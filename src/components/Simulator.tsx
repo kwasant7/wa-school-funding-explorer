@@ -970,7 +970,7 @@ function LeverBar({
             <a href={levyData.sources.workbook} target="_blank" rel="noopener noreferrer" className="font-semibold text-accent underline underline-offset-2">
               OSPI&apos;s {levyData.calendarYear} levy projection workbook ↗
             </a>
-            , &ldquo;Voter Approved&rdquo; sheet, {levyData.levyYear} column (updated June 26, 2026).
+            , &ldquo;Voter Approved&rdquo; sheet, {levyData.levyYear} column (updated October 7, 2026).
             Property values and enrollment come from its &ldquo;Data&rdquo; and &ldquo;District AAFTE&rdquo; sheets.
           </p>
           <p className="mt-2 leading-relaxed">
