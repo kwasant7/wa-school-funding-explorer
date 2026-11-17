@@ -143,8 +143,9 @@ function DownloadBriefButton({ brief }: { brief: Brief }) {
             Print this brief
           </p>
           <p className="mt-0.5 text-sm text-ink-secondary">
-            A print-ready PDF of this brief. Bring a copy to a school board
-            meeting or hand it to your legislator.
+            A one-page, print-ready PDF: this district&apos;s numbers, its Big 3
+            funding gaps, what to ask for, and who to ask. Bring a copy to a
+            school board meeting or hand it to your legislator.
           </p>
         </div>
       </div>

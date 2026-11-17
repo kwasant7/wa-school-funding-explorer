@@ -33,6 +33,7 @@ import levyJson from '@/data/levy.json';
 import baselineJson from '@/data/enrollment-baseline.json';
 import { oversightFor, type Oversight } from '@/data/oversight';
 import { fmtMoney, fmtMoneyFull, fmtInt, alignPair } from '@/lib/format';
+import { big3For, big3Gap, big3Totals, type Big3Record } from '@/lib/big3';
 import { PROTOTYPES } from '@/lib/prototypical-model';
 import { RESERVE_BENCHMARK_PCT, RESERVE_THIN_PCT, reserveDays } from '@/lib/reserves';
 
@@ -252,6 +253,16 @@ export type Metrics = {
   msocGapPerPupil: number;
   transGap: number;
   transGapPerPupil: number;
+  /**
+   * The same three gaps on AESD's Big 3 definitions, which is what the Big 3
+   * card and the one-page PDF print. Kept beside the allocation-based gaps
+   * above rather than replacing them: the district profile still shows those
+   * as allocated-versus-spent pairs, and the two must stay a matched set.
+   */
+  big3: Big3Record | null;
+  big3SpedPerPupil: number;
+  big3MsocPerPupil: number;
+  big3TransPerPupil: number;
   /** Voter-approved levy dollars the statutory cap forbids collecting. */
   capBlocked: number;
   capBlockedPerPupil: number;
@@ -293,6 +304,10 @@ function buildMetrics(): Metrics[] {
     // look up. The GenEd-only fields still exist for the formula walkthrough.
     const msocGap = alloc && spend ? spend.msocBig3 - alloc.msocBig3 : 0;
     const transGap = alloc && spend ? spend.transportation - alloc.transportation : 0;
+
+    const big3 = big3For(code);
+    const big3PerPupil = (gap: number) =>
+      big3 && big3.students > 0 ? gap / big3.students : 0;
 
     /*
       A district's enrichment levy authority is the lesser of a rate limit and
@@ -343,6 +358,10 @@ function buildMetrics(): Metrics[] {
       msocGapPerPupil: msocGap / fte,
       transGap,
       transGapPerPupil: transGap / fte,
+      big3,
+      big3SpedPerPupil: big3 ? big3PerPupil(big3Gap(big3.sped)) : 0,
+      big3MsocPerPupil: big3 ? big3PerPupil(big3Gap(big3.msoc)) : 0,
+      big3TransPerPupil: big3 ? big3PerPupil(big3Gap(big3.transportation)) : 0,
       capBlocked,
       capBlockedPerPupil: capBlocked / fte,
       leaShare: alloc ? rate(alloc.levyEqualization, alloc.total) : 0,
@@ -392,6 +411,9 @@ const DISTRIBUTIONS = {
   spedGapPerPupil: distribution((m) => m.spedGapPerPupil),
   msocGapPerPupil: distribution((m) => m.msocGapPerPupil),
   transGapPerPupil: distribution((m) => m.transGapPerPupil),
+  big3SpedPerPupil: distribution((m) => (m.big3 ? m.big3SpedPerPupil : null)),
+  big3MsocPerPupil: distribution((m) => (m.big3 ? m.big3MsocPerPupil : null)),
+  big3TransPerPupil: distribution((m) => (m.big3 ? m.big3TransPerPupil : null)),
   capBlockedPerPupil: distribution((m) => (m.capBlocked > 0 ? m.capBlockedPerPupil : null)),
   leaShare: distribution((m) => m.leaShare),
   ellRate: distribution((m) => m.ellRate),
@@ -670,30 +692,31 @@ const leaIssue: Builder = (m) => {
   };
 };
 
+/*
+  The three Big 3 issues read AESD's figures (src/lib/big3.ts) so that the
+  brief, the Big 3 card and the one-page PDF all print the same numbers. On
+  those definitions "funding" counts every revenue line for the program -
+  state, federal IDEA and Medicaid money, and payments from other districts -
+  and cost counts every matching expenditure, so a federal dollar appears on
+  both sides and the gap is what is left for the district's own money.
+*/
 const spedIssue: Builder = (m) => {
-  if (!m.alloc || !m.spend || m.spedGapPerPupil < 300) return null;
-  const pctile = percentileOf(DISTRIBUTIONS.spedGapPerPupil, m.spedGapPerPupil);
+  if (!m.big3 || m.big3SpedPerPupil < 300) return null;
+  const pctile = percentileOf(DISTRIBUTIONS.big3SpedPerPupil, m.big3SpedPerPupil);
   if (pctile < 55) return null;
 
   const fig = shortfall(
     'What it really costs',
-    m.spend.sped,
-    'What the state pays',
-    m.alloc.specialEd,
+    m.big3.sped.cost,
+    'Funding it receives',
+    m.big3.sped.revenue,
     (gap) => `${gap} short`,
   );
 
   return {
     id: 'sped',
     title: 'Special education is underfunded',
-    /*
-      Both figures are state-funded special education only. Federal IDEA money
-      pays for its own programs and is excluded from each side, so the gap is
-      genuinely what the district covers out of money meant for all students -
-      it used to include federally funded spending on the cost side, which
-      overstated it by $254M statewide and called federal grants district money.
-    */
-    fact: `The district pays the missing ${plainMoney(fig.gap)} out of regular school money - about ${round(m.spedGapPerPupil)} taken from every student. Federally funded services are left out of both figures.`,
+    fact: `Special education costs ${plainMoney(fig.gap)} more than the funding that arrives for it - about ${round(m.big3SpedPerPupil)} taken from every student's regular school money. That funding already counts state, federal and Medicaid dollars.`,
     visual: fig.visual,
     refs: [BILLS.budget, BILLS.spedIncrease],
     severity: 50 + pctile * 0.4,
@@ -701,22 +724,22 @@ const spedIssue: Builder = (m) => {
 };
 
 const msocIssue: Builder = (m) => {
-  if (!m.alloc || !m.spend || m.msocGapPerPupil < 250) return null;
-  const pctile = percentileOf(DISTRIBUTIONS.msocGapPerPupil, m.msocGapPerPupil);
+  if (!m.big3 || m.big3MsocPerPupil < 250) return null;
+  const pctile = percentileOf(DISTRIBUTIONS.big3MsocPerPupil, m.big3MsocPerPupil);
   if (pctile < 55) return null;
 
   const fig = shortfall(
     'What it really costs',
-    m.spend.msocBig3,
-    'What the state pays',
-    m.alloc.msocBig3,
+    m.big3.msoc.cost,
+    'Funding it receives',
+    m.big3.msoc.revenue,
     (gap) => `${gap} short`,
   );
 
   return {
     id: 'msoc',
     title: 'Everyday running costs are underfunded',
-    fact: `Heat, power, insurance, supplies and computers cost ${plainMoney(fig.gap)} more than the state sends for them.`,
+    fact: `Heat, power, insurance, supplies and computers cost ${plainMoney(fig.gap)} more than the funding that arrives for them.`,
     visual: fig.visual,
     refs: [BILLS.msoc, BILLS.utilities],
     severity: 48 + pctile * 0.4,
@@ -724,22 +747,22 @@ const msocIssue: Builder = (m) => {
 };
 
 const transportationIssue: Builder = (m) => {
-  if (!m.alloc || !m.spend || m.transGapPerPupil < 120) return null;
-  const pctile = percentileOf(DISTRIBUTIONS.transGapPerPupil, m.transGapPerPupil);
+  if (!m.big3 || m.big3TransPerPupil < 120) return null;
+  const pctile = percentileOf(DISTRIBUTIONS.big3TransPerPupil, m.big3TransPerPupil);
   if (pctile < 70) return null;
 
   const fig = shortfall(
     'What it really costs',
-    m.spend.transportation,
-    'What the state pays',
-    m.alloc.transportation,
+    m.big3.transportation.cost,
+    'Funding it receives',
+    m.big3.transportation.revenue,
     (gap) => `${gap} short`,
   );
 
   return {
     id: 'transportation',
-    title: 'Getting students to school costs more than the state pays',
-    fact: `Buses and routes cost ${plainMoney(fig.gap)} more here than the state sends for them.`,
+    title: 'Getting students to school costs more than the funding for it',
+    fact: `Buses and routes cost ${plainMoney(fig.gap)} more here than the funding that arrives for them.`,
     visual: fig.visual,
     refs: [BILLS.transportation, BILLS.buses],
     severity: 45 + pctile * 0.35,
@@ -886,6 +909,26 @@ const ISSUE_SHORT: Record<IssueId, string> = {
   smallScale: 'being a very small district',
 };
 
+/**
+ * One sentence per problem: what to ask a lawmaker for. These only appear on
+ * the one-page PDF, where the printed copy is carried to a legislator's
+ * office; the web brief leaves them out. Where a 2026 bill addressed the
+ * problem it is named, and nothing here invents a bill number.
+ */
+export const ISSUE_ASKS: Record<IssueId, string> = {
+  oversight: 'Fix what caused this. Watching a shortfall does not pay for it.',
+  reserves: 'Steady funding every year, not a one-time patch.',
+  levyCap: 'Raise the local levy cap. This money needs no new vote.',
+  leaDependence: 'Protect and raise the money that evens this out.',
+  sped: 'Pay what special education actually costs.',
+  msoc: `Raise the per-student operating rate. A bill to do it (${BILLS.msoc.bill}) died in 2026.`,
+  transportation: `Pay the real cost of hard routes (${BILLS.transportation.bill} would have).`,
+  ell: 'Fund these students for more years, at a higher rate.',
+  lowIncome: 'Send more money to schools with more student need.',
+  enrollmentDecline: `Give districts time to adjust when enrollment falls (${BILLS.enrollment.bill} would have).`,
+  smallScale: 'Raise the extra funding small districts get.',
+};
+
 function statsFor(m: Metrics): BriefStat[] {
   const stats: BriefStat[] = [
     {
@@ -902,8 +945,13 @@ function statsFor(m: Metrics): BriefStat[] {
     },
     {
       label: 'Covered locally',
-      value: fmtMoney(Math.max(0, m.spedGap) + Math.max(0, m.msocGap) + Math.max(0, m.transGap)),
-      note: 'Special ed, operating and transport costs above what the state allocated',
+      // The same total the Big 3 card prints: only programs that fall short.
+      value: fmtMoney(
+        m.big3
+          ? big3Totals(m.big3).total
+          : Math.max(0, m.spedGap) + Math.max(0, m.msocGap) + Math.max(0, m.transGap)
+      ),
+      note: 'Special ed, operating and transport costs above their funding',
     },
   ];
   if (m.reserveRatio != null) {
@@ -929,14 +977,27 @@ function statsFor(m: Metrics): BriefStat[] {
  * that cried wolf for all 315 would be worth nothing in the 40 where the
  * numbers are alarming.
  */
+function rankedIssues(m: Metrics): Issue[] {
+  return BUILDERS.map((build) => build(m))
+    .filter((issue): issue is Issue => issue != null)
+    .sort((a, b) => b.severity - a.severity);
+}
+
+/**
+ * Every problem this district has, most severe first, without the web brief's
+ * cut-off at four. The one-page PDF lists the Big 3 on their own and so needs
+ * to look past them to the next problems.
+ */
+export function allIssuesFor(code: string): Issue[] {
+  const m = BY_CODE.get(code);
+  return m ? rankedIssues(m) : [];
+}
+
 export function briefFor(code: string): DistrictBrief | null {
   const m = BY_CODE.get(code);
   if (!m) return null;
 
-  const issues = BUILDERS.map((build) => build(m))
-    .filter((issue): issue is Issue => issue != null)
-    .sort((a, b) => b.severity - a.severity)
-    .slice(0, 4);
+  const issues = rankedIssues(m).slice(0, 4);
 
   return {
     code: m.code,

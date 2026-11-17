@@ -215,6 +215,46 @@ so the two are not directly comparable (statewide: $179.8M actual vs $323.3M
 modeled for CY2027 - the gap widens because the CY2027 guarantee is higher and
 the actual is two years older).
 
+### The Big 3 (District Explorer card, brief and one-page PDF)
+
+**Source:** the Association of Educational Service Districts' (AESD) Big 3
+dashboard, a public Power BI report built from OSPI's F-196 actuals and
+apportionment data: https://www.waschoolfunding.org/. The site prints AESD's
+own figures so that the card, the brief and the PDF match the dashboard
+exactly. [`scripts/fetch-big3.py`](scripts/fetch-big3.py) asks the report's
+public query endpoint for each district's 2024-25 revenue and cost in the three
+programs, plus the student count AESD divides by, and writes
+`src/data/big3.json`. The arithmetic (cost minus funding; a total that counts
+only the programs that fall short) lives in `src/lib/big3.ts`.
+
+What AESD counts, worked out by matching the dashboard to the F-196 files to
+the cent for Lake Washington, Bellevue and Tacoma:
+
+- **Special education** - cost is F-196 programs 21 and 24; funding is every
+  general-fund revenue code ending in 21 or 24 (state special education 3121 and
+  4121, federal IDEA 6124, Medicaid reimbursements 6321, other state agencies
+  4321, payments from other districts 7121).
+- **Transportation** - cost is program 99; funding is every revenue code ending
+  in 99 (state operations 4199, other state agencies 4399, payments from other
+  districts 7199).
+- **MSOC** (Materials, Supplies, and Operating Costs) - the same expenditure
+  scope as `build-program-spending.mjs`'s "MSOC (Big 3)"; AESD sources the
+  alternative-learning (ALE) students in its funding side separately.
+- **Students** - K-12 basic plus ALE students, without Running Start and
+  dropout reengagement.
+
+"Funding" is therefore not "what the state pays": it includes federal and
+inter-district money, and a federal dollar counts on both sides. This differs
+from the allocation-versus-spending pairs on the district profile page, which
+use the state allocation only.
+
+### Revenue per student, six years (one-page PDF)
+
+`src/data/per-pupil-trend.json` holds each district's per-student revenue for
+every year on the site and the statewide median for each year, copied out of
+`history.json` by [`scripts/build-per-pupil-trend.py`](scripts/build-per-pupil-trend.py)
+so the PDF generator does not have to load the megabyte-sized history file.
+
 ## 3. District boundaries (the map)
 
 **Source:** OSPI's official "Washington School Districts" boundary layer on the
