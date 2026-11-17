@@ -13,21 +13,14 @@ import NeedVsFundingChart, { NeedPoint } from '@/components/charts/NeedVsFunding
 import WaMap from '@/components/charts/WaMap';
 import ChartErrorBoundary from '@/components/ChartErrorBoundary';
 import { oversightFor, OVERSIGHT_SOURCE, OVERSIGHT_CHECKED_ON } from '@/data/oversight';
-import allocationJson from '@/data/allocation.json';
+import big3Json from '@/data/big3.json';
 import regionalizationJson from '@/data/regionalization.json';
 import districtsJson from '@/data/districts.json';
-import spendingJson from '@/data/spending.json';
 import { alignPair, fmtInt, fmtMoney, fmtMoneyFull, fmtMoneyOnGrid, fmtSignedMoney, pct } from '@/lib/format';
 import { useAssistantDistrict, useAssistantYear } from '@/lib/assistant/store';
 import { readSelectedDistrict, writeSelectedDistrict } from '@/lib/selected-district';
 import { RESERVE_BENCHMARK_PCT, RESERVE_THIN_PCT, reserveDays } from '@/lib/reserves';
 
-/*
-  The Big 3 card compares one year of allocation and spending, so it reads the
-  two files directly rather than going through the year-switched series: OSPI
-  publishes F-196 actuals for a single closed year, 2024-25, and that is the
-  year the card names regardless of which year the charts above show.
-*/
 /*
   Charter schools, identified by their authorizer standing in for an ESD.
   Their tiny enrollments put them at the extremes of any per-student chart,
@@ -54,14 +47,17 @@ function regionalizationFor(code: string, year: string) {
   return { cis: d.cis[i], cas: d.cas[i], exp: d.exp[i] };
 }
 
-const BIG3_YEAR = spendingJson.schoolYear;
-const BIG3_ALLOCATION = allocationJson.districts as Record<
+/*
+  The Big 3 card shows AESD's Big 3 dashboard figures for one closed year,
+  2024-25 (see scripts/fetch-big3.py), so it reads big3.json directly rather
+  than going through the year-switched series, and names that year regardless
+  of which year the charts above show.
+*/
+type Big3Program = { revenue: number; cost: number };
+const BIG3_YEAR = big3Json.schoolYear;
+const BIG3 = big3Json.districts as Record<
   string,
-  { specialEd: number; transportation: number; msocBig3: number }
->;
-const BIG3_SPENDING = spendingJson.districts as Record<
-  string,
-  { sped: number; transportation: number; msocBig3: number }
+  { sped: Big3Program; transportation: Big3Program; msoc: Big3Program; students: number }
 >;
 
 export default function DistrictsExplorer() {
@@ -492,8 +488,8 @@ function FundBalanceCard({ district: d, year }: { district: District; year: stri
 
 /**
  * The "Big 3" - special education, transportation, and MSOC - as one card:
- * what the state allocated against what this district actually spent, in the
- * framing Washington's school-leader associations use when they lobby for
+ * the funding this district received against what it actually spent, as AESD
+ * reports it, in the framing Washington's school-leader associations use when they lobby for
  * the same three lines. The name gives a reader language that works outside
  * this site: a school board, a legislator's office, and AESD's own dashboard
  * all call these three gaps the Big 3.
@@ -504,25 +500,25 @@ function FundBalanceCard({ district: d, year }: { district: District; year: stri
 function Big3Gap({
   title,
   detail,
-  spend,
-  alloc,
+  cost,
+  funding,
 }: {
   title: string;
   detail: string;
-  spend: number;
-  alloc: number;
+  cost: number;
+  funding: number;
 }) {
-  const covered = spend <= alloc;
-  const pair = alignPair(Math.max(spend, alloc), Math.min(spend, alloc));
+  const covered = cost <= funding;
+  const pair = alignPair(Math.max(cost, funding), Math.min(cost, funding), 3, 10_000);
   const money = (n: number) => fmtMoneyOnGrid(n, pair.step);
   const rows = covered
     ? [
-        { label: 'What the state pays', amount: pair.a, tone: 'full' as const },
+        { label: 'Funding it receives', amount: pair.a, tone: 'full' as const },
         { label: 'What it really costs', amount: pair.b, tone: 'short' as const },
       ]
     : [
         { label: 'What it really costs', amount: pair.a, tone: 'full' as const },
-        { label: 'What the state pays', amount: pair.b, tone: 'short' as const },
+        { label: 'Funding it receives', amount: pair.b, tone: 'short' as const },
       ];
 
   return (
@@ -530,7 +526,7 @@ function Big3Gap({
       role="img"
       aria-label={`${title}. ${rows[0].label}: ${money(rows[0].amount)}. ${rows[1].label}: ${money(rows[1].amount)}. ${
         covered
-          ? 'The state allocation covered it.'
+          ? 'Its funding covered it.'
           : `${money(pair.gap)} short.`
       }`}
     >
@@ -558,24 +554,19 @@ function Big3Gap({
         aria-hidden
         className={`mt-2 text-sm font-bold ${covered ? 'text-good' : 'text-critical'}`}
       >
-        {covered ? 'Covered by the state formula' : `${money(pair.gap)} short`}
+        {covered ? 'Covered by its funding' : `${money(pair.gap)} short`}
       </p>
     </figure>
   );
 }
 
 function Big3Card({ district: d }: { district: District }) {
-  const alloc = BIG3_ALLOCATION[d.code];
-  const spend = BIG3_SPENDING[d.code];
-  if (!alloc || !spend) return null;
+  const big3 = BIG3[d.code];
+  if (!big3) return null;
 
-  const gaps = [
-    spend.sped - alloc.specialEd,
-    spend.transportation - alloc.transportation,
-    spend.msocBig3 - alloc.msocBig3,
-  ];
+  const gaps = [big3.sped, big3.transportation, big3.msoc].map((p) => p.cost - p.revenue);
   const totalGap = gaps.filter((g) => g > 0).reduce((sum, g) => sum + g, 0);
-  const perStudent = d.fundingEnrollment > 0 ? totalGap / d.fundingEnrollment : 0;
+  const perStudent = big3.students > 0 ? totalGap / big3.students : 0;
 
   return (
     <div data-assistant-section="big-3" className="mt-4 card p-5">
@@ -585,46 +576,46 @@ function Big3Card({ district: d }: { district: District }) {
         transportation, and everyday operating costs <strong>the Big 3</strong>:
         the three places the state formula falls furthest short of what running
         a district actually costs. Here is each one for{' '}
-        <span data-no-translate>{d.name}</span>, from OSPI&apos;s own records.
+        <span data-no-translate>{d.name}</span>, using the figures AESD publishes
+        from OSPI&apos;s records.
       </p>
 
       <div className="mt-5 grid gap-6 sm:grid-cols-3 sm:gap-4">
         <Big3Gap
           title="Special education"
           detail="Services for students with disabilities"
-          spend={spend.sped}
-          alloc={alloc.specialEd}
+          cost={big3.sped.cost}
+          funding={big3.sped.revenue}
         />
         <Big3Gap
           title="Transportation"
           detail="Buses, drivers, fuel, and required routes"
-          spend={spend.transportation}
-          alloc={alloc.transportation}
+          cost={big3.transportation.cost}
+          funding={big3.transportation.revenue}
         />
         <Big3Gap
           title="Operating costs (MSOC)"
           detail="Curriculum, technology, utilities, and insurance"
-          spend={spend.msocBig3}
-          alloc={alloc.msocBig3}
+          cost={big3.msoc.cost}
+          funding={big3.msoc.revenue}
         />
       </div>
 
       {totalGap > 0 && (
         <p className="mt-5 rounded-xl border border-accent-soft bg-accent-wash p-3.5 text-sm text-ink-secondary">
-          All three together left{' '}
+          Where funding fell short, the gaps add up to{' '}
           <strong className="text-ink">{fmtMoney(totalGap)}</strong> for{' '}
           <span data-no-translate>{d.name.replace(/ School District.*$/, '')}</span>{' '}
           to cover out of levies and other local money in {BIG3_YEAR} - about{' '}
           <strong className="text-ink">
-            ${fmtInt(Math.round(perStudent))} per funded student
+            ${fmtInt(Math.round(perStudent))} per student
           </strong>
           .
         </p>
       )}
 
       <p className="mt-3 text-xs text-ink-muted">
-        F-196 actuals against OSPI apportionment for the same year, built to
-        match the same three gaps on{' '}
+        These are the same figures as{' '}
         <a
           href="https://www.waschoolfunding.org/"
           target="_blank"
@@ -633,7 +624,12 @@ function Big3Card({ district: d }: { district: District }) {
         >
           AESD&apos;s Big 3 dashboard ↗
         </a>
-        .
+        , built from F-196 actuals and OSPI apportionment. Funding counts every
+        special education and transportation revenue line, including federal
+        special education grants (the Individuals with Disabilities Education
+        Act), Medicaid reimbursements, and payments from other districts.
+        Per-student amounts divide by K-12 students plus alternative learning
+        students, leaving out Running Start and dropout reengagement.
       </p>
     </div>
   );

@@ -49,17 +49,27 @@ export type AlignedPair = {
   step: number;
 };
 
-export function alignPair(a: number, b: number): AlignedPair {
+export function alignPair(
+  a: number,
+  b: number,
+  significantFigures = 2,
+  maxStep = Infinity
+): AlignedPair {
   const spread = Math.abs(a - b);
   if (!(spread > 0)) return { a, b, gap: 0, step: 1 };
 
   /*
-    Two significant figures on the gap. The grid is set by the gap rather than
-    by the size of the bars, because the gap is the claim being made: a $24k
-    shortfall between two $1.4M bars needs a $1,000 grid, and picking the grid
-    off the bars would round it away to nothing.
+    Two significant figures on the gap by default. The Big 3 card asks for
+    three and caps the grid at $10,000, so its millions print with two decimals
+    and read like the dashboard figures it mirrors. The grid is set by the gap
+    rather than by the size of the bars, because the gap is the claim being
+    made: a $24k shortfall between two $1.4M bars needs a $1,000 grid, and
+    picking the grid off the bars would round it away to nothing.
   */
-  const step = Math.max(1, 10 ** (Math.floor(Math.log10(spread)) - 1));
+  const step = Math.max(
+    1,
+    Math.min(maxStep, 10 ** (Math.floor(Math.log10(spread)) - (significantFigures - 1)))
+  );
   const ra = Math.round(a / step) * step;
   const rb = Math.round(b / step) * step;
   return { a: ra, b: rb, gap: ra - rb, step };
