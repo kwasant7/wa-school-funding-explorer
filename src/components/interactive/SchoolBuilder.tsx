@@ -287,7 +287,7 @@ export default function SchoolBuilder({
   return <div className="card p-5 md:p-7">
     <h3 className="text-xl md:text-2xl font-bold">
       {district
-        ? `${district.name}'s model-school calculation`
+        ? `${district.name} under the prototypical school model`
         : 'The three model schools, side by side'}
     </h3>
     <p className="mt-1 text-sm text-ink-secondary">
