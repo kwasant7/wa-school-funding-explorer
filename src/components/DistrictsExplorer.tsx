@@ -624,16 +624,44 @@ function Big3Card({ district: d }: { district: District }) {
         >
           AESD&apos;s Big 3 dashboard ↗
         </a>
-        , built from F-196 actuals and OSPI apportionment. Funding counts every
-        special education and transportation revenue line, including federal
-        special education grants (the Individuals with Disabilities Education
-        Act), Medicaid reimbursements, and payments from other districts.
-        Per-student amounts divide by K-12 students plus alternative learning
-        students, leaving out Running Start and dropout reengagement.
+        , built from F-196 actuals and OSPI apportionment.
       </p>
+
+      <dl className="mt-3 space-y-2 text-xs text-ink-secondary">
+        {BIG3_DEFINITIONS.map(([term, text]) => (
+          <div key={term}>
+            <dt className="inline font-semibold text-ink">{term}: </dt>
+            <dd className="inline">{text}</dd>
+          </div>
+        ))}
+      </dl>
     </div>
   );
 }
+
+/*
+  What each Big 3 figure counts, in AESD's definitions. Two differ from figures
+  elsewhere on this site: special education cost here includes the federal
+  program, and the per-student count leaves out Running Start.
+*/
+const BIG3_DEFINITIONS: [string, string][] = [
+  [
+    'Special education',
+    'Cost is what the district spent on special education, state and federal programs together (F-196 programs 21 and 24). Funding is every special education revenue line: state funding, federal grants under the Individuals with Disabilities Education Act, Medicaid reimbursements, and payments from other districts.',
+  ],
+  [
+    'Transportation',
+    'Cost is what the district spent on student transportation (program 99) from its general fund, so buses bought through its Transportation Vehicle Fund are not included. Funding is the state transportation allocation plus payments from other agencies and districts.',
+  ],
+  [
+    'Operating costs (MSOC)',
+    'Cost is non-staff spending, such as supplies, technology, utilities, and insurance, in basic education, career and technical education, and other programs. Contracted transportation, tuition, debt, and building improvements are left out. Funding is the state allocation for these costs.',
+  ],
+  [
+    'Per student',
+    'Divides by K-12 students plus alternative learning students, leaving out Running Start and dropout reengagement.',
+  ],
+];
 
 /**
  * Data-driven read of a district's trends. Everything here is computed from the
