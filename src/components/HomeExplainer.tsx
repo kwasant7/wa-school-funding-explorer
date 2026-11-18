@@ -174,8 +174,8 @@ export default function HomeExplainer() {
                         FTE (full-time equivalent)
                       </strong>{' '}
                       - a measure of enrollment by how much school a student
-                      actually attends. A student enrolled half-time counts as
-                      0.5 FTE.
+                      is enrolled in, not attendance. A student enrolled
+                      half-time counts as 0.5 FTE.
                     </>
                   ),
                 },
@@ -232,7 +232,10 @@ export default function HomeExplainer() {
             <p className="mt-3 text-sm text-ink-secondary">
               These are funding allocations, not staffing rules: a district can
               organize its schools differently, but must cover anything beyond
-              the formula out of other revenue.
+              the formula out of other revenue. The exceptions are K-3 class
+              size, funded in full only when a district actually meets it, and
+              program money such as the Learning Assistance Program, which must
+              be spent on that program.
             </p>
           </div>
           <SchoolBuilder district={selectedDistrict} year={year} />

@@ -95,7 +95,7 @@ export default function PrototypicalModelPage() {
         <p>
           The state counts students in <strong className="text-ink">FTE</strong>{' '}
           - full-time equivalent - which measures enrollment by how much school
-          a student actually attends, not just how many bodies are counted. A
+          a student is enrolled in, not just how many bodies are counted. A
           student enrolled half-time counts as 0.5 FTE, not 1. It is also an
           annual average rather than a single snapshot: districts report
           enrollment on the first school day of every month, and the year&apos;s
