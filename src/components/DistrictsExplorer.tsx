@@ -657,7 +657,9 @@ function Big3Card({ district: d }: { district: District }) {
       </div>
       <p className="mt-2 text-xs text-ink-muted">
         Big 3 per-student amounts divide by K-12 students plus alternative
-        learning students, leaving out Running Start and dropout reengagement.
+        learning and transitional kindergarten students, leaving out Running
+        Start, dropout reengagement, and private school students who take
+        some classes in the district.
       </p>
     </div>
   );
