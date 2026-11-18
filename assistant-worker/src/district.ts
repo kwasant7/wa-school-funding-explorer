@@ -157,8 +157,20 @@ export function districtSection(
   if (surplus !== null) {
     lines.push(
       surplus < 0
-        ? `This year it spent ${bigDollars(Math.abs(surplus))} more than it took in, drawing that down from savings.`
-        : `This year it took in ${bigDollars(surplus)} more than it spent, adding that to savings.`
+        ? `This year it spent ${bigDollars(Math.abs(surplus))} more than it took in (revenue minus spending).`
+        : `This year it took in ${bigDollars(surplus)} more than it spent (revenue minus spending).`
+    );
+  }
+
+  // The balance's own movement can differ from revenue minus spending -
+  // money moved to other district funds and prior-year adjustments - so it
+  // is stated on its own rather than implied by the line above.
+  const balanceChange = num(d.fundBalanceChange);
+  if (balanceChange !== null) {
+    lines.push(
+      balanceChange < 0
+        ? `Its fund balance fell ${bigDollars(Math.abs(balanceChange))} from the year before.`
+        : `Its fund balance rose ${bigDollars(balanceChange)} from the year before.`
     );
   }
 
@@ -174,7 +186,7 @@ export function districtSection(
           fundBalance === null ? null : `${bigDollars(fundBalance)} fund balance at year end`,
           reserveRatio === null
             ? null
-            : `a reserve ratio of ${reserveRatio.toFixed(1)}% of annual spending (experts treat 4-5% as the safe minimum)`,
+            : `a reserve ratio of ${reserveRatio.toFixed(1)}% of annual spending (the State Auditor's benchmark is at least 60 days, about 16%)`,
         ]
           .filter(Boolean)
           .join(', ') +

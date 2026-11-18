@@ -137,6 +137,8 @@ export type ContextDistrict = {
   expenditures: number;
   surplus: number;
   fundBalance: number | null;
+  /** Change in fund balance from last year's year-end balance; null if unknown. */
+  fundBalanceChange: number | null;
   reserveRatio: number | null;
   demographics: {
     lowIncomePct: number;

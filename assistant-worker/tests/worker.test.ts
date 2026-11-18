@@ -383,7 +383,7 @@ describe('district rendering', () => {
     assert.match(text, /2024-25/);
   });
 
-  it('reads a deficit as spending down savings, not as a negative number', () => {
+  it('reads a deficit in words, not as a negative number', () => {
     assert.match(districtSection(DISTRICT, 'primary') ?? '', /more than it took in/);
     assert.match(
       districtSection({ ...DISTRICT, surplus: 4_000_000 }, 'primary') ?? '',

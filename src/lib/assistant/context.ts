@@ -22,6 +22,7 @@ import {
 import { assistantSnapshot } from '@/lib/assistant/store';
 import { LATEST, YEARS, yearData } from '@/lib/data';
 import { oversightFor } from '@/data/oversight';
+import { fundBalanceChange } from '@/lib/reserves';
 import districtsData from '@/data/districts.json';
 
 const MAX_HEADINGS = 8;
@@ -92,6 +93,10 @@ export function districtContext(
     expenditures: Math.round(record.exp),
     surplus: Math.round(record.surplus),
     fundBalance: record.fundBalance == null ? null : Math.round(record.fundBalance),
+    fundBalanceChange: (() => {
+      const change = fundBalanceChange(record);
+      return change == null ? null : Math.round(change);
+    })(),
     reserveRatio: record.reserveRatio,
     demographics: {
       lowIncomePct: pct(record.demo.lowIncome, record.enrollment),

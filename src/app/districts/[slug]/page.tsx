@@ -11,7 +11,7 @@ import {
   pageMetadata,
   webPageJsonLd,
 } from '@/lib/site-metadata';
-import { fmtInt, fmtMoney, fmtMoneyFull, fmtSignedMoney, pct } from '@/lib/format';
+import { fmtInt, fmtMoney, fmtMoneyFull, fmtSignedMoney, ordinal, pct } from '@/lib/format';
 import { OVERSIGHT_CHECKED_ON, oversightFor } from '@/data/oversight';
 import levyJson from '@/data/levy.json';
 import {
@@ -178,7 +178,7 @@ export default function DistrictPage({ params }: Params) {
         <StatTile
           label="Per student"
           value={fmtMoneyFull(p.perPupil)}
-          note={`${Math.round(p.perPupilPercentile)}th percentile statewide`}
+          note={`${ordinal(Math.round(p.perPupilPercentile))} percentile statewide`}
         />
         <StatTile
           label="Reserves"
