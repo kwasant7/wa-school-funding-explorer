@@ -105,7 +105,7 @@ const BILLS = {
 const LEVY_STATUTE = {
   bill: 'RCW 84.52.0531',
   url: 'https://app.leg.wa.gov/rcw/default.aspx?cite=84.52.0531',
-  note: 'The statute that sets the per-student enrichment levy cap and the higher limit for districts above 40,000 students.',
+  note: 'The statute that limits enrichment levies to the lesser of $2.50 per $1,000 of assessed value and a per-student amount, with a higher per-student limit for districts above 40,000 students.',
 } as const;
 
 const LEA_STATUTE = {
@@ -120,6 +120,7 @@ export type IssueId =
   | 'oversight'
   | 'reserves'
   | 'levyCap'
+  | 'noLevy'
   | 'leaDependence'
   | 'sped'
   | 'msoc'
@@ -213,6 +214,11 @@ export type Issue = {
    * leave this unset rather than guessing.
    */
   response?: string;
+  /**
+   * What to ask lawmakers for, when it depends on the district rather than
+   * the issue alone. Falls back to ISSUE_ASKS[id].
+   */
+  ask?: string;
   /** Real bills or statutes behind this issue. */
   refs: BillRef[];
   /** 0-100, comparable across issue types, used only for ranking. */
@@ -676,11 +682,25 @@ const levyCapIssue: Builder = (m) => {
     (gap) => `${gap} blocked`,
   );
 
+  /*
+    The levy limit is the lesser of two caps. Thirty of the capped districts
+    hit the $2.50-per-$1,000 rate limit, not the per-student one - Spokane's
+    rate limit is $92.6M against a $117.8M per-student limit - so asking to
+    raise the per-student cap would free none of their money.
+  */
+  const perPupilCap = LARGE_DISTRICTS.has(m.code) ? LEA.maxLevyPerPupilLarge : LEA.maxLevyPerPupil;
+  const rateBound = (LEA.maxLevyRate * m.levy.av) / 1000 < perPupilCap * m.levy.enrollment;
+
   return {
     id: 'levyCap',
     title: 'Voters said yes. State law says no.',
-    fact: `People here voted to pay ${plainMoney(m.levy.levy)} in school taxes. State law blocks ${plainMoney(fig.gap)} of it.`,
+    fact: `People here voted to pay ${plainMoney(m.levy.levy)} in school taxes. State law blocks ${plainMoney(fig.gap)} of it${
+      rateBound ? `, because it is more than $${LEA.maxLevyRate.toFixed(2)} per $1,000 of property value` : ''
+    }.`,
     visual: fig.visual,
+    ask: rateBound
+      ? `Raise the $${LEA.maxLevyRate.toFixed(2)} levy rate limit. This money needs no new vote.`
+      : undefined,
     refs: [LEVY_STATUTE],
     // A cap that blocks a lot per student matters more than one blocking a
     // rounding error, but any blocked money is a strong, concrete case.
@@ -688,8 +708,50 @@ const levyCapIssue: Builder = (m) => {
   };
 };
 
+/*
+  A district whose voters approved no enrichment levy for the modelled year,
+  after one in the three years before. Nothing else in the brief sees it: the
+  levy-cap card needs a levy to block, and the 2024-25 money figures predate
+  the lapse - Battle Ground's brief said nothing stood out while its $31M
+  levy, about 13% of a year's spending, had run out.
+*/
+const noLevyIssue: Builder = (m) => {
+  const lv = m.levy;
+  if (!lv || lv.levy > 0 || !lv.lastLevy || !lv.lastLevyYear) return null;
+  const share = m.record.exp > 0 ? (100 * lv.lastLevy) / m.record.exp : 0;
+  if (share < 1) return null;
+  const first = lv.lastLevyYear + 1;
+  const last = levyJson.levyYear;
+  const years =
+    first === last ? `${last}` : last - first === 1 ? `${first} or ${last}` : `${first} through ${last}`;
+  const lea = m.alloc?.levyEqualization ?? 0;
+  const fig = shortfall(
+    `Approved for ${lv.lastLevyYear}`,
+    lv.lastLevy,
+    `Approved for ${last}`,
+    0,
+    (gap) => `${gap} gone`,
+  );
+
+  return {
+    id: 'noLevy',
+    title: 'No school levy approved',
+    fact: `Voters here have not approved an enrichment levy for ${years}. The last one, for ${lv.lastLevyYear}, was ${plainMoney(lv.lastLevy)}, about ${Math.round(share)}% of a year's spending${
+      lea > 0
+        ? `. Without a levy the district also gets no Local Effort Assistance, which brought in ${plainMoney(lea)} in ${LATEST_YEAR}`
+        : ''
+    }.`,
+    visual: fig.visual,
+    refs: [LEVY_STATUTE, LEA_STATUTE],
+    severity: 75 + Math.min(20, share),
+  };
+};
+
 const leaIssue: Builder = (m) => {
   if (!m.alloc || m.leaShare < 2) return null;
+  // LEA is paid in proportion to a district's own levy, so with no levy for
+  // the modelled year there is none to describe - the no-levy card says so.
+  if (m.levy && m.levy.levy === 0) return null;
   const pctile = percentileOf(DISTRIBUTIONS.leaShare, m.leaShare);
   if (pctile < 70) return null;
   if (m.avPerPupil == null) return null;
@@ -697,7 +759,7 @@ const leaIssue: Builder = (m) => {
   return {
     id: 'leaDependence',
     title: 'There is not much local property to tax',
-    fact: `A school tax here raises far less than the same tax in a richer district, so the state sends ${plainMoney(m.alloc.levyEqualization)} to help close the gap.`,
+    fact: `A school tax here raises far less than the same tax in a richer district, so the state sent ${plainMoney(m.alloc.levyEqualization)} in ${LATEST_YEAR} to help close the gap.`,
     visual: {
       kind: 'versus',
       aLabel: 'Property value per student, typical district',
@@ -889,6 +951,7 @@ const BUILDERS: Builder[] = [
   oversightIssue,
   reservesIssue,
   levyCapIssue,
+  noLevyIssue,
   leaIssue,
   spedIssue,
   msocIssue,
@@ -914,7 +977,9 @@ function summaryFor(m: Metrics, issues: Issue[]): string {
     names.length === 1
       ? names[0]
       : `${names.slice(0, -1).join(', ')} and ${names[names.length - 1]}`;
-  return `Compared with Washington's other 314 districts, the biggest problems here are ${list}.`;
+  return names.length === 1
+    ? `Compared with Washington's other 314 districts, the biggest problem here is ${list}.`
+    : `Compared with Washington's other 314 districts, the biggest problems here are ${list}.`;
 }
 
 // The reserves card has three variants; the summary names the one shown.
@@ -929,6 +994,7 @@ const ISSUE_SHORT: Record<IssueId, string> = {
   oversight: 'state oversight of the budget',
   reserves: 'spending that outran revenue',
   levyCap: 'the cap on local school taxes',
+  noLevy: 'no approved school levy',
   leaDependence: 'not much local property to tax',
   sped: 'special education',
   msoc: 'everyday running costs',
@@ -949,6 +1015,7 @@ export const ISSUE_ASKS: Record<IssueId, string> = {
   oversight: 'Fix what caused this. Watching a shortfall does not pay for it.',
   reserves: 'Steady funding every year, not a one-time patch.',
   levyCap: 'Raise the local levy cap. This money needs no new vote.',
+  noLevy: 'Fund more of basic education, so losing a levy does not cut what every school needs.',
   leaDependence: 'Protect and raise the money that evens this out.',
   sped: 'Pay what special education actually costs.',
   msoc: `Raise the per-student operating rate. A bill to do it (${BILLS.msoc.bill}) died in 2026.`,

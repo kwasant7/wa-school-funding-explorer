@@ -166,9 +166,19 @@ def main():
         raise SystemExit(f'no voter-approved levy column for {CALENDAR_YEAR}')
     levy_col = year_cols[latest_levy_year]
     levy_by_code = {}
+    # The three calendar years before, so a district whose levy lapsed (no
+    # amount approved for CALENDAR_YEAR after one in an earlier year) can be
+    # told apart from one that has never run a levy.
+    prior_years = [str(CALENDAR_YEAR - k) for k in (1, 2, 3) if str(CALENDAR_YEAR - k) in year_cols]
+    last_levy_by_code = {}
     for row in va_rows[1:]:
         if row[0] and str(row[0]).strip().isdigit():
             levy_by_code[code(row[0])] = num(row[levy_col])
+            for year in prior_years:
+                amount = num(row[year_cols[year]])
+                if amount > 0:
+                    last_levy_by_code[code(row[0])] = (int(year), round(amount))
+                    break
 
     # --- LEA enrollment: District AAFTE, net of high/non-high transfers ---
     aafte_ws = wb['District AAFTE']
@@ -258,6 +268,10 @@ def main():
             'payableLea': round(payable),
             'eligible': eligible,
             'actualLea': round(actual_lea.get(c, 0.0)),
+            # Most recent of the three years before CALENDAR_YEAR with an
+            # approved levy, or null if none of them had one.
+            'lastLevyYear': last_levy_by_code.get(c, (None, None))[0],
+            'lastLevy': last_levy_by_code.get(c, (None, None))[1],
         }
 
     out = {

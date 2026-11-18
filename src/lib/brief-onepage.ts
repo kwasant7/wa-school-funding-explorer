@@ -339,7 +339,7 @@ export function onePageFor(code: string): OnePage | null {
       fact: issue.fact,
       visual: issue.visual,
       response: issue.response,
-      ask: ISSUE_ASKS[issue.id],
+      ask: issue.ask ?? ISSUE_ASKS[issue.id],
       cite: citeFor(issue),
     }));
 

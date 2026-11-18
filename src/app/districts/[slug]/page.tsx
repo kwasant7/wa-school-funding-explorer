@@ -447,7 +447,9 @@ export default function DistrictPage({ params }: Params) {
               </dt>
               <dd className="text-xl font-semibold">{fmtMoneyFull(p.levy.levy)}</dd>
               <dd className="mt-1 text-xs text-ink-muted">
-                Calendar year {LEVY_CALENDAR_YEAR} collections, as approved by voters
+                {p.levy.levy === 0 && p.levy.lastLevy
+                  ? `No levy approved for ${LEVY_CALENDAR_YEAR}. The last one, for ${p.levy.lastLevyYear}, was ${fmtMoneyFull(p.levy.lastLevy)}.`
+                  : `Calendar year ${LEVY_CALENDAR_YEAR} collections, as approved by voters`}
               </dd>
             </div>
             <div className="card p-4">
@@ -463,6 +465,13 @@ export default function DistrictPage({ params }: Params) {
                   <>
                     The most state law allows. Voters approved $
                     {p.levy.levyRate.toFixed(2)}.
+                  </>
+                ) : p.levy.levy === 0 ? (
+                  <>No enrichment levy approved for this year</>
+                ) : p.levy.maxLevy > 0 && p.levy.levy >= 0.95 * p.levy.maxLevy ? (
+                  <>
+                    {Math.floor((100 * p.levy.levy) / p.levy.maxLevy)}% of the most
+                    state law allows ({fmtMoneyFull(p.levy.maxLevy)})
                   </>
                 ) : (
                   <>OSPI estimate, from current property values</>
