@@ -317,8 +317,6 @@ export default function WaMap({
   const selectedReserve = selectedShape
     ? info.get(selectedShape.code)?.reserveRatio ?? null
     : null;
-  // The open district keeps its true colour; the rest of the map is lightened.
-  const selectedFill = selectedShape ? fills.get(selectedShape.code) ?? null : null;
   /*
     The legend is drawn the way the map is. Lightening shifts how a colour
     reads, not just how strong it is - an olive green washed toward the page
@@ -328,26 +326,23 @@ export default function WaMap({
   const legendTone = (color: string) =>
     selectedShape ? lerpColor(color, SPOTLIGHT_TOWARD, SPOTLIGHT_FADE) : color;
   /*
-    Where the open district stands, written above its marker on the bar -
-    "Tacoma: 2 days" - so it reads as the district's status against the goal
-    printed under the bar. Near either end the label is aligned to that end so
-    it stays over the bar.
+    The open district's actual savings, drawn as a red line on the bar with
+    "Actual: 2 days" above it, against the black goal line with "Goal: 60 days"
+    below - actual against goal, the pairing a budget report uses. Near either
+    end the label is aligned to that end so it stays over the bar.
   */
-  const reserveStatus = (() => {
+  const reserveActual = (() => {
     if (selectedReserve == null || !selectedName) return null;
     const at = Math.min(100, Math.max(0, reserveLegendAt(selectedReserve)));
-    const name = selectedName.replace(/ School District.*$/, '');
     const text =
-      selectedReserve < 0
-        ? `${name}: no savings`
-        : `${name}: ${reserveDays(selectedReserve)} days`;
-    const style: { left?: string; right?: string; transform?: string } =
+      selectedReserve < 0 ? 'Actual: below zero' : `Actual: ${reserveDays(selectedReserve)} days`;
+    const labelStyle: { left?: string; right?: string; transform?: string } =
       at < 25
-        ? { left: `calc(${at}% - 8px)` }
+        ? { left: `calc(${at}% - 2px)` }
         : at > 75
-          ? { right: `calc(${100 - at}% - 8px)` }
+          ? { right: `calc(${100 - at}% - 2px)` }
           : { left: `${at}%`, transform: 'translateX(-50%)' };
-    return { text, style };
+    return { at, text, labelStyle };
   })();
 
   const fadedFills = useMemo(() => {
@@ -899,62 +894,73 @@ export default function WaMap({
           </>
         ) : (
           <>
-            <span className="text-sm font-semibold text-ink">
-              Savings, in days of spending ({year})
+            {/* What the bar measures, and for which district. */}
+            <span className="flex flex-col leading-snug">
+              <span className="text-[15px] font-semibold text-ink">
+                Savings, in days of spending
+              </span>
+              <span className="text-[13px] text-ink-muted">
+                {selectedName ? (
+                  <>
+                    <span data-no-translate>{selectedName}</span>, {year}
+                  </>
+                ) : (
+                  year
+                )}
+              </span>
             </span>
             {/*
-              Two labels and nothing else: where the open district stands,
-              above its marker, and the goal, under the black line. The colours
-              carry the rest - red is little or none, green is plenty.
+              Two lines and nothing else: red is the open district's actual
+              savings, labelled above the bar; black is the goal, labelled
+              below, so the two labels never collide even when a district sits
+              near the goal. The colours carry the rest - red is little or none,
+              green is plenty.
             */}
             <span
-              className={`relative mb-7 inline-block h-4 w-56 md:w-80 rounded ${
-                reserveStatus ? 'mt-7' : 'mt-1'
+              className={`relative mb-9 inline-block h-[18px] w-64 rounded-[5px] md:w-[440px] ${
+                reserveActual ? 'mt-9' : 'mt-3'
               }`}
               aria-hidden
             >
               <span
-                className="absolute inset-0 rounded"
+                className="absolute inset-0 rounded-[5px]"
                 style={{
                   background: `linear-gradient(to right, ${RESERVE_LEGEND_STOPS.map(
                     ([v, c]) => `${legendTone(c)} ${reserveLegendAt(v)}%`
                   ).join(', ')})`,
                 }}
               />
-              {/* the goal: the State Auditor's 60-day benchmark */}
+              {/* Goal: the State Auditor's 60-day benchmark. */}
               <span
-                className="absolute -top-1.5 -bottom-1.5 w-0.5 -translate-x-1/2 bg-ink"
+                className="absolute -top-3 -bottom-3 w-[3px] -translate-x-1/2 rounded-sm bg-ink"
                 style={{ left: `${reserveLegendAt(RESERVE_BENCHMARK_PCT)}%` }}
               />
               <span
-                className="absolute top-full mt-2 -translate-x-1/2 whitespace-nowrap text-sm font-semibold leading-none text-ink"
+                className="absolute top-full mt-4 -translate-x-1/2 whitespace-nowrap text-[15px] font-bold leading-none text-ink"
                 style={{ left: `${reserveLegendAt(RESERVE_BENCHMARK_PCT)}%` }}
               >
                 Goal: 60 days
               </span>
-              {/* the open district: its own colour, at its own value */}
-              {selectedReserve != null && selectedFill && (
-                <span
-                  className="absolute top-1/2 h-5 w-5 -translate-x-1/2 -translate-y-1/2 rounded border-2 border-ink"
-                  style={{
-                    left: `${Math.min(100, Math.max(0, reserveLegendAt(selectedReserve)))}%`,
-                    background: selectedFill,
-                  }}
-                />
-              )}
-              {reserveStatus && (
-                <span
-                  data-no-translate
-                  className="absolute bottom-full mb-2.5 whitespace-nowrap text-sm font-semibold leading-none text-ink"
-                  style={reserveStatus.style}
-                >
-                  {reserveStatus.text}
-                </span>
+              {/* Actual: the open district's own savings. */}
+              {reserveActual && (
+                <>
+                  <span
+                    className="absolute -top-3 -bottom-3 w-[3px] -translate-x-1/2 rounded-sm bg-critical"
+                    style={{ left: `${reserveActual.at}%` }}
+                  />
+                  <span
+                    className="absolute bottom-full mb-4 whitespace-nowrap text-[15px] font-bold leading-none"
+                    // A darker red than the line, so the words read clearly on paper-white.
+                    style={{ ...reserveActual.labelStyle, color: '#b42f2f' }}
+                  >
+                    {reserveActual.text}
+                  </span>
+                </>
               )}
             </span>
             {/* The same, for a screen reader, since the bar itself is hidden. */}
             <span className="sr-only">
-              {reserveStatus ? `${reserveStatus.text} of savings. ` : ''}
+              {reserveActual ? `${reserveActual.text} of savings. ` : ''}
               Goal: 60 days of spending, the State Auditor&apos;s recommended minimum.
             </span>
           </>
