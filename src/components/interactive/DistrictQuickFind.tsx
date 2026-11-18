@@ -4,7 +4,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import { District, LATEST, yearData } from '@/lib/data';
 import { districtPath } from '@/lib/district-slug';
-import { fmtInt, fmtMoneyFull } from '@/lib/format';
+import { fmtInt, fmtMoney, fmtMoneyFull } from '@/lib/format';
 import { writeSelectedDistrict } from '@/lib/selected-district';
 
 export default function DistrictQuickFind({
@@ -238,7 +238,12 @@ export default function DistrictQuickFind({
         )}
       </div>
       {picked && (
-        <div className="anim-rise mt-4 grid sm:grid-cols-3 gap-3">
+        <div className="anim-rise mt-4 grid sm:grid-cols-2 lg:grid-cols-4 gap-3">
+          <div className="card px-4 py-3">
+            <div className="text-xs text-ink-secondary">Total funding</div>
+            <div className="text-2xl font-bold">{fmtMoney(picked.rev.total)}</div>
+            <div className="text-xs text-ink-muted mt-0.5">general fund revenues</div>
+          </div>
           <div className="card px-4 py-3">
             <div className="text-xs text-ink-secondary">Funding per student</div>
             <div className="text-2xl font-bold">{fmtMoneyFull(picked.perPupil)}</div>
@@ -270,7 +275,7 @@ export default function DistrictQuickFind({
               budgets, demographics, 6-year history
             </span>
           </Link>
-          <p className="sm:col-span-3 text-sm text-accent-deep font-medium">
+          <p className="sm:col-span-2 lg:col-span-4 text-sm text-accent-deep font-medium">
             The prototypical-school model below is now personalized to{' '}
             <span data-no-translate>{picked.name}</span>. ↓
           </p>
