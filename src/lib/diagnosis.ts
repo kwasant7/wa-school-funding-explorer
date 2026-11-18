@@ -936,25 +936,57 @@ const enrollmentIssue: Builder = (m) => {
   };
 };
 
+/*
+  Two different situations share this card. Most districts under 400 students
+  (99 of 108) get extra staff from the state's small-school rules - Kahlotus,
+  with 55 students, gets 13.5 positions on top of the formula's 4 - so telling
+  them they get "a fraction of a nurse" contradicts their own School Builder
+  card. The other nine, small K-8 districts and elementary charters, get no
+  top-up, and for them the fraction is the whole story.
+
+  Severity no longer climbs with revenue per student: that ranked a district
+  as worse off the more the small-school rules sent it.
+*/
 const smallScaleIssue: Builder = (m) => {
-  if (m.fte >= PROTOTYPES.elementary.proto) return null;
-  const pctile = percentileOf(DISTRIBUTIONS.perPupil, m.perPupil);
+  // A high school only (Summit Sierra) is measured against the 600-student
+  // model high school, everyone else against the 400-student elementary one.
+  const band = m.record.fundingFte;
+  const onlyHigh = band.high > 0 && band.elementary === 0 && band.middle === 0;
+  const proto = onlyHigh ? PROTOTYPES.high.proto : PROTOTYPES.elementary.proto;
+  const modelSchools = onlyHigh ? `${proto}-student high schools` : `${proto}-student schools`;
+  if (m.fte >= proto) return null;
+  const noun = isSchoolDistrict(m.record) ? 'district' : 'school';
+  const students = fmtInt(Math.round(m.fte));
+  const small = m.alloc?.smallSchool;
+  const addedUnits = small ? small.cis + small.cas + small.cls : 0;
+  const visual: IssueVisual = {
+    kind: 'versus',
+    aLabel: 'Students in the state model school',
+    a: proto,
+    bLabel: `Students in this whole ${noun}`,
+    b: Math.round(m.fte),
+    gapLabel: 'One building costs the same either way',
+    format: 'plain',
+  };
+
+  if (addedUnits > 0) {
+    return {
+      id: 'smallScale',
+      title: `A very small ${noun}`,
+      fact: `The state formula is built around ${modelSchools}, and this ${noun} has ${students} students. The state's small-school rules add about ${addedUnits.toFixed(1)} staff positions on top of the formula so its schools have a minimum staff, but costs like a building and buses do not shrink with enrollment.`,
+      visual,
+      refs: [BILLS.review, BILLS.budget],
+      severity: 40,
+    };
+  }
 
   return {
     id: 'smallScale',
     title: 'Too small for the state formula',
-    fact: `The state funds schools using a pretend 400-student school. This whole district has ${fmtInt(Math.round(m.fte))} students, so it gets a fraction of a nurse and a fraction of a counselor.`,
-    visual: {
-      kind: 'versus',
-      aLabel: 'Students in the state model school',
-      a: PROTOTYPES.elementary.proto,
-      bLabel: 'Students in this whole district',
-      b: Math.round(m.fte),
-      gapLabel: 'One nurse costs the same either way',
-      format: 'plain',
-    },
+    fact: `The state funds schools using a pretend ${proto}-student school. This whole ${noun} has ${students} students and gets none of the state's extra small-school staff, so it gets a fraction of a nurse and a fraction of a counselor.`,
+    visual: { ...visual, gapLabel: 'One nurse costs the same either way' },
     refs: [BILLS.review, BILLS.budget],
-    severity: 40 + Math.min(pctile * 0.2, 20),
+    severity: 45,
   };
 };
 
@@ -982,7 +1014,11 @@ function summaryFor(m: Metrics, issues: Issue[]): string {
     return `Compared with Washington's school districts, nothing here stands out as unusually bad. That does not mean the schools are well funded - the statewide gaps still apply.`;
   }
   const names = issues.slice(0, 3).map((i) =>
-    i.id === 'reserves' ? (RESERVES_SHORT[i.title] ?? ISSUE_SHORT.reserves) : ISSUE_SHORT[i.id]
+    i.id === 'reserves'
+      ? (RESERVES_SHORT[i.title] ?? ISSUE_SHORT.reserves)
+      : i.id === 'smallScale' && !isSchoolDistrict(m.record)
+        ? 'being a very small school'
+        : ISSUE_SHORT[i.id]
   );
   const list =
     names.length === 1
