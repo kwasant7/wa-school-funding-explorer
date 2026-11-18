@@ -121,13 +121,6 @@ const RESERVE_LEGEND_STOPS = RESERVE_STOPS.filter(([v]) => v >= RESERVE_LEGEND_L
 /** Where a reserve ratio falls along the legend bar, in percent. */
 const reserveLegendAt = (rr: number) =>
   ((rr - RESERVE_LEGEND_LO) / (RESERVE_HI - RESERVE_LEGEND_LO)) * 100;
-/** The numbers printed under the legend bar: none, then 30, 60 and 90 days. */
-const RESERVE_LEGEND_TICKS: [number, string][] = [
-  [0, '0'],
-  [RESERVE_THIN_PCT, '30 days'],
-  [RESERVE_BENCHMARK_PCT, '60 days'],
-  [RESERVE_STOPS[RESERVE_STOPS.length - 1][0], '90 days'],
-];
 
 function reserveColor(rr: number) {
   const stops = RESERVE_STOPS;
@@ -334,6 +327,28 @@ export default function WaMap({
   */
   const legendTone = (color: string) =>
     selectedShape ? lerpColor(color, SPOTLIGHT_TOWARD, SPOTLIGHT_FADE) : color;
+  /*
+    Where the open district stands, written above its marker on the bar -
+    "Tacoma: 2 days" - so it reads as the district's status against the goal
+    printed under the bar. Near either end the label is aligned to that end so
+    it stays over the bar.
+  */
+  const reserveStatus = (() => {
+    if (selectedReserve == null || !selectedName) return null;
+    const at = Math.min(100, Math.max(0, reserveLegendAt(selectedReserve)));
+    const name = selectedName.replace(/ School District.*$/, '');
+    const text =
+      selectedReserve < 0
+        ? `${name}: no savings`
+        : `${name}: ${reserveDays(selectedReserve)} days`;
+    const style: { left?: string; right?: string; transform?: string } =
+      at < 25
+        ? { left: `calc(${at}% - 8px)` }
+        : at > 75
+          ? { right: `calc(${100 - at}% - 8px)` }
+          : { left: `${at}%`, transform: 'translateX(-50%)' };
+    return { text, style };
+  })();
 
   const fadedFills = useMemo(() => {
     const faded = new Map<string, string>();
@@ -884,91 +899,66 @@ export default function WaMap({
           </>
         ) : (
           <>
-            <span className="font-medium text-ink">
-              Savings, as days of spending ({year}):
+            <span className="text-sm font-semibold text-ink">
+              Savings, in days of spending ({year})
             </span>
-            <span className="flex items-center gap-2">
-              <span className="relative mb-5 inline-block h-3 w-40 md:w-56 rounded-sm" aria-hidden>
+            {/*
+              Two labels and nothing else: where the open district stands,
+              above its marker, and the goal, under the black line. The colours
+              carry the rest - red is little or none, green is plenty.
+            */}
+            <span
+              className={`relative mb-7 inline-block h-4 w-56 md:w-80 rounded ${
+                reserveStatus ? 'mt-7' : 'mt-1'
+              }`}
+              aria-hidden
+            >
+              <span
+                className="absolute inset-0 rounded"
+                style={{
+                  background: `linear-gradient(to right, ${RESERVE_LEGEND_STOPS.map(
+                    ([v, c]) => `${legendTone(c)} ${reserveLegendAt(v)}%`
+                  ).join(', ')})`,
+                }}
+              />
+              {/* the goal: the State Auditor's 60-day benchmark */}
+              <span
+                className="absolute -top-1.5 -bottom-1.5 w-0.5 -translate-x-1/2 bg-ink"
+                style={{ left: `${reserveLegendAt(RESERVE_BENCHMARK_PCT)}%` }}
+              />
+              <span
+                className="absolute top-full mt-2 -translate-x-1/2 whitespace-nowrap text-sm font-semibold leading-none text-ink"
+                style={{ left: `${reserveLegendAt(RESERVE_BENCHMARK_PCT)}%` }}
+              >
+                Goal: 60 days
+              </span>
+              {/* the open district: its own colour, at its own value */}
+              {selectedReserve != null && selectedFill && (
                 <span
-                  className="absolute inset-0 rounded-sm"
+                  className="absolute top-1/2 h-5 w-5 -translate-x-1/2 -translate-y-1/2 rounded border-2 border-ink"
                   style={{
-                    background: `linear-gradient(to right, ${RESERVE_LEGEND_STOPS.map(
-                      ([v, c]) => `${legendTone(c)} ${reserveLegendAt(v)}%`
-                    ).join(', ')})`,
+                    left: `${Math.min(100, Math.max(0, reserveLegendAt(selectedReserve)))}%`,
+                    background: selectedFill,
                   }}
                 />
-                {/* marker at the State Auditor's 60-day benchmark */}
+              )}
+              {reserveStatus && (
                 <span
-                  className="absolute -top-1 -bottom-1 w-px bg-ink"
-                  style={{ left: `${reserveLegendAt(RESERVE_BENCHMARK_PCT)}%` }}
-                />
-                {/*
-                  Numbers under the bar, so a position can be read rather than
-                  guessed: every stop sits where the map's own colour scale
-                  puts it, and the open district is marked at its own value.
-                */}
-                {RESERVE_LEGEND_TICKS.map(([value, label], i) => (
-                  <span
-                    key={label}
-                    // The end numbers hug the bar's ends so they stay under it
-                    // instead of running into the text beside it.
-                    className={`absolute top-full mt-1.5 whitespace-nowrap text-[10px] leading-none text-ink-muted ${
-                      i === 0
-                        ? ''
-                        : i === RESERVE_LEGEND_TICKS.length - 1
-                          ? '-translate-x-full'
-                          : '-translate-x-1/2'
-                    }`}
-                    style={{ left: `${reserveLegendAt(value)}%` }}
-                  >
-                    {label}
-                  </span>
-                ))}
-                {selectedReserve != null && selectedFill && (
-                  <span
-                    className="absolute top-1/2 h-4 w-4 -translate-x-1/2 -translate-y-1/2 rounded-sm border-2 border-ink"
-                    style={{
-                      left: `${Math.min(100, Math.max(0, reserveLegendAt(selectedReserve)))}%`,
-                      background: selectedFill,
-                    }}
-                  />
-                )}
-              </span>
+                  data-no-translate
+                  className="absolute bottom-full mb-2.5 whitespace-nowrap text-sm font-semibold leading-none text-ink"
+                  style={reserveStatus.style}
+                >
+                  {reserveStatus.text}
+                </span>
+              )}
             </span>
-            <span className="text-ink-muted">
-              Red: little or none (darkest: less than zero) · Green: plenty · Black
-              line: 60 days, the State Auditor&apos;s goal
+            {/* The same, for a screen reader, since the bar itself is hidden. */}
+            <span className="sr-only">
+              {reserveStatus ? `${reserveStatus.text} of savings. ` : ''}
+              Goal: 60 days of spending, the State Auditor&apos;s recommended minimum.
             </span>
           </>
         )}
-        <span className="flex items-center gap-1.5">
-          <span className="inline-block w-3 h-3 rounded-sm" style={{ background: NO_DATA }} />
-          no data
-        </span>
-        {selectedName && (
-          <span className="flex items-center gap-1.5">
-            <span
-              className="inline-block w-3 h-3 rounded-sm border-2 border-ink"
-              style={{ background: selectedFill ?? 'transparent' }}
-              aria-hidden
-            />
-            <span>
-              <span data-no-translate className="font-medium text-ink">
-                {selectedName}
-              </span>
-              {metric === 'reserveRatio' && selectedReserve != null
-                ? selectedReserve < 0
-                  ? `: no savings left (${selectedReserve.toFixed(1)}%)`
-                  : `: ${reserveDays(selectedReserve)} days of savings (${selectedReserve.toFixed(1)}%)`
-                : ' (open below)'}
-              . Other districts are shown lighter.
-            </span>
-          </span>
-        )}
-        <span className="text-ink-muted">
-          tap a district to open its profile below · pinch or Ctrl+scroll to
-          zoom · drag to pan
-        </span>
       </div>
     </div>
   );
