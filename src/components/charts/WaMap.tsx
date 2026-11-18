@@ -269,6 +269,8 @@ export default function WaMap({
         name: string;
         county: string;
         perPupil: number;
+        /** Where per-student funding ranks, 0 (lowest) to 1 (highest). */
+        perPupilRank: number;
         enrollment: number;
         reserveRatio: number | null;
         regionalization: number | null;
@@ -298,6 +300,7 @@ export default function WaMap({
           name: data.name,
           county: data.county,
           perPupil: data.perPupil,
+          perPupilRank: rank.get(d.code) ?? 0,
           enrollment: data.enrollment,
           reserveRatio: data.reserveRatio,
           regionalization: REGION_FACTORS.get(d.code) ?? null,
@@ -351,6 +354,23 @@ export default function WaMap({
           ? { right: `calc(${100 - at}% - 2px)` }
           : { left: `${at}%`, transform: 'translateX(-50%)' };
     return { at, text, spoken, labelStyle };
+  })();
+
+  /*
+    The open district's funding per student, drawn as a line on the bar at its
+    rank (the bar is ranked, like the map) with the dollar amount above it.
+  */
+  const fundingActual = (() => {
+    const d = selectedShape ? info.get(selectedShape.code) : null;
+    if (!d) return null;
+    const at = d.perPupilRank * 100;
+    const labelStyle: { left?: string; right?: string; transform?: string } =
+      at < 25
+        ? { left: `calc(${at}% - 2px)` }
+        : at > 75
+          ? { right: `calc(${100 - at}% - 2px)` }
+          : { left: `${at}%`, transform: 'translateX(-50%)' };
+    return { at, text: `${fmtMoneyFull(d.perPupil)} per student`, labelStyle };
   })();
 
   const fadedFills = useMemo(() => {
@@ -864,10 +884,30 @@ export default function WaMap({
                 lower
               </span>
               <span
-                className="inline-block h-3 w-32 md:w-44 rounded-sm"
-                style={{ background: `linear-gradient(to right, ${RAMP.map(legendTone).join(', ')})` }}
+                className={`relative inline-block h-3 w-40 rounded-sm md:w-56 ${
+                  fundingActual ? 'mt-7 mb-2' : ''
+                }`}
                 aria-hidden
-              />
+              >
+                <span
+                  className="absolute inset-0 rounded-sm"
+                  style={{ background: `linear-gradient(to right, ${RAMP.map(legendTone).join(', ')})` }}
+                />
+                {fundingActual && (
+                  <>
+                    <span
+                      className="absolute -top-2 -bottom-2 w-[3px] -translate-x-1/2 rounded-sm bg-ink"
+                      style={{ left: `${fundingActual.at}%` }}
+                    />
+                    <span
+                      className="absolute bottom-full mb-2.5 whitespace-nowrap text-[13px] font-bold leading-none text-ink"
+                      style={fundingActual.labelStyle}
+                    >
+                      {fundingActual.text}
+                    </span>
+                  </>
+                )}
+              </span>
               <span className="font-medium" style={{ color: RAMP_HIGH_LABEL }}>
                 higher
               </span>
@@ -875,6 +915,11 @@ export default function WaMap({
             <span className="text-ink-muted">
               | ranked against every district, not an absolute scale
             </span>
+            {fundingActual && (
+              <span className="sr-only">
+                <span data-no-translate>{selectedName}</span>: {fundingActual.text}.
+              </span>
+            )}
           </>
         ) : metric === 'regionalization' ? (
           <>
