@@ -33,10 +33,16 @@ export type District = {
   };
   /** Total general fund expenditures */
   exp: number;
-  /** Revenues − expenditures: the year's change in fund balance (+/−) */
+  /**
+   * Revenues − expenditures, on fiscal.wa.gov's general-fund definitions. Not
+   * the change in fund balance: transfers to other funds and prior-year
+   * adjustments are outside both totals. See fundBalanceChange().
+   */
   surplus: number;
   /** Ending total fund balance (savings carried forward); null if unavailable */
   fundBalance: number | null;
+  /** Last year's ending fund balance; null for the first year or if unavailable */
+  priorFundBalance: number | null;
   /** Fund balance as a % of expenditures (reserve ratio); null if unavailable */
   reserveRatio: number | null;
   perPupil: number;

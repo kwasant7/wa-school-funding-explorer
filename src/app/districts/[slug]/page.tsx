@@ -13,7 +13,13 @@ import {
 import { fmtInt, fmtMoney, fmtMoneyFull, fmtSignedMoney, pct } from '@/lib/format';
 import { OVERSIGHT_CHECKED_ON, oversightFor } from '@/data/oversight';
 import levyJson from '@/data/levy.json';
-import { RESERVE_BENCHMARK_PCT, RESERVE_THIN_PCT, reserveDays } from '@/lib/reserves';
+import {
+  RESERVE_BENCHMARK_PCT,
+  RESERVE_THIN_PCT,
+  balanceGapIsMaterial,
+  fundBalanceChange,
+  reserveDays,
+} from '@/lib/reserves';
 
 const LEVY_CALENDAR_YEAR = levyJson.calendarYear;
 const LEA_SCHOOL_YEAR = levyJson.actualLeaSchoolYear;
@@ -518,6 +524,20 @@ export default function DistrictPage({ params }: Params) {
             }
           />
         </div>
+        {(() => {
+          const change = fundBalanceChange(p.metrics.record);
+          if (!balanceGapIsMaterial(p.surplus, change, p.expenditures) || change == null) return null;
+          return (
+            <p className="mt-4 text-ink-secondary">
+              The fund balance itself {change < 0 ? 'fell' : 'rose'}{' '}
+              {fmtMoneyFull(Math.abs(change))} in {p.schoolYear}. The{' '}
+              {fmtMoneyFull(Math.abs(change - p.surplus))} difference from revenue
+              minus spending comes from general-fund money moved to other district
+              funds, such as capital projects, which the spending total leaves out,
+              or from adjustments to earlier years&apos; books.
+            </p>
+          );
+        })()}
         {p.reserveRatio != null && (
           <>
             <p className="mt-4 text-ink-secondary">

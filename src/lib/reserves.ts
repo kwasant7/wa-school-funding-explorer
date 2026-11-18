@@ -41,3 +41,30 @@ export const RESERVE_THIN_PCT = percentOfYear(RESERVE_THIN_DAYS);
 export function reserveDays(ratioPct: number) {
   return Math.round((ratioPct * 365) / 100);
 }
+
+/**
+ * How much the ending fund balance actually moved this year, from the two
+ * year-end balances. Not the same as revenue minus spending: general-fund
+ * money moved to other funds (capital projects, debt service, buses) and
+ * prior-year adjustments change the balance without appearing in either
+ * total. Null when either balance is missing, including the first year.
+ */
+export function fundBalanceChange(d: {
+  fundBalance: number | null;
+  priorFundBalance?: number | null;
+}): number | null {
+  return d.fundBalance != null && d.priorFundBalance != null
+    ? d.fundBalance - d.priorFundBalance
+    : null;
+}
+
+/**
+ * Whether the fund balance moved differently enough from revenue minus
+ * spending that a reader needs to be told why - more than $100,000 and more
+ * than half a percent of the year's spending.
+ */
+export function balanceGapIsMaterial(surplus: number, change: number | null, spending: number): boolean {
+  if (change == null) return false;
+  const gap = Math.abs(change - surplus);
+  return gap > 100_000 && gap > 0.005 * spending;
+}

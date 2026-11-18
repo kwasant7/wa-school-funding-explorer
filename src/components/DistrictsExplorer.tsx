@@ -19,7 +19,13 @@ import districtsJson from '@/data/districts.json';
 import { alignPair, fmtInt, fmtMoney, fmtMoneyFull, fmtMoneyOnGrid, fmtSignedMoney, pct } from '@/lib/format';
 import { useAssistantDistrict, useAssistantYear } from '@/lib/assistant/store';
 import { initialDistrictCode, writeSelectedDistrict } from '@/lib/selected-district';
-import { RESERVE_BENCHMARK_PCT, RESERVE_THIN_PCT, reserveDays } from '@/lib/reserves';
+import {
+  RESERVE_BENCHMARK_PCT,
+  RESERVE_THIN_PCT,
+  balanceGapIsMaterial,
+  fundBalanceChange,
+  reserveDays,
+} from '@/lib/reserves';
 
 /*
   Charter schools, identified by their authorizer standing in for an ESD.
@@ -342,14 +348,23 @@ function DistrictOverview({
 function FundBalanceCard({ district: d, year }: { district: District; year: string }) {
   const surplus = d.surplus;
   const deficit = surplus < 0;
-  // Running total: net added to / drawn from reserves across every year this
-  // district reported. Districts that opened mid-series cover a shorter span,
-  // so the sentence below names their own first year rather than assuming
-  // 2019-20.
+  /*
+    Revenue minus spending is not the change in fund balance. General-fund
+    money moved to capital projects or debt service, and prior-year
+    adjustments, move the balance without appearing in either total - Bethel
+    "added $10.7M" by summing surpluses while its balance fell $16.5M. So the
+    balance's own movement comes from the year-end balances, and the long-run
+    sentence compares the first and last balances rather than adding surpluses.
+  */
+  const change = fundBalanceChange(d);
+  const gapMaterial = balanceGapIsMaterial(surplus, change, d.exp);
   const netSeries = districtSeries(d.code, (x) => x.surplus);
-  const cumulative = netSeries.reduce((sum, p) => sum + (p.value ?? 0), 0);
-  const firstYear = netSeries.find((p) => p.value != null)?.label ?? YEARS[0];
   const maxAbs = Math.max(1, ...netSeries.map((p) => Math.abs(p.value ?? 0)));
+  const balances = districtSeries(d.code, (x) => x.fundBalance).filter(
+    (p): p is { label: string; value: number } => p.value != null
+  );
+  const firstBalance = balances[0];
+  const lastBalance = balances[balances.length - 1];
 
   return (
     <div data-assistant-section="fund-balance" className="mt-6 card p-5">
@@ -370,14 +385,26 @@ function FundBalanceCard({ district: d, year }: { district: District; year: stri
         </div>
         <div className={`rounded-lg border p-4 ${deficit ? 'border-critical/40 bg-red-50' : 'border-good/40 bg-green-50'}`}>
           <div className="text-sm text-ink-secondary">
-            {deficit ? 'Drew down savings' : 'Added to savings'}
+            {deficit ? 'Spent more than it took in' : 'Took in more than it spent'}
           </div>
           <div className={`text-2xl font-bold ${deficit ? 'text-critical' : 'text-good'}`}>
             {fmtSignedMoney(surplus)}
           </div>
-          <div className="text-xs text-ink-muted mt-0.5">this year&apos;s change in fund balance</div>
+          <div className="text-xs text-ink-muted mt-0.5">revenue minus spending</div>
         </div>
       </div>
+      {gapMaterial && change != null && (
+        <p className="mt-3 text-sm text-ink-secondary">
+          The fund balance itself {change < 0 ? 'fell' : 'rose'}{' '}
+          <strong className={change < 0 ? 'text-critical' : 'text-good'}>
+            {fmtMoney(Math.abs(change))}
+          </strong>{' '}
+          this year. The {fmtMoney(Math.abs(change - surplus))} difference comes
+          from general-fund money moved to other district funds, such as capital
+          projects, which the spending total leaves out, or from adjustments to
+          earlier years&apos; books.
+        </p>
+      )}
 
       {/* Fund balance (savings on hand) + reserve ratio */}
       {d.fundBalance != null && (
@@ -387,6 +414,11 @@ function FundBalanceCard({ district: d, year }: { district: District; year: stri
             <div className={`text-2xl font-bold ${d.fundBalance < 0 ? 'text-critical' : ''}`}>
               {fmtSignedMoney(d.fundBalance).replace('+', '')}
             </div>
+            {change != null && (
+              <div className={`text-xs font-medium mt-0.5 ${change < 0 ? 'text-critical' : 'text-good'}`}>
+                {fmtSignedMoney(change)} from last year
+              </div>
+            )}
             <div className="text-xs text-ink-muted mt-1">
               Year-end savings · emergencies, cash flow, next year&apos;s costs
             </div>
@@ -438,9 +470,9 @@ function FundBalanceCard({ district: d, year }: { district: District; year: stri
       {/* Year-by-year net strip */}
       <div className="mt-5">
         <div className="text-xs font-medium text-ink-secondary mb-2">
-          Surplus / (deficit) by year
+          Revenue minus spending by year
         </div>
-        <div className="flex items-stretch gap-2" role="img" aria-label={`${d.name} surplus or deficit by year`}>
+        <div className="flex items-stretch gap-2" role="img" aria-label={`${d.name} revenue minus spending by year`}>
           {netSeries.map((p) => {
             const v = p.value ?? 0;
             const h = (Math.abs(v) / maxAbs) * 40;
@@ -464,24 +496,24 @@ function FundBalanceCard({ district: d, year }: { district: District; year: stri
         </div>
       </div>
 
-      <p className="mt-4 text-sm text-ink-secondary">
-        Since {firstYear}, <span data-no-translate>{d.name}</span> has{' '}
-        <strong className={cumulative < 0 ? 'text-critical' : 'text-good'}>
-          {cumulative < 0 ? 'spent down' : 'added'} {fmtMoney(Math.abs(cumulative))}
-        </strong>{' '}
-        net {cumulative < 0 ? 'from' : 'to'} its reserves
-        {d.fundBalance != null && (
-          <>
-            , landing at a {fmtSignedMoney(d.fundBalance).replace('+', '')} fund
-            balance
-            {d.reserveRatio != null && <> ({d.reserveRatio.toFixed(1)}% of spending)</>}
-          </>
-        )}
-        .
-      </p>
+      {firstBalance && lastBalance && firstBalance !== lastBalance && (
+        <p className="mt-4 text-sm text-ink-secondary">
+          <span data-no-translate>{d.name}</span>&apos;s fund balance went from{' '}
+          {fmtSignedMoney(firstBalance.value).replace('+', '')} at the end of{' '}
+          {firstBalance.label} to {fmtSignedMoney(lastBalance.value).replace('+', '')}{' '}
+          at the end of {lastBalance.label}, a{' '}
+          <strong className={lastBalance.value < firstBalance.value ? 'text-critical' : 'text-good'}>
+            {lastBalance.value < firstBalance.value ? 'drop' : 'rise'} of{' '}
+            {fmtMoney(Math.abs(lastBalance.value - firstBalance.value))}
+          </strong>
+          .
+        </p>
+      )}
       <p className="mt-2 text-xs text-ink-muted">
         OSPI F-196 actuals; fund balance and reserve ratio from fiscal.wa.gov.
-        Bars show each year&apos;s change (money in minus money out).
+        Bars show each year&apos;s revenue minus spending. The fund balance also
+        moves with money sent to other district funds and prior-year
+        adjustments, so the two can differ.
       </p>
     </div>
   );
@@ -707,15 +739,24 @@ function TrendAnalysis({ district: d, year }: { district: District; year: string
 
   const ppPct = ((pp[pp.length - 1] - pp[0]) / pp[0]) * 100;
   const deficitYears = surp.filter((v) => v < 0).length;
-  const cumNet = surp.reduce((a, b) => a + b, 0);
+  // The balance's own movement, not a sum of surpluses - see FundBalanceCard.
+  const balances = districtSeries(d.code, (x) => x.fundBalance).filter(
+    (p): p is { label: string; value: number } => p.value != null
+  );
+  const firstBalance = balances[0];
+  const lastBalance = balances[balances.length - 1];
   const fundingTrend = ppPct > 2
     ? `Up ${Math.round(ppPct)}% since ${firstYear}`
     : ppPct < -2
       ? `Down ${Math.round(Math.abs(ppPct))}% since ${firstYear}`
       : `Roughly flat since ${firstYear}`;
   const balanceTrend = surp.length > 0
-    ? `${deficitYears} of ${surp.length} years had deficits; ${fmtMoney(Math.abs(cumNet))} ${cumNet < 0 ? 'net shortfall' : 'net surplus'}.`
-    : 'No surplus/deficit history is available.';
+    ? `Spending exceeded revenue in ${deficitYears} of ${surp.length} years.${
+        firstBalance && lastBalance && firstBalance !== lastBalance
+          ? ` The fund balance went from ${fmtMoney(firstBalance.value)} (end of ${firstBalance.label}) to ${fmtMoney(lastBalance.value)} (end of ${lastBalance.label}).`
+          : ''
+      }`
+    : 'No revenue and spending history is available.';
   const reserveAction = d.reserveRatio == null
     ? 'Check the latest district budget for its fund balance and reserve target.'
     : d.reserveRatio < RESERVE_THIN_PCT

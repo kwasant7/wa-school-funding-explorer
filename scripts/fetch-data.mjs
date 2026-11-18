@@ -413,6 +413,10 @@ async function buildYear({ label, enrollmentId, revenueFile, expenditureFile, re
       roundedLocal + roundedState + roundedFederal + roundedOther;
     const roundedExp = Math.round(expenditures.get(code) || 0);
     const fundBalance = fundBalanceData[label]?.[code] ?? null;
+    // Last year's ending balance, so the page can show how much the balance
+    // actually moved. Null for the first year on the site.
+    const priorLabel = YEARS[YEARS.findIndex((y) => y.label === label) - 1]?.label;
+    const priorFundBalance = priorLabel ? fundBalanceData[priorLabel]?.[code] ?? null : null;
     districts.push({
       code,
       name: row.districtname,
@@ -445,12 +449,16 @@ async function buildYear({ label, enrollmentId, revenueFile, expenditureFile, re
         total: roundedTotal,
       },
       exp: roundedExp,
-      // Change in fund balance for the year: positive = added to reserves,
-      // negative = drew down reserves ("dipped into savings").
+      // Revenue minus spending, as fiscal.wa.gov's general-fund totals define
+      // both. This is NOT the change in fund balance: transfers to other funds
+      // (capital projects, debt service, buses) are not in the spending total,
+      // and prior-year adjustments move the balance too. Use fundBalance -
+      // priorFundBalance for that.
       surplus: roundedTotal - roundedExp,
       // Ending total fund balance (savings carried forward) and the reserve
       // ratio (savings ÷ annual spending) from fiscal.wa.gov's WSF workbook.
       fundBalance,
+      priorFundBalance,
       reserveRatio:
         fundBalance != null && roundedExp > 0
           ? Math.round((fundBalance / roundedExp) * 1000) / 10

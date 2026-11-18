@@ -26,6 +26,7 @@ import {
 } from '@/lib/diagnosis';
 import { BIG3_KEYS, big3Totals, type Big3Key } from '@/lib/big3';
 import { fmtInt, fmtMoney, fmtMoneyFull } from '@/lib/format';
+import { balanceGapIsMaterial, fundBalanceChange } from '@/lib/reserves';
 
 /** The three problems the Big 3 section already covers on their own. */
 const BIG3_ISSUES: ReadonlySet<IssueId> = new Set<IssueId>(['sped', 'msoc', 'transportation']);
@@ -232,12 +233,17 @@ export function onePageFor(code: string): OnePage | null {
   // --- Tiles: the District Explorer's headline numbers -------------------
   const medianNow = trendJson.median[trendJson.median.length - 1];
   const surplus = record.surplus;
+  // When money moved to other funds makes the balance move differently from
+  // revenue minus spending, the tile's note says what the balance did.
+  const balanceChange = fundBalanceChange(record);
   const reserveNote =
-    record.reserveRatio == null
-      ? ''
-      : record.reserveRatio < 0
-        ? 'No savings left'
-        : `Savings: ${record.reserveRatio.toFixed(1)}% of spending`;
+    balanceGapIsMaterial(surplus, balanceChange, record.exp) && balanceChange != null
+      ? `Savings ${balanceChange < 0 ? 'fell' : 'rose'} ${fmtMoney(Math.abs(balanceChange))}`
+      : record.reserveRatio == null
+        ? ''
+        : record.reserveRatio < 0
+          ? 'No savings left'
+          : `Savings: ${record.reserveRatio.toFixed(1)}% of spending`;
   const tiles: Tile[] = [
     {
       label: 'Revenue per student',

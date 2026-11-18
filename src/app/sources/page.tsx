@@ -513,7 +513,13 @@ export default function SourcesPage() {
             Expenditures&rdquo; CSVs on the same{' '}
             <Ext href="https://ospi.k12.wa.us/safs-data-files">SAFS page</Ext>.
             The yearly surplus / (deficit) shown on each district is simply
-            revenue minus spending - the change in the fund balance.
+            revenue minus spending, on the same general-fund totals as
+            fiscal.wa.gov. It is not the change in the fund balance: revenue
+            includes transfers in from other funds, but general-fund money sent
+            out to other funds (capital projects, debt service, buses) is not
+            counted as spending, and prior-year adjustments move the balance too.
+            Where the site says how much the fund balance rose or fell, it uses
+            the difference between the two year-end balances.
           </p>
           <p>
             The <strong className="text-ink">ending fund balance</strong> (a

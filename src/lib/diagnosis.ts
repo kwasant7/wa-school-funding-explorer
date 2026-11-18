@@ -35,7 +35,7 @@ import { oversightFor, type Oversight } from '@/data/oversight';
 import { fmtMoney, fmtMoneyFull, fmtInt, alignPair } from '@/lib/format';
 import { big3For, big3Gap, big3Totals, type Big3Record } from '@/lib/big3';
 import { PROTOTYPES } from '@/lib/prototypical-model';
-import { RESERVE_BENCHMARK_PCT, RESERVE_THIN_PCT, reserveDays } from '@/lib/reserves';
+import { RESERVE_BENCHMARK_PCT, RESERVE_THIN_PCT, fundBalanceChange, reserveDays } from '@/lib/reserves';
 
 type DistrictRecord = (typeof districtsJson.districts)[number];
 type Allocation = (typeof allocationJson.districts)[keyof typeof allocationJson.districts];
@@ -602,7 +602,14 @@ const reservesIssue: Builder = (m) => {
     brief cries wolf in districts that are fine, which costs it credibility in
     the ones that are not.
   */
-  const deficitShare = m.record.exp > 0 ? (100 * -m.surplus) / m.record.exp : 0;
+  /*
+    Measured on the fund balance itself where both year-end balances exist.
+    Revenue minus spending misses general-fund money moved to other funds:
+    Bethel's 2024-25 looked like a 0.5% shortfall while its balance fell 1.6%.
+  */
+  const balanceChange = fundBalanceChange(m.record);
+  const drop = balanceChange != null ? -balanceChange : -m.surplus;
+  const deficitShare = m.record.exp > 0 ? (100 * drop) / m.record.exp : 0;
   const materialDeficit = deficitShare >= 1;
   // Under a month of spending. The State Auditor's 60-day benchmark is the
   // line on the gauge, but most districts sit below it (the statewide median
@@ -625,12 +632,16 @@ const reservesIssue: Builder = (m) => {
     title: negativeBalance
       ? 'The savings are gone'
       : materialDeficit
-        ? 'Spending outran revenue last year'
+        ? balanceChange != null
+          ? 'Savings fell last year'
+          : 'Spending outran revenue last year'
         : 'Savings are running low',
     fact: negativeBalance
       ? `${m.name} ended ${LATEST_YEAR} with a negative fund balance - it has spent its savings and is carrying a shortfall forward.`
       : materialDeficit
-        ? `${m.name} spent ${plainMoney(Math.abs(m.surplus))} more than it took in last year, covering the difference out of savings.`
+        ? balanceChange != null
+          ? `${m.name}'s fund balance fell by ${plainMoney(drop)} last year, leaving about ${reserveDays(rr)} days of spending in savings.`
+          : `${m.name} spent ${plainMoney(Math.abs(m.surplus))} more than it took in last year, covering the difference out of savings.`
         : `${m.name} has enough savings to run for only about ${reserveDays(rr)} days, less than one month of spending.`,
     visual: {
       kind: 'gauge',
@@ -900,6 +911,7 @@ function summaryFor(m: Metrics, issues: Issue[]): string {
 // The reserves card has three variants; the summary names the one shown.
 const RESERVES_SHORT: Record<string, string> = {
   'The savings are gone': 'a negative fund balance',
+  'Savings fell last year': 'falling savings',
   'Spending outran revenue last year': 'spending that outran revenue',
   'Savings are running low': 'thin savings',
 };
