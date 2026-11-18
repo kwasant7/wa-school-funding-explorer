@@ -273,12 +273,12 @@ function DistrictOverview({
         language control - see SchoolYearSwitcher.
       */}
       {/*
-        Statewide context is what you read while deciding which district to
-        click. Once one is open it's just four tiles between the reader and the
-        profile they asked for, so it stands down until the selection clears.
+        Statewide context stays up with a district open too, as the baseline
+        the district's own figures are read against.
       */}
-      {!selectedCode && (
-      <div data-assistant-section="district-stats" className="mt-6 grid lg:grid-cols-[1fr,22rem] gap-4 items-stretch">
+      <section data-assistant-section="district-stats" className="mt-6">
+      <h2 className="font-semibold">Statewide</h2>
+      <div className="mt-2 grid lg:grid-cols-[1fr,22rem] gap-4 items-stretch">
         <div className="grid grid-cols-2 gap-3">
           <StatTile label={`School districts (${year})`} value={String(districtCount(year))} />
           <StatTile
@@ -309,7 +309,7 @@ function DistrictOverview({
           </p>
         </div>
       </div>
-      )}
+      </section>
 
       <div data-assistant-section="district-picker" className="mt-6 card p-5">
         <h2 className="font-semibold">
