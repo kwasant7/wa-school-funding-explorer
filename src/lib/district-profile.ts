@@ -34,7 +34,12 @@ export type GapRow = {
   allocated: number;
   /** What the district's F-196 actuals show it spent. */
   spent: number;
-  /** spent − allocated. Positive means the district covered the difference. */
+  /**
+   * Other revenue booked to the same programs - for special education,
+   * payments from other districts, Medicaid and other agencies. 0 elsewhere.
+   */
+  otherRevenue: number;
+  /** spent − allocated − otherRevenue. Positive means the district covered the difference. */
   gap: number;
   gapPerPupil: number;
 };
@@ -129,6 +134,7 @@ function gaps(m: Metrics): GapRow[] {
       label: 'Special education',
       allocated: m.alloc.specialEd,
       spent: m.spend.sped,
+      otherRevenue: m.spend.spedOtherRevenue,
       gap: m.spedGap,
       gapPerPupil: m.spedGapPerPupil,
     },
@@ -139,6 +145,7 @@ function gaps(m: Metrics): GapRow[] {
       // subtract to the gap printed next to it.
       allocated: m.alloc.msocBig3,
       spent: m.spend.msocBig3,
+      otherRevenue: 0,
       gap: m.msocGap,
       gapPerPupil: m.msocGapPerPupil,
     },
@@ -147,6 +154,7 @@ function gaps(m: Metrics): GapRow[] {
       label: 'Student transportation',
       allocated: m.alloc.transportation,
       spent: m.spend.transportation,
+      otherRevenue: 0,
       gap: m.transGap,
       gapPerPupil: m.transGapPerPupil,
     },

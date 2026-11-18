@@ -126,12 +126,14 @@ function actualSpendPerUnit(leverId: LeverId, code: string): number | null {
         this district's own allocation rather than a flat statewide rate. The
         allocation already equals its basic-education base times today's
         multiplier, so dividing it back out gives the base the multiplier acts
-        on - no assumed dollar figure, and the answer reconciles with the Big 3
-        card, which subtracts these same two totals.
+        on - no assumed dollar figure. Spending is net of the other revenue
+        booked to the same programs (other districts' payments, Medicaid), the
+        same net the district page's special-ed gap uses.
       */
       const alloc = ALLOCATION[code];
-      if (!alloc || alloc.specialEd <= 0 || spend.sped <= 0) return null;
-      return (spend.sped * SPED_BASELINE_MULTIPLIER) / alloc.specialEd;
+      const netSpend = spend.sped - spend.spedOtherRevenue;
+      if (!alloc || alloc.specialEd <= 0 || netSpend <= 0) return null;
+      return (netSpend * SPED_BASELINE_MULTIPLIER) / alloc.specialEd;
     }
     case 'msoc':
       // Big-3 scope (OSPI's 2026 budget-request definition), so the spending
@@ -1870,8 +1872,9 @@ export default function Simulator() {
               multiplier: dividing that back out recovers the basic-education
               base the multiplier acts on, so moving the slider scales the
               money the district actually receives, and closing the gap to what
-              it spends matches the Big 3 figures elsewhere on the site
-              exactly. The multilingual weight still converts at a flat{' '}
+              it spends, net of other special-education revenue, matches the
+              special-education gap on its district page. The multilingual
+              weight still converts at a flat{' '}
               <strong className="text-ink">$1,800</strong> per student, a
               statewide figure rather than any one district&apos;s rate.
             </li>

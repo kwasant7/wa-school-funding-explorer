@@ -75,6 +75,22 @@ const EXPENDITURE_URL = `${OSPI}/2025-12/24-25-actuals-general-fund-expenditures
 const EXPENDITURE_DETAIL_FILE = 'gf-exp-detail-2425.csv';
 const EXPENDITURE_DETAIL_URL = `${OSPI}/2025-12/24-25-actuals-child-general-fund-expenditures.csv`;
 const SCHOOL_YEAR = '2024-2025';
+const REVENUE_FILE = 'gf-revenues-2425.csv';
+const REVENUE_URL = `${OSPI}/2025-12/24-25-actuals-general-fund-revenues.csv`;
+
+/*
+  Special-education revenue that is not the state formula allocation: payments
+  from other districts for students a district serves for them (7121), Medicaid
+  and other federal money booked to programs 21/22/26 (6121/6321/6322), other
+  state agencies (4321/4322/4326) and private sources (8521). The F-196 books
+  the matching cost in the same programs, so without this the district page
+  called all of it "covered beyond the formula" - $5.3M of Edmonds' $12.3M
+  special-ed gap was other districts paying it. Codes ending 24 (federal IDEA,
+  program 24) stay out, as on the cost side.
+*/
+const SPED_FORMULA_CODES = new Set(['3121', '4121', '4122', '4126']);
+const isSpedOtherRevenue = (code) =>
+  ['21', '22', '26'].includes(code.slice(-2)) && !SPED_FORMULA_CODES.has(code);
 
 // State-funded special education only. Program 24 (federal IDEA supplemental)
 // is excluded on purpose - see the note in the module docstring.
@@ -223,6 +239,16 @@ async function main() {
       add(code, 'msocBig3', num(row['Amount']));
   }
 
+  const spedOther = new Map();
+  for (const row of parseCsv(await ensureFile(REVENUE_FILE, REVENUE_URL))) {
+    if (row['Fund Code'] !== '1') continue; // general fund only
+    if (row['School Year Code'] !== SCHOOL_YEAR) continue;
+    const revenueCode = String(row['Revenue Code']).trim();
+    if (!isSpedOtherRevenue(revenueCode)) continue;
+    const code = String(row['County District Code']).padStart(5, '0');
+    spedOther.set(code, (spedOther.get(code) ?? 0) + num(row['Amount']));
+  }
+
   const districts = JSON.parse(
     await readFile(path.join(DATA_DIR, 'districts.json'), 'utf8')
   );
@@ -242,6 +268,7 @@ async function main() {
     out[d.code] = {
       sped: Math.round(spend.sped),
       spedPerStudent: d.demo.sped > 0 ? Math.round(spend.sped / d.demo.sped) : 0,
+      spedOtherRevenue: Math.round(spedOther.get(d.code) ?? 0),
       transportation: Math.round(spend.transportation),
       transportationPerStudent:
         d.enrollment > 0 ? Math.round(spend.transportation / d.enrollment) : 0,

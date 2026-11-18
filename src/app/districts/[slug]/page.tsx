@@ -242,8 +242,9 @@ export default function DistrictPage({ params }: Params) {
         >
           <p className="text-ink-secondary">
             For three programs the state publishes both an allocation and what
-            districts actually spent. Where spending runs above the allocation,
-            the difference comes out of local levy, federal or other money.
+            districts actually spent. Where spending runs above the allocation
+            and any other revenue booked to the program, the difference comes
+            out of local levy and other general-fund money.
           </p>
           <div className="mt-4 overflow-x-auto">
             <table className="w-full text-sm">
@@ -255,6 +256,7 @@ export default function DistrictPage({ params }: Params) {
                 <tr className="border-b border-line text-left">
                   <th scope="col" className="py-2 pr-4 font-semibold">Program</th>
                   <th scope="col" className="py-2 pr-4 font-semibold text-right">State allocation</th>
+                  <th scope="col" className="py-2 pr-4 font-semibold text-right">Other program revenue</th>
                   <th scope="col" className="py-2 pr-4 font-semibold text-right">Actually spent</th>
                   <th scope="col" className="py-2 pr-4 font-semibold text-right">Difference</th>
                   <th scope="col" className="py-2 font-semibold text-right">Per student</th>
@@ -268,6 +270,9 @@ export default function DistrictPage({ params }: Params) {
                     </th>
                     <td className="py-2 pr-4 text-right tabular-nums">
                       {fmtMoneyFull(g.allocated)}
+                    </td>
+                    <td className="py-2 pr-4 text-right tabular-nums">
+                      {g.otherRevenue ? fmtMoneyFull(g.otherRevenue) : '-'}
                     </td>
                     <td className="py-2 pr-4 text-right tabular-nums">
                       {fmtMoneyFull(g.spent)}
@@ -286,14 +291,18 @@ export default function DistrictPage({ params }: Params) {
           {p.coveredLocally > 0 && (
             <p className="mt-3">
               Across these three programs, {p.name} covered about{' '}
-              <strong>{fmtMoney(p.coveredLocally)}</strong> beyond what the state
-              formula allocated in {p.schoolYear}.
+              <strong>{fmtMoney(p.coveredLocally)}</strong> from its own general
+              money beyond what the state formula and other program revenue paid
+              for in {p.schoolYear}.
             </p>
           )}
           <p className="mt-3 text-sm text-ink-muted">
             Special education here is state programs 21, 22 and 26 - federally
-            funded IDEA (program 24) is excluded from both sides, so the two
-            columns describe the same thing. Read more on{' '}
+            funded IDEA (program 24) is excluded from both sides. Its other
+            program revenue is what the same programs took in beyond the state
+            allocation: payments from other districts for students served for
+            them, Medicaid and other agencies (F-196 revenue codes ending 21, 22
+            and 26). Read more on{' '}
             <Link href="/special-education-funding" className="text-accent hover:underline">
               special education funding
             </Link>

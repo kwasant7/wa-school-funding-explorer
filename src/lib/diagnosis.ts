@@ -297,7 +297,10 @@ function buildMetrics(): Metrics[] {
     const fte = record.fundingEnrollment || record.enrollment || 1;
     const headcount = record.enrollment || 0;
 
-    const spedGap = alloc && spend ? spend.sped - alloc.specialEd : 0;
+    // Net of the other special-ed revenue booked to the same programs (other
+    // districts' payments, Medicaid, other agencies), so the gap is what the
+    // district paid from its own general money - see build-program-spending.
+    const spedGap = alloc && spend ? spend.sped - spend.spedOtherRevenue - alloc.specialEd : 0;
     // MSOC uses the Big-3 scope (OSPI's 2026 budget-request definition, the
     // same one AESD's dashboard publishes) rather than the GenEd-only pair,
     // so the gap quoted to a legislator matches the number their staff can
