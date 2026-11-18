@@ -6,7 +6,7 @@ import DistrictBrief from '@/components/DistrictBrief';
 import data from '@/data/districts.json';
 import representation from '@/data/legislators.json';
 import { useAssistantDistrict } from '@/lib/assistant/store';
-import { readSelectedDistrict, writeSelectedDistrict } from '@/lib/selected-district';
+import { initialDistrictCode, writeSelectedDistrict } from '@/lib/selected-district';
 // Portraits live in public/legislators; prefix with the deploy base path so
 // they resolve under the GitHub Pages project subpath.
 const BASE_PATH = process.env.NEXT_PUBLIC_BASE_PATH ?? '';
@@ -125,12 +125,18 @@ export default function TakeAction() {
       empty-shell problem the District Explorer had before it was split into
       static per-district routes.
     */
+    const exists = (code: string) =>
+      data.districts.some((district) => district.code === code);
     const fromUrl = new URLSearchParams(window.location.search).get('d');
-    const saved = fromUrl ?? readSelectedDistrict();
-    if (saved && data.districts.some((district) => district.code === saved)) {
-      setSelectedCode(saved);
-      if (fromUrl) writeSelectedDistrict(fromUrl);
+    if (fromUrl && exists(fromUrl)) {
+      setSelectedCode(fromUrl);
+      writeSelectedDistrict(fromUrl);
+      return;
     }
+    // Saved choice, else the site-wide default, so the delegation panel is
+    // never empty on a first visit.
+    const initial = initialDistrictCode(exists);
+    if (initial) setSelectedCode(initial);
   }, []);
 
   const districts = useMemo(

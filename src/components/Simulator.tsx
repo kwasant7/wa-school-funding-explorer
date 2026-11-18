@@ -14,7 +14,7 @@ import {
   type SimulatorControlId,
 } from '@/lib/simulator-config';
 import { useAssistantDistrict, useAssistantSimulator } from '@/lib/assistant/store';
-import { readSelectedDistrict, writeSelectedDistrict } from '@/lib/selected-district';
+import { initialDistrictCode, writeSelectedDistrict } from '@/lib/selected-district';
 
 /**
  * A lever's numeric envelope, read from the shared control table so the
@@ -1612,10 +1612,13 @@ export default function Simulator() {
     (lever) => values[lever.id] !== lever.baseline
   );
 
-  // Restore whatever district the visitor picked elsewhere on the site.
+  // Restore whatever district the visitor picked elsewhere on the site, or
+  // open on the site-wide default if they haven't picked one.
   useEffect(() => {
-    const saved = readSelectedDistrict();
-    if (saved && data.districts.some((d) => d.code === saved)) setCode(saved);
+    const initial = initialDistrictCode((c) =>
+      data.districts.some((d) => d.code === c)
+    );
+    if (initial) setCode(initial);
   }, []);
 
   const pickerDistricts = useMemo(

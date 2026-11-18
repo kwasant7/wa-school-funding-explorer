@@ -7,6 +7,27 @@
  */
 export const SELECTED_DISTRICT_KEY = 'wa-selected-district';
 
+/**
+ * The district every page opens on for a visitor who hasn't picked one yet.
+ * Seattle is the state's largest district and the one most visitors will
+ * recognise, and its figures exercise every panel (a deficit, a thin reserve,
+ * a levy). One constant so all the tabs open on the same place.
+ */
+export const DEFAULT_DISTRICT_CODE = '17001';
+
+/**
+ * The visitor's saved district if it still exists in the data, otherwise the
+ * default. `exists` is passed in because pages check against different data
+ * (the latest year, the simulator's own table).
+ */
+export function initialDistrictCode(
+  exists: (code: string) => boolean
+): string | null {
+  const saved = readSelectedDistrict();
+  if (saved && exists(saved)) return saved;
+  return exists(DEFAULT_DISTRICT_CODE) ? DEFAULT_DISTRICT_CODE : null;
+}
+
 export function readSelectedDistrict(): string | null {
   try {
     return window.localStorage.getItem(SELECTED_DISTRICT_KEY);

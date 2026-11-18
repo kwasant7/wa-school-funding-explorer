@@ -18,7 +18,7 @@ import regionalizationJson from '@/data/regionalization.json';
 import districtsJson from '@/data/districts.json';
 import { alignPair, fmtInt, fmtMoney, fmtMoneyFull, fmtMoneyOnGrid, fmtSignedMoney, pct } from '@/lib/format';
 import { useAssistantDistrict, useAssistantYear } from '@/lib/assistant/store';
-import { readSelectedDistrict, writeSelectedDistrict } from '@/lib/selected-district';
+import { initialDistrictCode, writeSelectedDistrict } from '@/lib/selected-district';
 import { RESERVE_BENCHMARK_PCT, RESERVE_THIN_PCT, reserveDays } from '@/lib/reserves';
 
 /*
@@ -155,10 +155,11 @@ export default function DistrictsExplorer() {
     if (restoredSelection.current) return;
     restoredSelection.current = true;
     if (selectedCode) return;
-    const saved = readSelectedDistrict();
-    if (!saved || !yearData(LATEST).districts.some((d) => d.code === saved)) {
-      return;
-    }
+    // Saved choice, else the site-wide default.
+    const saved = initialDistrictCode((c) =>
+      yearData(LATEST).districts.some((d) => d.code === c)
+    );
+    if (!saved) return;
     scrolledFor.current = saved;
     router.replace(`/districts?d=${encodeURIComponent(saved)}`);
   }, [router, selectedCode]);

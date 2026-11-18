@@ -12,7 +12,7 @@ import ClassSizeViz from '@/components/interactive/ClassSizeViz';
 import FundingJourney from '@/components/interactive/FundingJourney';
 import { useAssistantDistrict, useAssistantYear } from '@/lib/assistant/store';
 import { yearData as yearDataFor } from '@/lib/data';
-import { readSelectedDistrict, writeSelectedDistrict } from '@/lib/selected-district';
+import { initialDistrictCode, writeSelectedDistrict } from '@/lib/selected-district';
 
 export default function HomeExplainer() {
   const [year, setYear] = useState(LATEST);
@@ -27,18 +27,15 @@ export default function HomeExplainer() {
     A first-time visitor has nothing saved, and the page used to open with no
     district at all: every per-district panel below sat empty until they
     thought to pick one, which reads as a page that hasn't finished loading
-    rather than one waiting for input. It falls back to the first district
-    alphabetically so there is always something real on screen to react to.
+    rather than one waiting for input. It falls back to the site-wide default
+    district so there is always something real on screen to react to.
     A saved choice always wins - this only fills the empty case.
   */
   const [restored, setRestored] = useState(false);
   useEffect(() => {
     const districts = yearData(LATEST).districts;
-    const saved = readSelectedDistrict();
-    const record =
-      (saved && districts.find((d) => d.code === saved)) ||
-      [...districts].sort((a, b) => a.name.localeCompare(b.name))[0] ||
-      null;
+    const code = initialDistrictCode((c) => districts.some((d) => d.code === c));
+    const record = districts.find((d) => d.code === code) ?? null;
     if (record) setSelectedDistrict(record);
     setRestored(true);
   }, []);
