@@ -627,39 +627,60 @@ function Big3Card({ district: d }: { district: District }) {
         , built from F-196 actuals and OSPI apportionment.
       </p>
 
-      <dl className="mt-3 space-y-2 text-xs text-ink-secondary">
-        {BIG3_DEFINITIONS.map(([term, text]) => (
-          <div key={term}>
-            <dt className="inline font-semibold text-ink">{term}: </dt>
-            <dd className="inline">{text}</dd>
-          </div>
-        ))}
-      </dl>
+      <div className="mt-3 overflow-x-auto">
+        <table className="w-full min-w-[560px] text-xs text-ink-secondary">
+          <caption className="sr-only">
+            What each Big 3 figure counts, beside the same figure elsewhere on this site
+          </caption>
+          <thead>
+            <tr className="text-left text-ink">
+              <th scope="col" className="w-36 py-1.5 pr-3 font-semibold">
+                <span className="sr-only">Program</span>
+              </th>
+              <th scope="col" className="py-1.5 pr-3 font-semibold">Rest of this site</th>
+              <th scope="col" className="py-1.5 font-semibold">Big 3 gap (above)</th>
+            </tr>
+          </thead>
+          <tbody>
+            {BIG3_DEFINITIONS.map(([term, site, big3]) => (
+              <tr key={term} className="border-t border-line align-top">
+                <th scope="row" className="py-1.5 pr-3 text-left font-semibold text-ink">
+                  {term}
+                </th>
+                <td className="py-1.5 pr-3">{site}</td>
+                <td className="py-1.5">{big3}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      <p className="mt-2 text-xs text-ink-muted">
+        Big 3 per-student amounts divide by K-12 students plus alternative
+        learning students, leaving out Running Start and dropout reengagement.
+      </p>
     </div>
   );
 }
 
 /*
-  What each Big 3 figure counts, in AESD's definitions. Two differ from figures
-  elsewhere on this site: special education cost here includes the federal
-  program, and the per-student count leaves out Running Start.
+  What each Big 3 figure counts in AESD's definitions, beside the definition
+  the rest of this site (topic pages, simulator, district brief) uses.
 */
-const BIG3_DEFINITIONS: [string, string][] = [
+const BIG3_DEFINITIONS: [string, string, string][] = [
   [
     'Special education',
-    'Cost is what the district spent on special education, state and federal programs together (F-196 programs 21 and 24). Funding is every special education revenue line: state funding, federal grants under the Individuals with Disabilities Education Act, Medicaid reimbursements, and payments from other districts.',
+    'Cost: state special education programs only (F-196 programs 21, 22, 26). Funding: the state special education allocation.',
+    'Cost: state and federal programs together (programs 21 and 24). Funding: every special education revenue line - state, federal IDEA grants, Medicaid, and payments from other districts.',
   ],
   [
     'Transportation',
-    'Cost is what the district spent on student transportation (program 99) from its general fund, so buses bought through its Transportation Vehicle Fund are not included. Funding is the state transportation allocation plus payments from other agencies and districts.',
+    'Cost: student transportation from the general fund (program 99); buses bought through the Transportation Vehicle Fund are not included. Funding: the state transportation allocation.',
+    'Cost: the same (program 99). Funding: the state transportation allocation plus payments from other agencies and districts.',
   ],
   [
-    'Operating costs (MSOC)',
-    'Cost is non-staff spending, such as supplies, technology, utilities, and insurance, in basic education, career and technical education, and other programs. Contracted transportation, tuition, debt, and building improvements are left out. Funding is the state allocation for these costs.',
-  ],
-  [
-    'Per student',
-    'Divides by K-12 students plus alternative learning students, leaving out Running Start and dropout reengagement.',
+    'MSOC',
+    'Cost: non-staff spending such as supplies, technology, utilities, and insurance, leaving out contracted transportation, tuition, debt, and building improvements. Funding: the state allocation for these costs.',
+    'The same definition. Funding differs slightly because AESD counts alternative learning students separately.',
   ],
 ];
 
