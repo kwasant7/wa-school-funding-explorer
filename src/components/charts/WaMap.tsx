@@ -166,6 +166,16 @@ const REGION_FACTORS = new Map(
 );
 const REGION_MAX = Math.max(...Array.from(REGION_FACTORS.values()));
 
+/**
+ * Where to put a legend marker's label: over the line, or aligned to the bar's
+ * end when the line is near it, so the label stays over the bar.
+ */
+function labelStyleAt(at: number): { left?: string; right?: string; transform?: string } {
+  if (at < 25) return { left: `calc(${at}% - 2px)` };
+  if (at > 75) return { right: `calc(${100 - at}% - 2px)` };
+  return { left: `${at}%`, transform: 'translateX(-50%)' };
+}
+
 function regionColor(factor: number) {
   const t = (factor - 1) / (REGION_MAX - 1);
   const scaled = Math.min(0.9999, Math.max(0, t)) * (REGION_RAMP.length - 1);
@@ -347,13 +357,7 @@ export default function WaMap({
     const spoken = inRed
       ? `Actual: in the red by ${count} ${unit} of spending.`
       : `Actual: ${count} ${unit} of savings.`;
-    const labelStyle: { left?: string; right?: string; transform?: string } =
-      at < 25
-        ? { left: `calc(${at}% - 2px)` }
-        : at > 75
-          ? { right: `calc(${100 - at}% - 2px)` }
-          : { left: `${at}%`, transform: 'translateX(-50%)' };
-    return { at, text, spoken, labelStyle };
+    return { at, text, spoken, labelStyle: labelStyleAt(at) };
   })();
 
   /*
@@ -364,13 +368,21 @@ export default function WaMap({
     const d = selectedShape ? info.get(selectedShape.code) : null;
     if (!d) return null;
     const at = d.perPupilRank * 100;
-    const labelStyle: { left?: string; right?: string; transform?: string } =
-      at < 25
-        ? { left: `calc(${at}% - 2px)` }
-        : at > 75
-          ? { right: `calc(${100 - at}% - 2px)` }
-          : { left: `${at}%`, transform: 'translateX(-50%)' };
-    return { at, text: `${fmtMoneyFull(d.perPupil)} per student`, labelStyle };
+    return { at, text: `${fmtMoneyFull(d.perPupil)} per student`, labelStyle: labelStyleAt(at) };
+  })();
+
+  /*
+    The open district's regionalization factor, drawn as a line on the bar
+    where the map colours it, with the factor and its uplift above, e.g.
+    Skykomish "1.18× (+18%)".
+  */
+  const regionActual = (() => {
+    const f = selectedShape ? info.get(selectedShape.code)?.regionalization : null;
+    if (f == null) return null;
+    const at = Math.min(100, Math.max(0, ((f - 1) / (REGION_MAX - 1)) * 100));
+    const uplift = Math.round((f - 1) * 100);
+    const text = uplift > 0 ? `${f.toFixed(2)}× (+${uplift}%)` : `${f.toFixed(2)}×`;
+    return { at, text, labelStyle: labelStyleAt(at) };
   })();
 
   const fadedFills = useMemo(() => {
@@ -931,12 +943,32 @@ export default function WaMap({
                 1.00× base
               </span>
               <span
-                className="inline-block h-3 w-40 md:w-56 rounded-sm"
-                style={{
-                  background: `linear-gradient(to right, ${REGION_RAMP.map(legendTone).join(', ')})`,
-                }}
+                className={`relative inline-block h-3 w-40 rounded-sm md:w-56 ${
+                  regionActual ? 'mt-7 mb-2' : ''
+                }`}
                 aria-hidden
-              />
+              >
+                <span
+                  className="absolute inset-0 rounded-sm"
+                  style={{
+                    background: `linear-gradient(to right, ${REGION_RAMP.map(legendTone).join(', ')})`,
+                  }}
+                />
+                {regionActual && (
+                  <>
+                    <span
+                      className="absolute -top-2 -bottom-2 w-[3px] -translate-x-1/2 rounded-sm bg-ink"
+                      style={{ left: `${regionActual.at}%` }}
+                    />
+                    <span
+                      className="absolute bottom-full mb-2.5 whitespace-nowrap text-[13px] font-bold leading-none text-ink"
+                      style={regionActual.labelStyle}
+                    >
+                      {regionActual.text}
+                    </span>
+                  </>
+                )}
+              </span>
               <span className="font-medium" style={{ color: REGION_HIGH_LABEL }}>
                 {REGION_MAX.toFixed(2)}×
               </span>
@@ -944,6 +976,11 @@ export default function WaMap({
             <span className="text-ink-muted">
               | certificated salary allocations, scaled for local hiring costs
             </span>
+            {regionActual && (
+              <span className="sr-only">
+                <span data-no-translate>{selectedName}</span>: {regionActual.text}.
+              </span>
+            )}
           </>
         ) : (
           <>
