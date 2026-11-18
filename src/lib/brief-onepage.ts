@@ -27,6 +27,7 @@ import {
 import { BIG3_KEYS, big3Totals, type Big3Key } from '@/lib/big3';
 import { fmtInt, fmtMoney, fmtMoneyFull } from '@/lib/format';
 import { balanceGapIsMaterial, fundBalanceChange } from '@/lib/reserves';
+import { isSchoolDistrict } from '@/lib/entity';
 
 /** The three problems the Big 3 section already covers on their own. */
 const BIG3_ISSUES: ReadonlySet<IssueId> = new Set<IssueId>(['sped', 'msoc', 'transportation']);
@@ -180,8 +181,10 @@ function messageFor(
   shortPrograms: { key: Big3Key; gap: number }[]
 ): string {
   const metrics = metricsFor(code);
-  // A charter school has residents of no one's school district to speak for.
-  const isDistrict = /school district/i.test(metrics?.name ?? '');
+  // A charter or tribal compact school has no residents of its own to speak
+  // for. Read from the data, not the name: "Rainier Prep Charter School
+  // District" is a charter, and "Quileute Tribal School District" a compact.
+  const isDistrict = metrics != null && isSchoolDistrict(metrics.record);
   const sentences = [isDistrict ? `I live in ${shortName}.` : `I am writing about ${shortName}.`];
   const requests: string[] = [];
 
@@ -260,7 +263,16 @@ export function onePageFor(code: string): OnePage | null {
       value: `${Math.round(metrics.lowIncomeRate)}%`,
       note: `${fmtInt(record.demo.lowIncome)} students`,
     },
-    surplus < 0
+    // Revenue booked to the dollar to match spending, with no fund balance
+    // reported, is an accounting convention rather than a balanced budget
+    // (Paschal Sherman), so it is not shown as a surplus.
+    surplus === 0
+      ? {
+          label: 'Revenue minus spending',
+          value: '$0',
+          note: record.fundBalance == null ? 'Revenue reported equal to spending' : reserveNote,
+        }
+      : surplus < 0
       ? {
           label: 'Spent more than it took in',
           value: `-${fmtMoney(Math.abs(surplus))}`,
@@ -306,7 +318,7 @@ export function onePageFor(code: string): OnePage | null {
       if (gap > 0) shortPrograms.push({ key, gap });
       const covered = gap <= 0;
       const note =
-        covered && key === 'sped'
+        covered && key === 'sped' && record.demo.sped > 0
           ? `Funding covers the cost here. ${fmtInt(record.demo.sped)} students (${Math.round(metrics.spedRate)}% of enrollment) have disabilities.`
           : covered
             ? 'Funding covers the cost here.'

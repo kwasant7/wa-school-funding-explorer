@@ -685,7 +685,7 @@ function drawBrief(
     (page.big3
       ? '; the Big 3 figures are those of the AESD Big 3 dashboard, built from OSPI F-196 actuals and apportionment.'
       : '.') +
-    ' Each district is compared with the other 314 in Washington. Not an official fiscal or legal source: ' +
+    " Each problem is ranked against Washington's school districts; charter and tribal compact schools are left out of that comparison. Not an official fiscal or legal source: " +
     'an independent civic education project, not affiliated with OSPI or the Washington State Legislature. ' +
     `Sources: ${siteHost}/sources`;
   const pageLabelW = 40;

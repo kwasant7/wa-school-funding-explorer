@@ -15,6 +15,7 @@ import ChartErrorBoundary from '@/components/ChartErrorBoundary';
 import { oversightFor, OVERSIGHT_SOURCE, OVERSIGHT_CHECKED_ON } from '@/data/oversight';
 import big3Json from '@/data/big3.json';
 import spendingJson from '@/data/spending.json';
+import { isSchoolDistrict } from '@/lib/entity';
 import regionalizationJson from '@/data/regionalization.json';
 import districtsJson from '@/data/districts.json';
 import { alignPair, fmtInt, fmtMoney, fmtMoneyFull, fmtMoneyOnGrid, fmtSignedMoney, pct } from '@/lib/format';
@@ -384,15 +385,25 @@ function FundBalanceCard({ district: d, year }: { district: District; year: stri
           <div className="text-sm text-ink-secondary">Total spending (out)</div>
           <div className="text-2xl font-bold">{fmtMoney(d.exp)}</div>
         </div>
-        <div className={`rounded-lg border p-4 ${deficit ? 'border-critical/40 bg-red-50' : 'border-good/40 bg-green-50'}`}>
-          <div className="text-sm text-ink-secondary">
-            {deficit ? 'Spent more than it took in' : 'Took in more than it spent'}
+        {surplus === 0 ? (
+          <div className="rounded-lg border border-line p-4">
+            <div className="text-sm text-ink-secondary">Revenue minus spending</div>
+            <div className="text-2xl font-bold">$0</div>
+            <div className="text-xs text-ink-muted mt-0.5">
+              {d.fundBalance == null ? 'revenue reported equal to spending' : 'revenue minus spending'}
+            </div>
           </div>
-          <div className={`text-2xl font-bold ${deficit ? 'text-critical' : 'text-good'}`}>
-            {fmtSignedMoney(surplus)}
+        ) : (
+          <div className={`rounded-lg border p-4 ${deficit ? 'border-critical/40 bg-red-50' : 'border-good/40 bg-green-50'}`}>
+            <div className="text-sm text-ink-secondary">
+              {deficit ? 'Spent more than it took in' : 'Took in more than it spent'}
+            </div>
+            <div className={`text-2xl font-bold ${deficit ? 'text-critical' : 'text-good'}`}>
+              {fmtSignedMoney(surplus)}
+            </div>
+            <div className="text-xs text-ink-muted mt-0.5">revenue minus spending</div>
           </div>
-          <div className="text-xs text-ink-muted mt-0.5">revenue minus spending</div>
-        </div>
+        )}
       </div>
       {gapMaterial && change != null && (
         <p className="mt-3 text-sm text-ink-secondary">
@@ -644,7 +655,10 @@ function Big3Card({ district: d }: { district: District }) {
           Where funding fell short, the gaps add up to{' '}
           <strong className="text-ink">{fmtMoney(totalGap)}</strong> for{' '}
           <span data-no-translate>{d.name.replace(/ School District.*$/, '')}</span>{' '}
-          to cover out of levies and other local money in {BIG3_YEAR} - about{' '}
+          {isSchoolDistrict(d)
+            ? 'to cover out of levies and other local money in'
+            : 'to cover from its other money, without a levy, in'}{' '}
+          {BIG3_YEAR} - about{' '}
           <strong className="text-ink">
             ${fmtInt(Math.round(perStudent))} per student
           </strong>

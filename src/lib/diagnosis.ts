@@ -36,6 +36,7 @@ import { fmtMoney, fmtMoneyFull, fmtInt, alignPair } from '@/lib/format';
 import { big3For, big3Gap, big3Totals, type Big3Record } from '@/lib/big3';
 import { PROTOTYPES } from '@/lib/prototypical-model';
 import { RESERVE_BENCHMARK_PCT, RESERVE_THIN_PCT, fundBalanceChange, reserveDays } from '@/lib/reserves';
+import { isCharter, isCompact, isSchoolDistrict } from '@/lib/entity';
 
 type DistrictRecord = (typeof districtsJson.districts)[number];
 type Allocation = (typeof allocationJson.districts)[keyof typeof allocationJson.districts];
@@ -415,9 +416,19 @@ export function metricsFor(code: string): Metrics | null {
  * Percentile ranking
  * ------------------------------------------------------------------ */
 
-/** Sorted value lists, built once, so a district can be ranked against the state. */
-function distribution(pick: (m: Metrics) => number | null): number[] {
-  return METRICS.map(pick)
+/*
+  Problems are ranked against school districts only. Charter and tribal
+  compact schools are funded differently - no levy, no LEA, often private
+  grants - and pooling them moved the gates: charters held 11 of the top 32
+  MSOC gaps and pushed nine districts below the MSOC card's cut-off. A charter
+  or compact school's own brief is still ranked against the same pool.
+  Revenue per student stays statewide, matching the medians shown elsewhere.
+*/
+const DISTRICT_METRICS = METRICS.filter((m) => isSchoolDistrict(m.record));
+
+/** Sorted value lists, built once, so a district can be ranked against the others. */
+function distribution(pick: (m: Metrics) => number | null, pool: Metrics[] = DISTRICT_METRICS): number[] {
+  return pool.map(pick)
     .filter((v): v is number => v != null && Number.isFinite(v))
     .sort((a, b) => a - b);
 }
@@ -433,7 +444,7 @@ const DISTRIBUTIONS = {
   leaShare: distribution((m) => m.leaShare),
   ellRate: distribution((m) => m.ellRate),
   lowIncomeRate: distribution((m) => m.lowIncomeRate),
-  perPupil: distribution((m) => m.perPupil),
+  perPupil: distribution((m) => m.perPupil, METRICS),
   reserveRatio: distribution((m) => m.reserveRatio),
   avPerPupil: distribution((m) => m.avPerPupil),
 };
@@ -968,7 +979,7 @@ const BUILDERS: Builder[] = [
 
 function summaryFor(m: Metrics, issues: Issue[]): string {
   if (issues.length === 0) {
-    return `Compared with Washington's other 314 districts, nothing here stands out as unusually bad. That does not mean the schools are well funded - the statewide gaps still apply.`;
+    return `Compared with Washington's school districts, nothing here stands out as unusually bad. That does not mean the schools are well funded - the statewide gaps still apply.`;
   }
   const names = issues.slice(0, 3).map((i) =>
     i.id === 'reserves' ? (RESERVES_SHORT[i.title] ?? ISSUE_SHORT.reserves) : ISSUE_SHORT[i.id]
@@ -978,8 +989,8 @@ function summaryFor(m: Metrics, issues: Issue[]): string {
       ? names[0]
       : `${names.slice(0, -1).join(', ')} and ${names[names.length - 1]}`;
   return names.length === 1
-    ? `Compared with Washington's other 314 districts, the biggest problem here is ${list}.`
-    : `Compared with Washington's other 314 districts, the biggest problems here are ${list}.`;
+    ? `Compared with Washington's school districts, the biggest problem here is ${list}.`
+    : `Compared with Washington's school districts, the biggest problems here are ${list}.`;
 }
 
 // The reserves card has three variants; the summary names the one shown.

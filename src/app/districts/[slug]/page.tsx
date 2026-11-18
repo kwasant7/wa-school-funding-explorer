@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import JsonLd from '@/components/JsonLd';
+import { isSchoolDistrict } from '@/lib/entity';
 import StatTile from '@/components/StatTile';
 import { DISTRICT_REFS, districtBySlug, districtPath } from '@/lib/district-slug';
 import { districtProfile, districtMetaDescription } from '@/lib/district-profile';
@@ -94,7 +95,14 @@ export default function DistrictPage({ params }: Params) {
 
   const revenueRows = [
     ['State', rev.state, 'The prototypical-school formula allocation, plus other state programs.'],
-    ['Local', rev.local, 'Voter-approved enrichment levies and other local revenue.'],
+    [
+      'Local',
+      rev.local,
+      // Charter and tribal compact schools cannot levy a property tax.
+      isSchoolDistrict(p.metrics.record)
+        ? 'Voter-approved enrichment levies and other local revenue.'
+        : 'Local revenue other than a levy, such as fees and donations - this school cannot levy a property tax.',
+    ],
     ['Federal', rev.federal, 'Title I, IDEA, child nutrition and other federal programs.'],
     ['Other', rev.other, 'Grants, fees and revenue from other districts and agencies.'],
   ] as const;
@@ -405,10 +413,10 @@ export default function DistrictPage({ params }: Params) {
                     {d.label}
                   </th>
                   <td className="py-2 pr-4 text-right tabular-nums">
-                    {fmtInt(d.count)}
+                    {d.reported ? fmtInt(d.count) : 'Not reported'}
                   </td>
                   <td className="py-2 pr-4 text-right tabular-nums">
-                    {d.districtRate.toFixed(1)}%
+                    {d.reported ? `${d.districtRate.toFixed(1)}%` : '-'}
                   </td>
                   <td className="py-2 text-right tabular-nums text-ink-secondary">
                     {d.statewideRate.toFixed(1)}%

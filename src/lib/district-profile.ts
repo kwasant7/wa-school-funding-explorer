@@ -54,6 +54,12 @@ export type TrendRow = {
 export type DemographicRow = {
   label: string;
   count: number;
+  /**
+   * False when the count is a blank read as 0: no students with disabilities
+   * reported although the state paid a special-education allocation (the
+   * Report Card leaves small counts out). Paschal Sherman, Benge.
+   */
+  reported: boolean;
   districtRate: number;
   statewideRate: number;
 };
@@ -118,6 +124,7 @@ function demographics(m: Metrics): DemographicRow[] {
   return rows.map(([label, count, swCount]) => ({
     label,
     count,
+    reported: !(label === 'Students with disabilities' && count === 0 && (m.alloc?.specialEd ?? 0) > 0),
     districtRate: (100 * count) / head,
     statewideRate: (100 * swCount) / swHead,
   }));

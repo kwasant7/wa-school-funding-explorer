@@ -273,7 +273,8 @@ export default function DistrictBrief({ code }: { code: string }) {
 
       <p className="mt-4 text-xs text-ink-muted">
         All numbers come from OSPI records for {DIAGNOSIS_YEAR}, and each
-        district is compared against the other 314 in Washington.{' '}
+        problem is ranked against Washington&apos;s school districts; charter
+        and tribal compact schools are left out of that comparison.{' '}
         <Link href="/sources" className="font-semibold text-accent hover:underline">
           See where the data comes from
         </Link>
