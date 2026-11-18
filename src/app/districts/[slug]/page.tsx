@@ -562,8 +562,9 @@ export default function DistrictPage({ params }: Params) {
         )}
         {oversight && (
           <p className="mt-3 rounded-lg border border-line bg-surface p-4 text-sm">
-            OSPI lists {p.name} under {oversight.level} financial oversight
-            {oversight.since ? ` since ${oversight.since}` : ''}.{' '}
+            OSPI lists {p.name} under{' '}
+            {oversight.level === 'enhanced' ? 'enhanced financial oversight' : 'binding conditions'}
+            {oversight.since ? `; its most recent update was in ${oversight.since}` : ''}.{' '}
             {oversight.detail} Checked {OVERSIGHT_CHECKED_ON}.
           </p>
         )}

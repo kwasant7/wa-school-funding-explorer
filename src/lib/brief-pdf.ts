@@ -578,7 +578,7 @@ function miniVisual(
       const barX = x + labelW + 5;
       const barW = width - labelW - valueW - 10;
       // The note can take two lines on a narrow column; the gauge is as tall as it is.
-      const noteText = `Black line: ${visual.safeLabel} (${visual.safe}% of a year's spending).`;
+      const noteText = `Black line: ${visual.safeLabel} (${visual.safe.toFixed(1)}% of a year's spending).`;
       const noteH = pdf.at(noteText, {
         x: barX, top: 0, width: barW, size: 6.2, leading: 7.6, measureOnly: true,
       });

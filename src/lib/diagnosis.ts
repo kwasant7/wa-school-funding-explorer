@@ -576,7 +576,7 @@ const oversightIssue: Builder = (m) => {
     title: enhanced ? 'The state took over the budget' : 'The state is watching the budget',
     fact: enhanced
       ? `${m.name} could not fix its budget on its own, so the state sent in someone to help run it.`
-      : `${m.name} could not pass a balanced budget, so the state stepped in. That started in ${m.oversight.since}.`,
+      : `${m.name} could not pass a balanced budget, so the state stepped in. OSPI's most recent update was in ${m.oversight.since}.`,
     visual: {
       kind: 'steps',
       steps: ['Healthy', 'Warning', 'State steps in', 'State takes over'],
@@ -887,13 +887,22 @@ function summaryFor(m: Metrics, issues: Issue[]): string {
   if (issues.length === 0) {
     return `Compared with Washington's other 314 districts, nothing here stands out as unusually bad. That does not mean the schools are well funded - the statewide gaps still apply.`;
   }
-  const names = issues.slice(0, 3).map((i) => ISSUE_SHORT[i.id]);
+  const names = issues.slice(0, 3).map((i) =>
+    i.id === 'reserves' ? (RESERVES_SHORT[i.title] ?? ISSUE_SHORT.reserves) : ISSUE_SHORT[i.id]
+  );
   const list =
     names.length === 1
       ? names[0]
       : `${names.slice(0, -1).join(', ')} and ${names[names.length - 1]}`;
   return `Compared with Washington's other 314 districts, the biggest problems here are ${list}.`;
 }
+
+// The reserves card has three variants; the summary names the one shown.
+const RESERVES_SHORT: Record<string, string> = {
+  'The savings are gone': 'a negative fund balance',
+  'Spending outran revenue last year': 'spending that outran revenue',
+  'Savings are running low': 'thin savings',
+};
 
 const ISSUE_SHORT: Record<IssueId, string> = {
   oversight: 'state oversight of the budget',

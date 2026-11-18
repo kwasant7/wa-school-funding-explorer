@@ -56,13 +56,15 @@ export const OVERSIGHT: Record<string, Oversight> = {
     since: 'October 2025',
     detail: 'On binding conditions since 2023; most recent OSPI update October 2025.',
   },
-  // Prescott - OSPI lists it under binding conditions; a dissolution petition
-  // was rescinded in March 2026.
+  // Prescott - OSPI's page files it under "Binding Conditions", but its letters
+  // say more: enhanced financial oversight from June 2025, and the March 25,
+  // 2026 letter says it "will remain under Enhanced Financial Oversight for
+  // the 2026-27 school year". Read the letters, not just the page heading.
   '36402': {
-    level: 'binding',
+    level: 'enhanced',
     since: 'March 2026',
     detail:
-      'On binding conditions since 2024; a dissolution petition was rescinded in March 2026.',
+      'On binding conditions since March 2024 and under enhanced financial oversight since June 2025; OSPI rescinded its petition to dissolve the district in March 2026.',
   },
   // Yelm
   '34002': {
