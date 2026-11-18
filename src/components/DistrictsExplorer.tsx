@@ -14,6 +14,7 @@ import WaMap from '@/components/charts/WaMap';
 import ChartErrorBoundary from '@/components/ChartErrorBoundary';
 import { oversightFor, OVERSIGHT_SOURCE, OVERSIGHT_CHECKED_ON } from '@/data/oversight';
 import big3Json from '@/data/big3.json';
+import spendingJson from '@/data/spending.json';
 import regionalizationJson from '@/data/regionalization.json';
 import districtsJson from '@/data/districts.json';
 import { alignPair, fmtInt, fmtMoney, fmtMoneyFull, fmtMoneyOnGrid, fmtSignedMoney, pct } from '@/lib/format';
@@ -596,6 +597,10 @@ function Big3Gap({
 function Big3Card({ district: d }: { district: District }) {
   const big3 = BIG3[d.code];
   if (!big3) return null;
+  // Contracted ALE teaching inside AESD's MSOC cost - see build-program-spending.
+  const aleContracts =
+    (spendingJson.districts as Record<string, { msocBig3AleContracts?: number }>)[d.code]
+      ?.msocBig3AleContracts ?? 0;
 
   const gaps = [big3.sped, big3.transportation, big3.msoc].map((p) => p.cost - p.revenue);
   const totalGap = gaps.filter((g) => g > 0).reduce((sum, g) => sum + g, 0);
@@ -659,6 +664,15 @@ function Big3Card({ district: d }: { district: District }) {
         </a>
         , built from F-196 actuals and OSPI apportionment.
       </p>
+      {aleContracts > 100_000 && aleContracts > 0.05 * big3.msoc.cost && (
+        <p className="mt-2 text-xs text-ink-muted">
+          AESD&apos;s operating-cost figure here includes{' '}
+          <strong className="text-ink-secondary">{fmtMoney(aleContracts)}</strong>{' '}
+          that the district&apos;s alternative learning (online) program paid
+          outside providers to teach its students. That is teaching, not
+          operating costs, so the rest of this site leaves it out.
+        </p>
+      )}
 
       <div className="mt-3 overflow-x-auto">
         <table className="w-full min-w-[560px] text-xs text-ink-secondary">

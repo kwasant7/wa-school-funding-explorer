@@ -127,6 +127,21 @@ const MSOC_BIG3_EXCLUDED_NCES = new Set([
 // and purchased services; NCES 580 under object 8 is ordinary travel and stays.
 const MSOC_BIG3_EXCLUDED_NCES_OBJ57 = '580';
 
+/*
+  Teaching that an alternative learning (ALE, program 02) program buys from an
+  outside provider: activity 27 (teaching), object 7 (purchased services).
+  AESD's definition already leaves out instruction bought from districts and
+  ESDs (NCES 321/322) but keeps these private-provider contracts, so in the
+  handful of districts that run large online ALE programs they swamp the
+  figure - Goldendale's $19.9M of contracted ALE teaching was 90% of its
+  "MSOC", and the site called it heat, power and supplies. This site leaves
+  it out of its own MSOC cost (msocBig3) and records it separately
+  (msocBig3AleContracts) so the Big 3 card, which prints AESD's published
+  numbers, can say what is inside them.
+*/
+const isAleContractedTeaching = (program, activity, object) =>
+  program === '02' && activity === '27' && object === '7';
+
 function isMsocBig3Cost(program, activity, object, nces) {
   if (!MSOC_BIG3_PROGRAMS.has(program) || !MSOC_BIG3_OBJECTS.has(object)) return false;
   if (activity === MSOC_BIG3_EXCLUDED_ACTIVITY) return false;
@@ -202,6 +217,7 @@ async function main() {
         transportation: 0,
         msoc: 0,
         msocBig3: 0,
+        msocBig3AleContracts: 0,
         nonHighPayment: 0,
       });
     totals.get(code)[key] += amount;
@@ -236,7 +252,11 @@ async function main() {
     const object = String(row['Object Code']).trim();
     const nces = String(row['NCES Code']).trim();
     if (isMsocBig3Cost(program, activity, object, nces))
-      add(code, 'msocBig3', num(row['Amount']));
+      add(
+        code,
+        isAleContractedTeaching(program, activity, object) ? 'msocBig3AleContracts' : 'msocBig3',
+        num(row['Amount'])
+      );
   }
 
   const spedOther = new Map();
@@ -278,6 +298,7 @@ async function main() {
       msocBig3: Math.round(msocBig3),
       msocBig3PerStudent:
         d.fundingEnrollment > 0 ? Math.round(msocBig3 / d.fundingEnrollment) : 0,
+      msocBig3AleContracts: Math.round(spend.msocBig3AleContracts),
     };
     statewide.sped += spend.sped;
     statewide.transportation += spend.transportation;
@@ -294,7 +315,7 @@ async function main() {
       file: EXPENDITURE_URL,
       detailFile: EXPENDITURE_DETAIL_URL,
       note:
-        'OSPI F-196 General Fund expenditure actuals, 2024-25. Special education = state programs 21/22/26, excluding program 24 (federally funded IDEA supplemental) so the figure is comparable with the state allocation; transportation = program 99 (general fund only, excludes the Transportation Vehicle Fund); MSOC = objects 5/7/8 in basic-education programs 01/02/03 plus objects 7/8 in districtwide support program 97; excludes capital outlay, special education, food service, and transportation. msocBig3 = the broader MSOC expenditure definition OSPI Supt. Reykdal used in his 2026 budget request and AESD uses in its Big 3 dashboard, from the NCES-coded detail file: objects 5/7/8/9 in programs 01/02/03/31/34/55/65/74/97, excluding athletics (activity 28), NCES 321/322/511/519/565/569/710/720/820/831/832/833/835/950/960, NCES 580 under objects 5 and 7, and, for non-high districts, the program 01 activity 29 payment to the serving high district.',
+        'OSPI F-196 General Fund expenditure actuals, 2024-25. Special education = state programs 21/22/26, excluding program 24 (federally funded IDEA supplemental) so the figure is comparable with the state allocation; transportation = program 99 (general fund only, excludes the Transportation Vehicle Fund); MSOC = objects 5/7/8 in basic-education programs 01/02/03 plus objects 7/8 in districtwide support program 97; excludes capital outlay, special education, food service, and transportation. msocBig3 = the broader MSOC expenditure definition OSPI Supt. Reykdal used in his 2026 budget request and AESD uses in its Big 3 dashboard, from the NCES-coded detail file: objects 5/7/8/9 in programs 01/02/03/31/34/55/65/74/97, excluding athletics (activity 28), NCES 321/322/511/519/565/569/710/720/820/831/832/833/835/950/960, NCES 580 under objects 5 and 7, and, for non-high districts, the program 01 activity 29 payment to the serving high district. Unlike AESD, msocBig3 also leaves out teaching that ALE (program 02) buys from outside providers (activity 27, object 7), which is reported separately as msocBig3AleContracts.',
     },
     statewide: {
       sped: Math.round(statewide.sped),

@@ -261,6 +261,8 @@ export type Metrics = {
    */
   big3: Big3Record | null;
   big3SpedPerPupil: number;
+  /** AESD's MSOC cost less contracted ALE teaching (see build-program-spending). */
+  big3MsocCost: number;
   big3MsocPerPupil: number;
   big3TransPerPupil: number;
   /** Voter-approved levy dollars the statutory cap forbids collecting. */
@@ -311,6 +313,9 @@ function buildMetrics(): Metrics[] {
     const big3 = big3For(code);
     const big3PerPupil = (gap: number) =>
       big3 && big3.students > 0 ? gap / big3.students : 0;
+    // AESD's MSOC cost without the teaching an ALE program buys from outside
+    // providers, which the site does not count as operating costs.
+    const big3MsocCost = big3 ? big3.msoc.cost - (spend?.msocBig3AleContracts ?? 0) : 0;
 
     /*
       A district's enrichment levy authority is the lesser of a rate limit and
@@ -363,7 +368,8 @@ function buildMetrics(): Metrics[] {
       transGapPerPupil: transGap / fte,
       big3,
       big3SpedPerPupil: big3 ? big3PerPupil(big3Gap(big3.sped)) : 0,
-      big3MsocPerPupil: big3 ? big3PerPupil(big3Gap(big3.msoc)) : 0,
+      big3MsocCost,
+      big3MsocPerPupil: big3 ? big3PerPupil(big3MsocCost - big3.msoc.revenue) : 0,
       big3TransPerPupil: big3 ? big3PerPupil(big3Gap(big3.transportation)) : 0,
       capBlocked,
       capBlockedPerPupil: capBlocked / fte,
@@ -744,7 +750,7 @@ const msocIssue: Builder = (m) => {
 
   const fig = shortfall(
     'What it really costs',
-    m.big3.msoc.cost,
+    m.big3MsocCost,
     'Funding it receives',
     m.big3.msoc.revenue,
     (gap) => `${gap} short`,
@@ -953,6 +959,15 @@ export const ISSUE_ASKS: Record<IssueId, string> = {
   smallScale: 'Raise the extra funding small districts get.',
 };
 
+/**
+ * Whether AESD's MSOC cost carries enough contracted ALE teaching to mention -
+ * the same test the Big 3 card uses for its note.
+ */
+export function aleContractsMaterial(m: Metrics): boolean {
+  const ale = m.spend?.msocBig3AleContracts ?? 0;
+  return m.big3 != null && ale > 100_000 && ale > 0.05 * m.big3.msoc.cost;
+}
+
 function statsFor(m: Metrics): BriefStat[] {
   const stats: BriefStat[] = [
     {
@@ -975,7 +990,12 @@ function statsFor(m: Metrics): BriefStat[] {
           ? big3Totals(m.big3).total
           : Math.max(0, m.spedGap) + Math.max(0, m.msocGap) + Math.max(0, m.transGap)
       ),
-      note: 'Special ed, operating and transport costs above their funding',
+      // AESD's total, as on the Big 3 card - which for a few online-ALE
+      // districts includes contracted teaching the site leaves out elsewhere.
+      note:
+        m.big3 && aleContractsMaterial(m)
+          ? `AESD figure; includes ${fmtMoney(m.spend?.msocBig3AleContracts ?? 0)} of contracted online (ALE) teaching`
+          : 'Special ed, operating and transport costs above their funding',
     },
   ];
   if (m.reserveRatio != null) {
