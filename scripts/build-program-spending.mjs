@@ -92,6 +92,12 @@ const SPED_FORMULA_CODES = new Set(['3121', '4121', '4122', '4126']);
 const isSpedOtherRevenue = (code) =>
   ['21', '22', '26'].includes(code.slice(-2)) && !SPED_FORMULA_CODES.has(code);
 
+// The same for transportation (program 99): payments from other districts and
+// agencies for buses a district runs for them (7199, 4399, 8199, 6399), beside
+// the state allocation (4199). Shelton's $278,000 of 7199 was counted as its
+// own shortfall.
+const isTransportationOtherRevenue = (code) => code.endsWith('99') && code !== '4199';
+
 // State-funded special education only. Program 24 (federal IDEA supplemental)
 // is excluded on purpose - see the note in the module docstring.
 const SPED_PROGRAMS = new Set(['21', '22', '26']);
@@ -260,13 +266,19 @@ async function main() {
   }
 
   const spedOther = new Map();
+  const transportationOther = new Map();
   for (const row of parseCsv(await ensureFile(REVENUE_FILE, REVENUE_URL))) {
     if (row['Fund Code'] !== '1') continue; // general fund only
     if (row['School Year Code'] !== SCHOOL_YEAR) continue;
     const revenueCode = String(row['Revenue Code']).trim();
-    if (!isSpedOtherRevenue(revenueCode)) continue;
+    const target = isSpedOtherRevenue(revenueCode)
+      ? spedOther
+      : isTransportationOtherRevenue(revenueCode)
+        ? transportationOther
+        : null;
+    if (!target) continue;
     const code = String(row['County District Code']).padStart(5, '0');
-    spedOther.set(code, (spedOther.get(code) ?? 0) + num(row['Amount']));
+    target.set(code, (target.get(code) ?? 0) + num(row['Amount']));
   }
 
   const districts = JSON.parse(
@@ -290,6 +302,7 @@ async function main() {
       spedPerStudent: d.demo.sped > 0 ? Math.round(spend.sped / d.demo.sped) : 0,
       spedOtherRevenue: Math.round(spedOther.get(d.code) ?? 0),
       transportation: Math.round(spend.transportation),
+      transportationOtherRevenue: Math.round(transportationOther.get(d.code) ?? 0),
       transportationPerStudent:
         d.enrollment > 0 ? Math.round(spend.transportation / d.enrollment) : 0,
       msoc: Math.round(spend.msoc),

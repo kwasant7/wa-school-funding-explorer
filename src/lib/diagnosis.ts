@@ -315,7 +315,9 @@ function buildMetrics(): Metrics[] {
     // so the gap quoted to a legislator matches the number their staff can
     // look up. The GenEd-only fields still exist for the formula walkthrough.
     const msocGap = alloc && spend ? spend.msocBig3 - alloc.msocBig3 : 0;
-    const transGap = alloc && spend ? spend.transportation - alloc.transportation : 0;
+    // Net of other districts' and agencies' payments for buses run for them.
+    const transGap =
+      alloc && spend ? spend.transportation - spend.transportationOtherRevenue - alloc.transportation : 0;
 
     const big3 = big3For(code);
     const big3PerPupil = (gap: number) =>
@@ -864,6 +866,10 @@ const transportationIssue: Builder = (m) => {
 
 const ellIssue: Builder = (m) => {
   if (m.ellRate < 12) return null;
+  // The percentile is across districts, unweighted, so a district can rank in
+  // the top 30% while sitting below the statewide student-weighted rate - the
+  // card's own dots then showed it below the state (Tacoma, Seattle).
+  if (m.ellRate <= STATEWIDE.ellRate) return null;
   const pctile = percentileOf(DISTRIBUTIONS.ellRate, m.ellRate);
   if (pctile < 70) return null;
 
@@ -885,6 +891,7 @@ const ellIssue: Builder = (m) => {
 
 const lowIncomeIssue: Builder = (m) => {
   if (m.lowIncomeRate < 60) return null;
+  if (m.lowIncomeRate <= STATEWIDE.lowIncomeRate) return null;
   const pctile = percentileOf(DISTRIBUTIONS.lowIncomeRate, m.lowIncomeRate);
   if (pctile < 72) return null;
 

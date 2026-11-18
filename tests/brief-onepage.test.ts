@@ -141,9 +141,11 @@ describe('one-page problems and asks', () => {
 
   it("ranks Tacoma's own problems and attaches the old asks", () => {
     const { problems } = page(TACOMA);
+    // No English learner card: Tacoma's 13.5% is below the 15.0% statewide
+    // rate, though it ranks in the top 30% of districts.
     assert.deepEqual(
       problems.map((p) => p.id),
-      ['levyCap', 'reserves', 'ell']
+      ['levyCap', 'reserves']
     );
     assert.equal(problems[0].ask, 'Raise the local levy cap. This money needs no new vote.');
     assert.equal(problems[0].cite, 'RCW 84.52.0531');

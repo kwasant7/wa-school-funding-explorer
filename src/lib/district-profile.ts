@@ -36,7 +36,8 @@ export type GapRow = {
   spent: number;
   /**
    * Other revenue booked to the same programs - for special education,
-   * payments from other districts, Medicaid and other agencies. 0 elsewhere.
+   * payments from other districts, Medicaid and other agencies; for
+   * transportation, other districts' and agencies' payments. 0 for MSOC.
    */
   otherRevenue: number;
   /** spent − allocated − otherRevenue. Positive means the district covered the difference. */
@@ -161,7 +162,7 @@ function gaps(m: Metrics): GapRow[] {
       label: 'Student transportation',
       allocated: m.alloc.transportation,
       spent: m.spend.transportation,
-      otherRevenue: 0,
+      otherRevenue: m.spend.transportationOtherRevenue,
       gap: m.transGap,
       gapPerPupil: m.transGapPerPupil,
     },

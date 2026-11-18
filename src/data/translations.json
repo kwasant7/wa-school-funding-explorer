@@ -984,6 +984,7 @@
     "Per-student goal": "Meta por estudiante",
     "Per-student levy dollar cap": "Límite en dólares del impuesto por estudiante",
     "percent of a year of spending.": "por ciento de un año de gasto.",
+    "percentile statewide": "percentil a nivel estatal",
     "Pick a district above to see each policy applied to real numbers.": "Elija un distrito de arriba para ver cada política aplicada a números reales.",
     "Pick from the dropdown or click your district to open its profile.": "Elija del menú desplegable o haga clic en su distrito para abrir su perfil.",
     "Pick one clear ask": "Elija una petición clara",
@@ -1195,7 +1196,6 @@
     "Special Education Funding in Washington | K12Funding.org": "Financiamiento de la educación especial en Washington | K12Funding.org",
     "Special education funding increase; removed enrollment cap": "Aumento de la financiación de la educación especial; se eliminó el límite de inscripción",
     "Special education funding multiplier": "Multiplicador de financiación de educación especial",
-    "Special education here is state programs 21, 22 and 26 - federally funded IDEA (program 24) is excluded from both sides. Its other program revenue is what the same programs took in beyond the state allocation: payments from other districts for students served for them, Medicaid and other agencies (F-196 revenue codes ending 21, 22 and 26). Read more on": "La educación especial aquí son los programas estatales 21, 22 y 26; IDEA (programa 24), financiado con fondos federales, está excluido de ambos lados. Los otros ingresos de su programa son los que los mismos programas recibieron más allá de la asignación estatal: pagos de otros distritos para los estudiantes atendidos por ellos, Medicaid y otras agencias (códigos de ingresos F-196 que terminan en 21, 22 y 26). Leer más en",
     "Special education is funded as a multiplier on top of basic education, under": "La educación especial se financia como un multiplicador además de la educación básica, bajo",
     "Special education is not funded by a separate per-student amount. The state calculates a district's basic education allocation first, then applies an excess-cost multiplier for students eligible for special education services - the allocation sits": "La educación especial no se financia con una cantidad separada por estudiante. El estado calcula primero la asignación de educación básica de un distrito y luego aplica un multiplicador de exceso de costo para los estudiantes elegibles para servicios de educación especial; la asignación se sitúa",
     "Special education is underfunded": "La educación especial no tiene fondos suficientes",
@@ -1650,7 +1650,7 @@
     "Youth participation": "Participación juvenil",
     "Zoom in": "Acercar",
     "Zoom out": "Alejar",
-    "percentile statewide": "percentil a nivel estatal"
+    "Special education here is state programs 21, 22 and 26 - federally funded IDEA (program 24) is excluded from both sides. Its other program revenue is what the same programs took in beyond the state allocation: payments from other districts for students served for them, Medicaid and other agencies (F-196 revenue codes ending 21, 22 and 26). For transportation it is other districts' and agencies' payments for buses run for them (codes ending 99 other than the state allocation, 4199). Read more on": "La educación especial aquí son los programas estatales 21, 22 y 26; IDEA (programa 24), financiado con fondos federales, está excluido de ambos lados. Los otros ingresos de su programa son los que los mismos programas recibieron más allá de la asignación estatal: pagos de otros distritos para los estudiantes atendidos por ellos, Medicaid y otras agencias (códigos de ingresos F-196 que terminan en 21, 22 y 26). Para el transporte, son los pagos de otros distritos y agencias por los autobuses que circulan por ellos (códigos que terminan en 99 distintos de la asignación estatal, 4199). Leer más en"
   },
   "zh": {
     "- a flat per-student amount covering everything that is not staff pay.": "- 每个学生的固定金额，涵盖员工工资以外的所有费用。",
@@ -2637,6 +2637,7 @@
     "Per-student goal": "每个学生的目标",
     "Per-student levy dollar cap": "每名学生征税金额上限",
     "percent of a year of spending.": "占一年支出的百分比。",
+    "percentile statewide": "全州百分位",
     "Pick a district above to see each policy applied to real numbers.": "选择上面的一个学区，查看每项政策应用于实际数字。",
     "Pick from the dropdown or click your district to open its profile.": "从下拉列表中选择或单击您所在的学区以打开其个人资料。",
     "Pick one clear ask": "选定一个明确的诉求",
@@ -2848,7 +2849,6 @@
     "Special Education Funding in Washington | K12Funding.org": "华盛顿特殊教育资助| K12Funding.org",
     "Special education funding increase; removed enrollment cap": "特殊教育经费增加；取消了招生上限",
     "Special education funding multiplier": "特殊教育经费乘数",
-    "Special education here is state programs 21, 22 and 26 - federally funded IDEA (program 24) is excluded from both sides. Its other program revenue is what the same programs took in beyond the state allocation: payments from other districts for students served for them, Medicaid and other agencies (F-196 revenue codes ending 21, 22 and 26). Read more on": "这里的特殊教育是州计划 21、22 和 26 - 联邦资助的 IDEA（计划 24）均被排除在外。其其他计划收入是同一计划在国家拨款之外获得的收入：其他学区为其服务的学生、医疗补助和其他机构支付的费用（F-196 收入代码以 21、22 和 26 结尾）。阅读更多内容",
     "Special education is funded as a multiplier on top of basic education, under": "特殊教育的资助是基础教育之上的乘数，",
     "Special education is not funded by a separate per-student amount. The state calculates a district's basic education allocation first, then applies an excess-cost multiplier for students eligible for special education services - the allocation sits": "特殊教育并非由每个学生单独拨款。州首先计算一个学区的基础教育拨款，然后对有资格获得特殊教育服务的学生应用超额成本乘数 - 拨款位于",
     "Special education is underfunded": "特殊教育资金不足",
@@ -3303,7 +3303,7 @@
     "Youth participation": "青少年参与",
     "Zoom in": "放大",
     "Zoom out": "缩小",
-    "percentile statewide": "全州百分位"
+    "Special education here is state programs 21, 22 and 26 - federally funded IDEA (program 24) is excluded from both sides. Its other program revenue is what the same programs took in beyond the state allocation: payments from other districts for students served for them, Medicaid and other agencies (F-196 revenue codes ending 21, 22 and 26). For transportation it is other districts' and agencies' payments for buses run for them (codes ending 99 other than the state allocation, 4199). Read more on": "这里的特殊教育是州计划 21、22 和 26 - 联邦资助的 IDEA（计划 24）均被排除在外。其其他计划收入是同一计划在国家拨款之外获得的收入：其他学区为其服务的学生、医疗补助和其他机构支付的费用（F-196 收入代码以 21、22 和 26 结尾）。对于交通而言，是其他地区和机构为其运行的公共汽车支付的费用（国家分配的代码以 99 结尾，4199）。阅读更多内容"
   },
   "vi": {
     "- a flat per-student amount covering everything that is not staff pay.": "- một khoản tiền cố định cho mỗi học sinh bao gồm mọi thứ không phải là lương của nhân viên.",
@@ -4290,6 +4290,7 @@
     "Per-student goal": "Mục tiêu mỗi học sinh",
     "Per-student levy dollar cap": "Giới hạn đô la tiền thuế cho mỗi học sinh",
     "percent of a year of spending.": "phần trăm của một năm chi tiêu.",
+    "percentile statewide": "phần trăm trên toàn tiểu bang",
     "Pick a district above to see each policy applied to real numbers.": "Chọn một học khu ở trên để xem từng chính sách được áp dụng cho số thực.",
     "Pick from the dropdown or click your district to open its profile.": "Chọn từ danh sách thả xuống hoặc nhấp vào học khu của bạn để mở hồ sơ.",
     "Pick one clear ask": "Chọn một yêu cầu rõ ràng",
@@ -4501,7 +4502,6 @@
     "Special Education Funding in Washington | K12Funding.org": "Tài trợ Giáo dục Đặc biệt ở Washington | K12Funding.org",
     "Special education funding increase; removed enrollment cap": "Tăng tài trợ giáo dục đặc biệt; loại bỏ giới hạn tuyển sinh",
     "Special education funding multiplier": "Hệ số tài trợ giáo dục đặc biệt",
-    "Special education here is state programs 21, 22 and 26 - federally funded IDEA (program 24) is excluded from both sides. Its other program revenue is what the same programs took in beyond the state allocation: payments from other districts for students served for them, Medicaid and other agencies (F-196 revenue codes ending 21, 22 and 26). Read more on": "Giáo dục đặc biệt ở đây là các chương trình 21, 22 và 26 của tiểu bang - IDEA do liên bang tài trợ (chương trình 24) bị loại trừ khỏi cả hai bên. Doanh thu chương trình khác của nó là những gì mà các chương trình tương tự đã thu được ngoài sự phân bổ của tiểu bang: các khoản thanh toán từ các học khu khác cho học sinh phục vụ cho họ, Medicaid và các cơ quan khác (mã doanh thu F-196 kết thúc là 21, 22 và 26). Đọc thêm trên",
     "Special education is funded as a multiplier on top of basic education, under": "Giáo dục đặc biệt được tài trợ như một hệ số nhân cộng thêm trên giáo dục cơ bản, theo",
     "Special education is not funded by a separate per-student amount. The state calculates a district's basic education allocation first, then applies an excess-cost multiplier for students eligible for special education services - the allocation sits": "Giáo dục đặc biệt không được tài trợ bằng số tiền riêng cho mỗi học sinh. Trước tiên, tiểu bang tính toán phân bổ giáo dục cơ bản của học khu, sau đó áp dụng hệ số nhân chi phí vượt mức cho học sinh đủ điều kiện nhận các dịch vụ giáo dục đặc biệt - việc phân bổ nằm trong",
     "Special education is underfunded": "Giáo dục đặc biệt không được đầu tư đầy đủ",
@@ -4956,7 +4956,7 @@
     "Youth participation": "Sự tham gia của giới trẻ",
     "Zoom in": "Phóng to",
     "Zoom out": "Thu nhỏ",
-    "percentile statewide": "phần trăm trên toàn tiểu bang"
+    "Special education here is state programs 21, 22 and 26 - federally funded IDEA (program 24) is excluded from both sides. Its other program revenue is what the same programs took in beyond the state allocation: payments from other districts for students served for them, Medicaid and other agencies (F-196 revenue codes ending 21, 22 and 26). For transportation it is other districts' and agencies' payments for buses run for them (codes ending 99 other than the state allocation, 4199). Read more on": "Giáo dục đặc biệt ở đây là các chương trình 21, 22 và 26 của tiểu bang - IDEA do liên bang tài trợ (chương trình 24) bị loại trừ khỏi cả hai bên. Doanh thu chương trình khác của nó là những gì mà các chương trình tương tự đã thu được ngoài sự phân bổ của tiểu bang: các khoản thanh toán từ các học khu khác cho học sinh phục vụ cho họ, Medicaid và các cơ quan khác (mã doanh thu F-196 kết thúc là 21, 22 và 26). Đối với giao thông vận tải, các quận và cơ quan khác thanh toán cho xe buýt chạy cho họ (mã kết thúc 99 ngoài phân bổ của tiểu bang, 4199). Đọc thêm trên"
   },
   "ru": {
     "- a flat per-student amount covering everything that is not staff pay.": "- фиксированная сумма на одного учащегося, покрывающая все, кроме заработной платы персонала.",
@@ -5943,6 +5943,7 @@
     "Per-student goal": "Цель на каждого учащегося",
     "Per-student levy dollar cap": "Максимальный размер сбора в расчете на одного учащегося в долларах",
     "percent of a year of spending.": "процентов годовых расходов.",
+    "percentile statewide": "процентиль по всему штату",
     "Pick a district above to see each policy applied to real numbers.": "Выберите округ выше, чтобы увидеть, как каждая политика применяется к реальным цифрам.",
     "Pick from the dropdown or click your district to open its profile.": "Выберите из раскрывающегося списка или щелкните свой округ, чтобы открыть его профиль.",
     "Pick one clear ask": "Сформулируйте одну чёткую просьбу",
@@ -6154,7 +6155,6 @@
     "Special Education Funding in Washington | K12Funding.org": "Финансирование специального образования в Вашингтоне | K12Funding.org",
     "Special education funding increase; removed enrollment cap": "Увеличение финансирования специального образования; снято ограничение численности",
     "Special education funding multiplier": "Мультипликатор финансирования специального образования",
-    "Special education here is state programs 21, 22 and 26 - federally funded IDEA (program 24) is excluded from both sides. Its other program revenue is what the same programs took in beyond the state allocation: payments from other districts for students served for them, Medicaid and other agencies (F-196 revenue codes ending 21, 22 and 26). Read more on": "Специальное образование здесь — это государственные программы 21, 22 и 26 — финансируемая из федерального бюджета IDEA (программа 24) исключена с обеих сторон. Другой доход от программы - это то, что те же программы получили помимо ассигнований штата: выплаты из других округов за студентов, обслуживаемых для них, Medicaid и других агентств (коды доходов F-196, заканчивающиеся на 21, 22 и 26). Подробнее читайте на",
     "Special education is funded as a multiplier on top of basic education, under": "Специальное образование финансируется как множитель сверх базового образования, согласно",
     "Special education is not funded by a separate per-student amount. The state calculates a district's basic education allocation first, then applies an excess-cost multiplier for students eligible for special education services - the allocation sits": "Специальное образование не финансируется отдельной суммой на учащегося. Штат сначала рассчитывает распределение округа на базовое образование, затем применяет множитель избыточных затрат для учащихся, имеющих право на услуги специального образования, — распределение составляет",
     "Special education is underfunded": "Специальное образование недофинансируется",
@@ -6609,7 +6609,7 @@
     "Youth participation": "Участие молодежи",
     "Zoom in": "Увеличить масштаб",
     "Zoom out": "Уменьшить масштаб",
-    "percentile statewide": "процентиль по всему штату"
+    "Special education here is state programs 21, 22 and 26 - federally funded IDEA (program 24) is excluded from both sides. Its other program revenue is what the same programs took in beyond the state allocation: payments from other districts for students served for them, Medicaid and other agencies (F-196 revenue codes ending 21, 22 and 26). For transportation it is other districts' and agencies' payments for buses run for them (codes ending 99 other than the state allocation, 4199). Read more on": "Специальное образование здесь — это государственные программы 21, 22 и 26 — финансируемая из федерального бюджета IDEA (программа 24) исключена с обеих сторон. Другой доход от программы - это то, что те же программы получили помимо ассигнований штата: выплаты из других округов за студентов, обслуживаемых для них, Medicaid и других агентств (коды доходов F-196, заканчивающиеся на 21, 22 и 26). Что касается транспорта, то это плата других районов и агентств за курсирующие для них автобусы (коды, оканчивающиеся на 99, кроме государственного распределения, 4199). Подробнее читайте на"
   },
   "tl": {
     "- a flat per-student amount covering everything that is not staff pay.": "- isang flat na halagang bawat mag-aaral na sumasaklaw sa lahat ng hindi suweldo ng kawani.",
@@ -7596,6 +7596,7 @@
     "Per-student goal": "Layunin ng bawat mag-aaral",
     "Per-student levy dollar cap": "Cap sa dolyar ng levy bawat mag-aaral",
     "percent of a year of spending.": "porsyento ng isang taon ng paggasta.",
+    "percentile statewide": "percentile sa buong estado",
     "Pick a district above to see each policy applied to real numbers.": "Pumili ng distrito sa itaas para makita ang bawat patakarang inilapat sa mga tunay na numero.",
     "Pick from the dropdown or click your district to open its profile.": "Pumili mula sa dropdown o i-click ang iyong distrito upang buksan ang profile nito.",
     "Pick one clear ask": "Pumili ng isang malinaw na hiling",
@@ -7807,7 +7808,6 @@
     "Special Education Funding in Washington | K12Funding.org": "Pagpopondo sa Espesyal na Edukasyon sa Washington | K12Funding.org",
     "Special education funding increase; removed enrollment cap": "Pagtaas ng pondo sa espesyal na edukasyon; inalis ang enrollment cap",
     "Special education funding multiplier": "Multiplier ng pagpopondo ng espesyal na edukasyon",
-    "Special education here is state programs 21, 22 and 26 - federally funded IDEA (program 24) is excluded from both sides. Its other program revenue is what the same programs took in beyond the state allocation: payments from other districts for students served for them, Medicaid and other agencies (F-196 revenue codes ending 21, 22 and 26). Read more on": "Ang espesyal na edukasyon dito ay ang mga programa ng estado 21, 22 at 26 - ang IDEA na pinondohan ng pederal (program 24) ay hindi kasama sa magkabilang panig. Ang iba pang kita nito sa programa ay kung ano ang kinuha ng parehong mga programa na lampas sa alokasyon ng estado: mga pagbabayad mula sa ibang mga distrito para sa mga estudyanteng pinagsilbihan para sa kanila, Medicaid at iba pang mga ahensya (F-196 revenue codes na nagtatapos sa 21, 22 at 26). Magbasa pa sa",
     "Special education is funded as a multiplier on top of basic education, under": "Ang espesyal na edukasyon ay pinopondohan bilang isang multiplier na dagdag sa pangunahing edukasyon, sa ilalim ng",
     "Special education is not funded by a separate per-student amount. The state calculates a district's basic education allocation first, then applies an excess-cost multiplier for students eligible for special education services - the allocation sits": "Ang espesyal na edukasyon ay hindi pinopondohan ng hiwalay na halagang bawat mag-aaral. Kinakalkula muna ng estado ang alokasyon ng pangunahing edukasyon ng distrito, pagkatapos ay naglalapat ng excess-cost multiplier para sa mga mag-aaral na kwalipikado sa mga serbisyo ng espesyal na edukasyon - ang alokasyon ay nakapatong",
     "Special education is underfunded": "Ang espesyal na edukasyon ay kulang sa pondo",
@@ -8262,7 +8262,7 @@
     "Youth participation": "Pakikilahok ng kabataan",
     "Zoom in": "Mag-zoom in",
     "Zoom out": "Mag-zoom out",
-    "percentile statewide": "percentile sa buong estado"
+    "Special education here is state programs 21, 22 and 26 - federally funded IDEA (program 24) is excluded from both sides. Its other program revenue is what the same programs took in beyond the state allocation: payments from other districts for students served for them, Medicaid and other agencies (F-196 revenue codes ending 21, 22 and 26). For transportation it is other districts' and agencies' payments for buses run for them (codes ending 99 other than the state allocation, 4199). Read more on": "Ang espesyal na edukasyon dito ay ang mga programa ng estado 21, 22 at 26 - ang IDEA na pinondohan ng pederal (program 24) ay hindi kasama sa magkabilang panig. Ang iba pang kita nito sa programa ay kung ano ang kinuha ng parehong mga programa na lampas sa alokasyon ng estado: mga pagbabayad mula sa ibang mga distrito para sa mga estudyanteng pinagsilbihan para sa kanila, Medicaid at iba pang mga ahensya (F-196 revenue codes na nagtatapos sa 21, 22 at 26). Para sa transportasyon, ito ay mga bayad ng ibang distrito at ahensya para sa mga bus na tumatakbo para sa kanila (mga code na nagtatapos sa 99 maliban sa alokasyon ng estado, 4199). Magbasa pa sa"
   },
   "ko": {
     "- a flat per-student amount covering everything that is not staff pay.": "- 교직원 급여가 아닌 모든 금액을 포함하는 학생당 정액 금액입니다.",
@@ -9249,6 +9249,7 @@
     "Per-student goal": "학생당 목표",
     "Per-student levy dollar cap": "학생당 교육세 금액 상한",
     "percent of a year of spending.": "1년 지출의 퍼센트입니다.",
+    "percentile statewide": "주 전체 백분위수",
     "Pick a district above to see each policy applied to real numbers.": "위에서 학군을 선택하면 각 정책이 실제 수치에 적용된 결과를 볼 수 있습니다.",
     "Pick from the dropdown or click your district to open its profile.": "드롭다운에서 선택하거나 지도에서 내 학군을 클릭해 프로필을 여세요.",
     "Pick one clear ask": "명확한 요구 사항을 하나 고르세요",
@@ -9460,7 +9461,6 @@
     "Special Education Funding in Washington | K12Funding.org": "워싱턴의 특수 교육 자금 | K12Funding.org",
     "Special education funding increase; removed enrollment cap": "특수교육 자금 증액; 등록 상한 폐지",
     "Special education funding multiplier": "특수교육 자금 승수",
-    "Special education here is state programs 21, 22 and 26 - federally funded IDEA (program 24) is excluded from both sides. Its other program revenue is what the same programs took in beyond the state allocation: payments from other districts for students served for them, Medicaid and other agencies (F-196 revenue codes ending 21, 22 and 26). Read more on": "여기서 특수 교육은 주 프로그램 21, 22 및 26입니다. 연방 자금 지원 IDEA(프로그램 24)는 양쪽에서 제외됩니다. 다른 프로그램 수익은 동일한 프로그램이 주 할당을 넘어서 가져간 것입니다. 즉, 학생을 위해 봉사하는 다른 지역, Medicaid 및 기타 기관(21, 22, 26으로 끝나는 F-196 수익 코드)에 대한 지불금입니다. 자세히 알아보기",
     "Special education is funded as a multiplier on top of basic education, under": "특수 교육은 기본 교육에 더하여 승수로 자금이 지원됩니다.",
     "Special education is not funded by a separate per-student amount. The state calculates a district's basic education allocation first, then applies an excess-cost multiplier for students eligible for special education services - the allocation sits": "특수교육은 학생당 별도 금액으로 지원되지 않습니다. 주정부는 먼저 학군의 기본 교육 할당액을 계산한 뒤, 특수교육 서비스 대상 학생에 대해 초과 비용 승수를 적용합니다. 그 할당액의 수준은",
     "Special education is underfunded": "특수교육은 자금이 부족합니다",
@@ -9915,6 +9915,6 @@
     "Youth participation": "청소년 참여",
     "Zoom in": "확대",
     "Zoom out": "축소",
-    "percentile statewide": "주 전체 백분위수"
+    "Special education here is state programs 21, 22 and 26 - federally funded IDEA (program 24) is excluded from both sides. Its other program revenue is what the same programs took in beyond the state allocation: payments from other districts for students served for them, Medicaid and other agencies (F-196 revenue codes ending 21, 22 and 26). For transportation it is other districts' and agencies' payments for buses run for them (codes ending 99 other than the state allocation, 4199). Read more on": "여기서 특수 교육은 주 프로그램 21, 22 및 26입니다. 연방 자금 지원 IDEA(프로그램 24)는 양쪽에서 제외됩니다. 다른 프로그램 수익은 동일한 프로그램이 주 할당을 넘어서 가져간 것입니다. 즉, 학생을 위해 봉사하는 다른 지역, Medicaid 및 기타 기관(21, 22, 26으로 끝나는 F-196 수익 코드)에 대한 지불금입니다. 교통의 경우 해당 지역을 위해 운행되는 버스에 대한 다른 지역 및 기관의 지불입니다(주 할당 이외의 99로 끝나는 코드, 4199). 자세히 알아보기"
   }
 }

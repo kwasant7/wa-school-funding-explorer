@@ -123,25 +123,29 @@ BUCKETS = [
 ]
 BASIC_ED_CODE = '3100'
 
-# About 30 small districts, mostly in special-education cooperatives, show a
-# zero special-ed allotment in App Revenue - the apportionment is paid through
-# the cooperative - while their own F-196 books the same codes as received
-# (Goldendale: $0 here, $6,228,426 on its F-196). For those, the F-196 amount
-# for the same codes stands in, so the special-ed gap is not "all of the
-# spending". Only allotments under 10% of the F-196 amount are replaced.
+# Where App Revenue and the district's own F-196 disagree tenfold for the same
+# codes, the F-196 amount stands in - the figure the site's totals and AESD's
+# Big 3 already use. Special education: about 30 small districts in
+# special-education cooperatives show a zero allotment here while their F-196
+# books the money (Goldendale: $0 here, $6,228,426 on its F-196), plus Ocean
+# Beach's $396 against $3.09M. Transportation: six districts show $0 here and
+# money on their F-196 (Ridgefield: $3.07M), and Centralia the reverse, $3.12M
+# here against $52,779 booked to code 4199.
 F196_REVENUES = os.path.join(RAW, 'gf-revenues-2425.csv')
-SPECIAL_ED_CODES = dict(BUCKETS)['specialEd']
+F196_FALLBACK_BUCKETS = ('specialEd', 'transportation')
 
 
-def f196_special_ed():
-    """F-196 2024-25 general-fund revenue for the special-ed codes, by district."""
+def f196_by_bucket():
+    """F-196 2024-25 general-fund revenue for each fallback bucket's codes, by district."""
     import csv
-    totals = {}
+    codes = {code: name for name, prefixes in BUCKETS if name in F196_FALLBACK_BUCKETS for code in prefixes}
+    totals = {name: {} for name in F196_FALLBACK_BUCKETS}
     with open(F196_REVENUES, encoding='utf-8-sig', newline='') as handle:
         for row in csv.DictReader(handle):
-            if row['Revenue Code'] in SPECIAL_ED_CODES:
+            name = codes.get(row['Revenue Code'])
+            if name:
                 code = row['County District Code'].strip().zfill(5)
-                totals[code] = totals.get(code, 0) + float(row['Amount'] or 0)
+                totals[name][code] = totals[name].get(code, 0) + float(row['Amount'] or 0)
     return totals
 
 
@@ -252,17 +256,19 @@ def main():
     msoc_reg_rate = next(rows)[COL_MSOC_REG_RATE] or 0
     book.close()
 
-    special_ed_f196 = f196_special_ed()
-    filled_special_ed = []
+    f196 = f196_by_bucket()
+    filled = {name: [] for name in F196_FALLBACK_BUCKETS}
 
     districts = {}
     skipped_no_revenue = 0
     for code, buckets in totals.items():
         # Below 10% of the F-196 figure: zero for the cooperative districts,
         # and Ocean Beach's $396 against $3.09M. No other district is close.
-        if buckets.get('specialEd', 0) < 0.1 * special_ed_f196.get(code, 0):
-            buckets['specialEd'] = special_ed_f196[code]
-            filled_special_ed.append(code)
+        for name in F196_FALLBACK_BUCKETS:
+            app, books = buckets.get(name, 0), f196[name].get(code, 0)
+            if books > 0 and (app < 0.1 * books or app > 10 * books):
+                buckets[name] = books
+                filled[name].append(code)
         rev_state = rev_state_by_code.get(code)
         if rev_state is None:
             # District not in districts.json (no F-196 filing this year, or a
@@ -324,9 +330,10 @@ def main():
                 "an explicit allowlist of App Revenue codes - not every 3xxx/4xxx "
                 "code, since some (like 4100) can also carry capital-fund grants "
                 "that do not belong in a general-fund total. Where App Revenue "
-                "shows no special-education allotment (districts paid through a "
-                "special-education cooperative), the district's own F-196 "
-                "revenue for the same codes is used instead. 'Other state "
+                "and the district's own F-196 differ tenfold for the special "
+                "education or transportation codes (districts paid through a "
+                "cooperative, for instance), the F-196 amount is used instead. "
+                "'Other state "
                 "programs' is what is left after subtracting all of the above "
                 "from the district's actual F-196 state general-fund revenue, so "
                 "the total always matches that figure exactly. 'msocBig3' is "
@@ -360,7 +367,8 @@ def main():
         if d['total'] > 0 and d['otherState'] / d['total'] > 0.25
     ]
     print(f'Wrote allocation.json for {len(districts)} districts.')
-    print(f'  special ed filled from F-196 where App Revenue shows under 10% of it: {len(filled_special_ed)}')
+    for name in F196_FALLBACK_BUCKETS:
+        print(f'  {name} taken from F-196 where App Revenue differs tenfold: {len(filled[name])}')
     with_units = [d['smallSchool'] for d in districts.values() if d['smallSchool']['kinds']]
     print(
         f'  small-school staffing: {len(with_units)} districts, '

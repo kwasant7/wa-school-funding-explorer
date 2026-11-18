@@ -310,7 +310,9 @@ export default function DistrictPage({ params }: Params) {
             program revenue is what the same programs took in beyond the state
             allocation: payments from other districts for students served for
             them, Medicaid and other agencies (F-196 revenue codes ending 21, 22
-            and 26). Read more on{' '}
+            and 26). For transportation it is other districts&apos; and
+            agencies&apos; payments for buses run for them (codes ending 99
+            other than the state allocation, 4199). Read more on{' '}
             <Link href="/special-education-funding" className="text-accent hover:underline">
               special education funding
             </Link>
