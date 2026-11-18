@@ -334,15 +334,23 @@ export default function WaMap({
   const reserveActual = (() => {
     if (selectedReserve == null || !selectedName) return null;
     const at = Math.min(100, Math.max(0, reserveLegendAt(selectedReserve)));
-    const text =
-      selectedReserve < 0 ? 'Actual: below zero' : `Actual: ${reserveDays(selectedReserve)} days`;
+    // A negative balance is shown as the days of spending it is short by, e.g.
+    // Prescott at -20.2% reads "Actual: −74 days (in the red)".
+    const days = Math.abs(reserveDays(selectedReserve));
+    const inRed = selectedReserve < 0;
+    const count = inRed ? Math.max(1, days) : days;
+    const unit = count === 1 ? 'day' : 'days';
+    const text = inRed ? `Actual: −${count} ${unit} (in the red)` : `Actual: ${count} ${unit}`;
+    const spoken = inRed
+      ? `Actual: in the red by ${count} ${unit} of spending.`
+      : `Actual: ${count} ${unit} of savings.`;
     const labelStyle: { left?: string; right?: string; transform?: string } =
       at < 25
         ? { left: `calc(${at}% - 2px)` }
         : at > 75
           ? { right: `calc(${100 - at}% - 2px)` }
           : { left: `${at}%`, transform: 'translateX(-50%)' };
-    return { at, text, labelStyle };
+    return { at, text, spoken, labelStyle };
   })();
 
   const fadedFills = useMemo(() => {
@@ -960,7 +968,7 @@ export default function WaMap({
             </span>
             {/* The same, for a screen reader, since the bar itself is hidden. */}
             <span className="sr-only">
-              {reserveActual ? `${reserveActual.text} of savings. ` : ''}
+              {reserveActual ? `${reserveActual.spoken} ` : ''}
               Goal: 60 days of spending, the State Auditor&apos;s recommended minimum.
             </span>
           </>
