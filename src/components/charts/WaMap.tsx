@@ -335,12 +335,12 @@ export default function WaMap({
     if (selectedReserve == null || !selectedName) return null;
     const at = Math.min(100, Math.max(0, reserveLegendAt(selectedReserve)));
     // A negative balance is shown as the days of spending it is short by, e.g.
-    // Prescott at -20.2% reads "Actual: −74 days (in the red)".
+    // Prescott at -20.2% reads "Actual: −74 days".
     const days = Math.abs(reserveDays(selectedReserve));
     const inRed = selectedReserve < 0;
     const count = inRed ? Math.max(1, days) : days;
     const unit = count === 1 ? 'day' : 'days';
-    const text = inRed ? `Actual: −${count} ${unit} (in the red)` : `Actual: ${count} ${unit}`;
+    const text = inRed ? `Actual: −${count} ${unit}` :`Actual: ${count} ${unit}`;
     const spoken = inRed
       ? `Actual: in the red by ${count} ${unit} of spending.`
       : `Actual: ${count} ${unit} of savings.`;
