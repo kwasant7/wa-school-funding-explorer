@@ -1117,6 +1117,11 @@ export function sheetFitForTest(code: string, meta: BriefPdfMeta): SheetFit | nu
 /** How much larger than its layout units the brief prints; for the overflow test. */
 export const pdfScaleForTest = PDF_SCALE;
 
+/** The PDF for a hand-built page, so a test can draw a case no district has today. */
+export function pdfForPageForTest(page: OnePage, meta: BriefPdfMeta): Blob {
+  return renderBrief(page, meta).pdf.build();
+}
+
 /** Build the PDF. Returns a Blob ready to download. */
 export function buildBriefPdf(brief: DistrictBrief, meta: BriefPdfMeta): Blob {
   const page = onePageFor(brief.code);

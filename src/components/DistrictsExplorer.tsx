@@ -1074,7 +1074,7 @@ function DistrictDetail({
           </span>
           <span className="mt-0.5 block text-sm text-ink-secondary">
             {d.name}&apos;s funding brief, a printable one-page PDF, and the
-            three legislators who represent it.
+            legislators who represent it.
           </span>
         </span>
         <span aria-hidden className="text-xl leading-none text-accent">

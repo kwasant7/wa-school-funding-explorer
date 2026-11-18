@@ -17,10 +17,12 @@ import { describe, it } from 'node:test';
 
 import districtsJson from '@/data/districts.json';
 import { briefFor, type DistrictBrief } from '@/lib/diagnosis';
+import { onePageFor } from '@/lib/brief-onepage';
 import {
   buildBriefPdf,
   briefFileName,
   measureForTest,
+  pdfForPageForTest,
   pdfScaleForTest,
   pdfStringForTest,
   sheetFitForTest,
@@ -35,7 +37,7 @@ const TACOMA = '27010';
 const BELLEVUE = '17405';
 const SEATTLE = '17001'; // overlaps more legislative districts than fit on the sheet
 const STEADY = '06119';
-const ENHANCED_OVERSIGHT = '31025'; // Marysville: under oversight, with no response on record
+const ON_OVERSIGHT = '31025'; // Marysville: under oversight, with no response on record
 const NO_BIG3 = '37902'; // a school AESD publishes no Big 3 figures for
 
 const ALL_CODES = districtsJson.districts.map((d) => d.code);
@@ -132,7 +134,7 @@ describe('brief PDF structure', () => {
   });
 
   it('is two US Letter pages, whatever the district', async () => {
-    for (const code of [TACOMA, BELLEVUE, SEATTLE, STEADY, ENHANCED_OVERSIGHT, NO_BIG3]) {
+    for (const code of [TACOMA, BELLEVUE, SEATTLE, STEADY, ON_OVERSIGHT, NO_BIG3]) {
       const pdf = await bytesFor(code);
       assert.equal((pdf.match(/\/Type \/Page\b/g) ?? []).length, 2, `${code} is not two pages`);
       assert.ok(pdf.includes('/Count 2'));
@@ -261,11 +263,20 @@ describe('brief PDF content', () => {
   });
 
   it('prints what the district has already done, where that is on record', async () => {
-    // Bellevue is the one district under oversight with a recorded response.
-    const text = readable(await bytesFor(BELLEVUE));
-    assert.ok(text.includes('Already done:'));
-    // And not where there is none: Marysville is under oversight without one.
-    assert.equal(readable(await bytesFor(ENHANCED_OVERSIGHT)).includes('Already done:'), false);
+    // No district on the list has a recorded response right now, so give
+    // Marysville's oversight card one here.
+    assert.equal(readable(await bytesFor(ON_OVERSIGHT)).includes('Already done:'), false);
+    const page = onePageFor(ON_OVERSIGHT);
+    assert.ok(page);
+    assert.ok(page.problems.length > 0);
+    const withResponse = {
+      ...page,
+      problems: page.problems.map((p, i) =>
+        i === 0 ? { ...p, response: 'Cut central-office staff.' } : p
+      ),
+    };
+    const pdf = Buffer.from(await pdfForPageForTest(withResponse, META).arrayBuffer()).toString('latin1');
+    assert.ok(readable(pdf).includes('Already done:'));
   });
 
   it('sets punctuation against the word it follows, with no stray space', async () => {
@@ -340,7 +351,7 @@ describe('brief PDF content', () => {
 
   it('never writes a byte above the ASCII range', async () => {
     // The invariant behind the xref table: one character, one byte.
-    for (const code of [TACOMA, BELLEVUE, SEATTLE, STEADY, ENHANCED_OVERSIGHT, NO_BIG3]) {
+    for (const code of [TACOMA, BELLEVUE, SEATTLE, STEADY, ON_OVERSIGHT, NO_BIG3]) {
       const pdf = await bytesFor(code);
       const offending = pdf.search(/[^\x00-\x7E]/);
       assert.equal(

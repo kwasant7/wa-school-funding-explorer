@@ -777,7 +777,7 @@ const ellIssue: Builder = (m) => {
   return {
     id: 'ell',
     title: 'Many students are still learning English',
-    fact: `${fmtInt(m.record.demo.ell)} students here are learning English. State money for them stops once a student passes a test, even when new students keep arriving.`,
+    fact: `${fmtInt(m.record.demo.ell)} students here are learning English. State money for them ends two years after a student passes the English proficiency test, even when new students keep arriving.`,
     visual: {
       kind: 'dots',
       filled: perHundred(m.ellRate),
@@ -828,7 +828,7 @@ const enrollmentIssue: Builder = (m) => {
 
   return {
     id: 'enrollmentDecline',
-    title: 'Fewer students every year',
+    title: 'Enrollment has fallen',
     fact: `The district has about ${fmtInt(Math.round(lost))} fewer students than in ${BASE_YEAR}. Money follows students, but buildings and bus routes cost the same.`,
     visual: {
       kind: 'trend',
@@ -897,7 +897,7 @@ function summaryFor(m: Metrics, issues: Issue[]): string {
 
 const ISSUE_SHORT: Record<IssueId, string> = {
   oversight: 'state oversight of the budget',
-  reserves: 'a budget that does not balance',
+  reserves: 'spending that outran revenue',
   levyCap: 'the cap on local school taxes',
   leaDependence: 'not much local property to tax',
   sped: 'special education',

@@ -25,11 +25,16 @@
 export const RESERVE_BENCHMARK_DAYS = 60;
 export const RESERVE_THIN_DAYS = 30;
 
-const percentOfYear = (days: number) => Math.round((1000 * days) / 365) / 10;
+/*
+  Not rounded. Reserve ratios are stored to one decimal, so a rounded 8.2 line
+  let Seattle's 8.155% (about 30 days, stored as 8.2) pass a strict `<` test
+  and miss the "less than one month" label.
+*/
+const percentOfYear = (days: number) => (100 * days) / 365;
 
-/** 16.4 - the State Auditor's 60-day benchmark as a share of annual spending. */
+/** About 16.4 - the State Auditor's 60-day benchmark as a share of annual spending. */
 export const RESERVE_BENCHMARK_PCT = percentOfYear(RESERVE_BENCHMARK_DAYS);
-/** 8.2 - one month of spending. */
+/** About 8.2 - one month of spending. */
 export const RESERVE_THIN_PCT = percentOfYear(RESERVE_THIN_DAYS);
 
 /** A reserve ratio (percent of annual spending) as days of operation. */
