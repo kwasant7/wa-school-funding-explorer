@@ -222,12 +222,16 @@ const DEEP = [0.063, 0.259, 0.506] as const;
 const TILE = [0.988, 0.988, 0.984] as const;
 const WHITE = [1, 1, 1] as const;
 // The revenue-source colours the site's charts use.
+// A plain grayscale ramp - the brief reads as a research document, and prints
+// the same in black and white. State (the largest share) is darkest.
 const SERIES: Record<'state' | 'local' | 'federal' | 'other', Rgb> = {
-  state: [0.165, 0.471, 0.839],
-  local: [0.106, 0.686, 0.478],
-  federal: [0.929, 0.631, 0],
-  other: [0, 0.514, 0],
+  state: [0.28, 0.28, 0.27],
+  local: [0.46, 0.46, 0.44],
+  federal: [0.64, 0.64, 0.61],
+  other: [0.8, 0.8, 0.77],
 };
+/** Mid gray for the "funding" bars; cost bars use INK. */
+const BAR_GRAY = [0.6, 0.6, 0.58] as const;
 
 /** A stretch of text in one weight and colour, for lines that mix both. */
 type Run = { text: string; bold?: boolean; colour?: Rgb };
@@ -539,27 +543,27 @@ function miniVisual(
   switch (visual.kind) {
     case 'versus':
       return bars([
-        { label: visual.aLabel, value: visualValue(visual.a, visual), amount: visual.a, fill: ACCENT },
-        { label: visual.bLabel, value: visualValue(visual.b, visual), amount: visual.b, fill: ACCENT_SOFT },
+        { label: visual.aLabel, value: visualValue(visual.a, visual), amount: visual.a, fill: INK },
+        { label: visual.bLabel, value: visualValue(visual.b, visual), amount: visual.b, fill: BAR_GRAY },
       ]);
 
     case 'dots':
       // Fifty-odd dots do not fit beside a sentence; two bars say the same.
       return bars([
-        { label: 'Here', value: `${visual.filled}%`, amount: visual.filled, fill: ACCENT },
+        { label: 'Here', value: `${visual.filled}%`, amount: visual.filled, fill: INK },
         {
           label: visual.compareLabel.charAt(0).toUpperCase() + visual.compareLabel.slice(1),
           value: `${visual.compare}%`,
           amount: visual.compare,
-          fill: ACCENT_SOFT,
+          fill: BAR_GRAY,
         },
       ]);
 
     case 'trend':
       if (measureOnly) return 2 * MINI_ROW + 10;
       bars([
-        { label: visual.fromLabel, value: Math.round(visual.from).toLocaleString('en-US'), amount: visual.from, fill: ACCENT_SOFT },
-        { label: visual.toLabel, value: Math.round(visual.to).toLocaleString('en-US'), amount: visual.to, fill: ACCENT },
+        { label: visual.fromLabel, value: Math.round(visual.from).toLocaleString('en-US'), amount: visual.from, fill: BAR_GRAY },
+        { label: visual.toLabel, value: Math.round(visual.to).toLocaleString('en-US'), amount: visual.to, fill: INK },
       ]);
       pdf.at(visual.changeLabel, {
         x,
@@ -592,7 +596,7 @@ function miniVisual(
       pdf.box(barX, top + 1.5, barW, 6.5, PAPER);
       const from = at(Math.min(0, visual.value));
       const to = at(Math.max(0, visual.value));
-      pdf.box(from, top + 1.5, Math.max(1.5, to - from), 6.5, visual.value < 0 ? CRITICAL : ACCENT);
+      pdf.box(from, top + 1.5, Math.max(1.5, to - from), 6.5, visual.value < 0 ? CRITICAL : INK);
       // The safe line stands proud of the bar so it reads as a threshold.
       pdf.box(at(visual.safe), top - 0.5, 1.2, 10.5, INK);
       pdf.at(reading, {
@@ -827,7 +831,7 @@ function drawBrief(
   // A very long name would run the key out of its panel; "This district" says the same.
   const keyWidth = (name: string) => 9 + measure(name, 'regular', 6.8) + 10 + 11 + measure('state median', 'regular', 6.8);
   const keyName = keyWidth(page.shortName) <= panelW ? page.shortName : 'This district';
-  pdf.box(trendX, y + 13.6, 6, 6, ACCENT);
+  pdf.box(trendX, y + 13.6, 6, 6, BAR_GRAY);
   pdf.at(keyName, { x: trendX + 9, top: y + 13, width: panelW, size: 6.8, colour: INK_SECONDARY });
   {
     const keyX = trendX + 9 + measure(keyName, 'regular', 6.8) + 10;
@@ -847,7 +851,7 @@ function drawBrief(
       const value = values[i];
       if (value != null) {
         const h = (value / maxValue) * maxBar;
-        pdf.box(cx, base - h, colW, h, ACCENT);
+        pdf.box(cx, base - h, colW, h, BAR_GRAY);
         pdf.at(`$${(value / 1000).toFixed(1)}K`, {
           x: cx - 3, top: base - h - 9, width: colW + 6, size: 6.8, bold: true, colour: INK,
         });
@@ -880,12 +884,12 @@ function drawBrief(
       const pair = alignPair(Math.max(col.cost, col.funding), Math.min(col.cost, col.funding), 3, 10_000);
       const rows = covered
         ? [
-            { label: 'Funding it receives', amount: pair.a, fill: ACCENT },
-            { label: 'What it really costs', amount: pair.b, fill: ACCENT_SOFT },
+            { label: 'Funding it receives', amount: pair.a, fill: BAR_GRAY },
+            { label: 'What it really costs', amount: pair.b, fill: INK },
           ]
         : [
-            { label: 'What it really costs', amount: pair.a, fill: ACCENT },
-            { label: 'Funding it receives', amount: pair.b, fill: ACCENT_SOFT },
+            { label: 'What it really costs', amount: pair.a, fill: INK },
+            { label: 'Funding it receives', amount: pair.b, fill: BAR_GRAY },
           ];
       rows.forEach((row) => {
         pdf.at(row.label, { x: cx, top: cy, width: colW3, size: 7, colour: INK_SECONDARY });
@@ -893,8 +897,7 @@ function drawBrief(
           x: cx, top: cy, width: colW3, size: 7, bold: true, colour: INK, align: 'right',
         });
         cy += 9.4;
-        pdf.box(cx, cy, colW3, 8, PAPER);
-        pdf.box(cx, cy, Math.max(1.5, (colW3 * row.amount) / (pair.a || 1)), 8, row.fill);
+        pdf.box(cx, cy, Math.max(1.5, (colW3 * row.amount) / (pair.a || 1)), 7, row.fill);
         cy += 11;
       });
       pdf.at(covered ? 'Covered by its funding' : `${fmtMoneyOnGrid(pair.gap, pair.step)} short`, {
