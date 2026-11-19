@@ -766,14 +766,17 @@ function drawBrief(
   page.tiles.forEach((tile, i) => {
     const tx = X + (i % tileCols) * (tileW + tileGap);
     const ty = y + Math.floor(i / tileCols) * (tileH + tileGap);
-    pdf.ring(tx, ty, tileW, tileH, 3.5, LINE, TILE);
-    pdf.at(tile.label, { x: tx + 8, top: ty + 6, width: tileW - 16, size: 7.4, colour: INK_SECONDARY });
+    pdf.at(tile.label.toUpperCase(), { x: tx, top: ty + 2, width: tileW, size: 6.8, colour: INK_MUTED });
     pdf.at(tile.value, {
-      x: tx + 8, top: ty + 15, width: tileW - 16, size: 17, bold: true,
+      x: tx, top: ty + 11, width: tileW, size: 17, bold: true,
       colour: tile.tone === 'critical' ? CRITICAL : INK, leading: 19,
     });
-    pdf.at(tile.note, { x: tx + 8, top: ty + 36, width: tileW - 16, size: 7, colour: INK_MUTED });
+    pdf.at(tile.note, { x: tx, top: ty + 32, width: tileW, size: 7, colour: INK_SECONDARY });
   });
+  // One hairline between the two rows of facts, no boxes around them.
+  if (page.tiles.length > tileCols) {
+    pdf.box(X, y + tileH + tileGap / 2 - 0.25, W, 0.5, LINE);
+  }
   y += Math.ceil(page.tiles.length / tileCols) * (tileH + tileGap) + 4;
 
   // --- Where the money comes from, and how revenue per student has moved ----------------
@@ -895,7 +898,7 @@ function drawBrief(
         cy += 11;
       });
       pdf.at(covered ? 'Covered by its funding' : `${fmtMoneyOnGrid(pair.gap, pair.step)} short`, {
-        x: cx, top: cy + 0.5, width: colW3, size: 9, bold: true, colour: covered ? GOOD : CRITICAL,
+        x: cx, top: cy + 0.5, width: colW3, size: 9, bold: true, colour: covered ? INK : CRITICAL,
       });
       cy += 14;
       const noteRuns: Run[] = col.isAsk
@@ -925,9 +928,9 @@ function drawBrief(
     const noteH = pdf.at(note, { x: 0, top: 0, width: boxW, size: 6.6, leading: 8.4, measureOnly: true });
     const boxH = 5 + leadH + 2 + noteH + 4;
     need(boxH);
-    pdf.ring(X, y, W, boxH, 3.5, ACCENT_SOFT, WASH);
-    pdf.rich(lead, { x: X + 8, top: y + 5, width: boxW, size: 8, colour: INK, leading: 10.4 });
-    pdf.at(note, { x: X + 8, top: y + 5 + leadH + 2, width: boxW, size: 6.6, colour: INK_MUTED, leading: 8.4 });
+    pdf.box(X, y, W, 0.5, LINE);
+    pdf.rich(lead, { x: X, top: y + 6, width: W, size: 8, colour: INK, leading: 10.4 });
+    pdf.at(note, { x: X, top: y + 6 + leadH + 2, width: W, size: 6.6, colour: INK_SECONDARY, leading: 8.4 });
     y += boxH;
   }
 
@@ -970,21 +973,21 @@ function drawBrief(
       const askH = 4.5 + 8 + textH + (citeH ? 2 + citeH : 0) + 4.5;
 
       if (draw) {
-        pdf.box(askX, top, askW, askH, WASH);
-        pdf.box(askX, top, 2.4, askH, ACCENT);
+        // A hairline in the gutter sets the request apart - no filled box.
+        pdf.box(askX - 4, top, 0.5, askH, LINE);
         let ay = top + 4.5;
-        pdf.at('ASK', { x: askX + 9.4, top: ay, width: askInner, size: 6.6, bold: true, colour: ACCENT });
+        pdf.at('REQUEST', { x: askX + 9.4, top: ay, width: askInner, size: 6.6, bold: true, colour: INK_MUTED });
         ay += 8;
         ay += pdf.at(problem.ask, { x: askX + 9.4, top: ay, width: askInner, size: 8.6, bold: true, colour: INK, leading: 10.6 });
         if (problem.cite) {
           pdf.at(problem.cite, { x: askX + 9.4, top: ay + 2, width: askInner, size: 6.8, colour: INK_MUTED, leading: 8.4 });
         }
 
-        // The number badge: a circle with the numeral set on its optical centre.
+        // The number: a small ink disc with the numeral on its optical centre.
         const numeral = String(index + 1);
         const numeralSize = 8;
         const capHeight = numeralSize * 0.717;
-        pdf.round(X, top + 1, badge, badge, badge / 2, ACCENT);
+        pdf.round(X, top + 1, badge, badge, badge / 2, INK);
         pdf.at(numeral, {
           x: X + (badge - measure(numeral, 'bold', numeralSize)) / 2,
           top: top + 1 + badge / 2 + capHeight / 2 - numeralSize,
@@ -1019,19 +1022,18 @@ function drawBrief(
     heading('Who to ask', whoSubtitle);
     page.delegations.forEach((d, i) => {
       const lx = X + i * (legW + legGap);
-      pdf.ring(lx, y, legW, legH, 3.5, LINE, TILE);
       const head = `${ordinal(d.district)} District`;
-      pdf.at(head, { x: lx + 7, top: y + 5, width: legW - 14, size: 8.2, bold: true, colour: INK });
+      pdf.at(head, { x: lx, top: y + 5, width: legW, size: 8.2, bold: true, colour: INK });
       // The share reads "74% of Tacoma" where it fits and just "74%" where a
       // long district name would run out of the box.
-      const room = legW - 14 - measure(head, 'bold', 8.2) - 8;
+      const room = legW - measure(head, 'bold', 8.2) - 8;
       const full = `·  ${d.percent}% of ${page.shortName}`;
       const share = measure(full, 'regular', 7) <= room ? full : `·  ${d.percent}%`;
-      pdf.at(share, { x: lx + 7 + measure(head, 'bold', 8.2) + 5, top: y + 6, width: room + 2, size: 7, colour: INK_MUTED });
+      pdf.at(share, { x: lx + measure(head, 'bold', 8.2) + 5, top: y + 6, width: room + 2, size: 7, colour: INK_MUTED });
       d.members.forEach((member, r) => {
         const my = y + 5 + 11.5 + r * 10.4;
-        pdf.at(member.chamber, { x: lx + 7, top: my, width: 26, size: 8, bold: true, colour: INK });
-        pdf.at(member.name, { x: lx + 7 + 25, top: my, width: legW - 34, size: 8, colour: INK_SECONDARY });
+        pdf.at(member.chamber, { x: lx, top: my, width: 26, size: 8, bold: true, colour: INK });
+        pdf.at(member.name, { x: lx + 25, top: my, width: legW - 27, size: 8, colour: INK_SECONDARY });
       });
     });
     y += legH + 5;
@@ -1060,10 +1062,9 @@ function drawBrief(
     const quoteH = pdf.at(quote, { x: 0, top: 0, width: innerW, size: 8.4, leading: 11, measureOnly: true });
     const boxH = 5 + 8.4 + quoteH + 5;
     need(boxH);
-    pdf.box(X, y, W, boxH, WASH);
-    pdf.box(X, y, 2.4, boxH, ACCENT);
-    pdf.at('SAY IT IN THIRTY SECONDS', { x: X + 9.4, top: y + 5, width: innerW, size: 6.8, bold: true, colour: ACCENT });
-    pdf.at(quote, { x: X + 9.4, top: y + 5 + 8.4, width: innerW, size: 8.4, colour: INK, leading: 11 });
+    pdf.box(X, y, W, 0.5, LINE);
+    pdf.at('SAY IT IN THIRTY SECONDS', { x: X, top: y + 5, width: W, size: 6.8, bold: true, colour: INK });
+    pdf.at(quote, { x: X, top: y + 5 + 8.4, width: W, size: 8.4, colour: INK_SECONDARY, leading: 11 });
     y += boxH;
   }
 
