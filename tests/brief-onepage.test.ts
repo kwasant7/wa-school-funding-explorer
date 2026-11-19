@@ -31,12 +31,19 @@ describe('one-page tiles and charts', () => {
     const byLabel = Object.fromEntries(tacoma.tiles.map((t) => [t.label, t]));
     assert.equal(byLabel['Revenue per student'].value, '$20,578');
     assert.equal(byLabel['Revenue per student'].note, 'Statewide median $19,867');
-    assert.equal(byLabel['Funded students'].value, '27,781');
     assert.equal(byLabel['Low-income students'].value, '59%');
     // A district that spent more than it took in says so, in the warning tone.
     const deficit = byLabel['Spent more than it took in'];
     assert.equal(deficit.value, '-$7.9M');
     assert.equal(deficit.tone, 'critical');
+    // The ending fund balance sits beside the annual result, so a deficit and a
+    // positive balance can be read at once rather than collapsing into one tile.
+    const balance = byLabel['Ending fund balance'];
+    assert.equal(balance.value, '$3,239,412');
+    assert.equal(balance.note, '0.6% of spending, about 2 days');
+    assert.equal(balance.tone, undefined);
+    // Funded students moved out of the tiles; it already prints under the title.
+    assert.equal(byLabel['Funded students'], undefined);
   });
 
   it('splits revenue into four parts that add up', () => {

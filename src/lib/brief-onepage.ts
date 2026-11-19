@@ -26,7 +26,7 @@ import {
 } from '@/lib/diagnosis';
 import { BIG3_KEYS, big3Totals, type Big3Key } from '@/lib/big3';
 import { fmtInt, fmtMoney, fmtMoneyFull } from '@/lib/format';
-import { balanceGapIsMaterial, fundBalanceChange, RESERVE_MARGINAL_NEGATIVE_PCT } from '@/lib/reserves';
+import { balanceGapIsMaterial, fundBalanceChange, RESERVE_MARGINAL_NEGATIVE_PCT, reserveDays } from '@/lib/reserves';
 import { isSchoolDistrict } from '@/lib/entity';
 
 /** The three problems the Big 3 section already covers on their own. */
@@ -232,29 +232,28 @@ export function onePageFor(code: string): OnePage | null {
   // --- Tiles: the District Explorer's headline numbers -------------------
   const medianNow = trendJson.median[trendJson.median.length - 1];
   const surplus = record.surplus;
-  // When money moved to other funds makes the balance move differently from
-  // revenue minus spending, the tile's note says what the balance did.
+  // The ending fund balance gets its own tile beside the annual result, so a
+  // deficit and a positive balance can be read at once instead of collapsing
+  // into one number (a district can run a deficit and still hold reserves). The
+  // note says how the balance moved when that differs from revenue minus
+  // spending (money shifted to other funds), otherwise its depth in days.
   const balanceChange = fundBalanceChange(record);
-  const reserveNote =
+  const balanceNote =
     balanceGapIsMaterial(surplus, balanceChange, record.exp) && balanceChange != null
-      ? `Savings ${balanceChange < 0 ? 'fell' : 'rose'} ${fmtMoney(Math.abs(balanceChange))}`
+      ? `${balanceChange < 0 ? 'Fell' : 'Rose'} ${fmtMoney(Math.abs(balanceChange))} last year`
       : record.reserveRatio == null
         ? ''
         : record.reserveRatio <= RESERVE_MARGINAL_NEGATIVE_PCT
           ? 'No savings left'
           : record.reserveRatio < 0
-            ? 'Balance just below zero'
-            : `Savings: ${record.reserveRatio.toFixed(1)}% of spending`;
+            ? 'Just below zero'
+            : `${record.reserveRatio.toFixed(1)}% of spending, about ${reserveDays(record.reserveRatio)} days`;
+  const resultNote = `Revenue minus spending, ${DIAGNOSIS_YEAR}`;
   const tiles: Tile[] = [
     {
       label: 'Revenue per student',
       value: fmtMoneyFull(Math.round(record.perPupil)),
       note: `Statewide median ${fmtMoneyFull(Math.round(medianNow))}`,
-    },
-    {
-      label: 'Funded students',
-      value: fmtInt(fundedStudents),
-      note: `${fmtInt(record.enrollment)} enrolled in October`,
     },
     {
       label: 'Low-income students',
@@ -268,20 +267,28 @@ export function onePageFor(code: string): OnePage | null {
       ? {
           label: 'Revenue minus spending',
           value: '$0',
-          note: record.fundBalance == null ? 'Revenue reported equal to spending' : reserveNote,
+          note: record.fundBalance == null ? 'Revenue reported equal to spending' : resultNote,
         }
       : surplus < 0
       ? {
           label: 'Spent more than it took in',
           value: `-${fmtMoney(Math.abs(surplus))}`,
-          note: reserveNote,
+          note: resultNote,
           tone: 'critical',
         }
       : {
           label: 'Took in more than it spent',
           value: `+${fmtMoney(surplus)}`,
-          note: reserveNote,
+          note: resultNote,
         },
+    {
+      label: 'Ending fund balance',
+      value: record.fundBalance == null ? 'Not reported' : fmtMoneyFull(Math.round(record.fundBalance)),
+      note: balanceNote,
+      ...(record.reserveRatio != null && record.reserveRatio < 0
+        ? { tone: 'critical' as const }
+        : {}),
+    },
   ];
 
   // --- Revenue mix --------------------------------------------------------

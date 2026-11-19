@@ -681,9 +681,9 @@ function drawBrief(
 
   // --- Footer geometry: the same on every page, so measured once ------------------
   const footer =
-    `All numbers come from OSPI records for ${meta.year}` +
+    `OSPI records for ${meta.year}; levy and bills use their own dates` +
     (page.big3
-      ? '; the Big 3 figures are those of the AESD Big 3 dashboard, built from OSPI F-196 actuals and apportionment.'
+      ? '. The Big 3 figures are those of the AESD Big 3 dashboard, built from OSPI F-196 actuals and apportionment.'
       : '.') +
     " Each problem is ranked against Washington's school districts; charter and tribal compact schools are left out of that comparison. Not an official fiscal or legal source: " +
     'an independent civic education project, not affiliated with OSPI or the Washington State Legislature. ' +
@@ -915,12 +915,12 @@ function drawBrief(
             { text: fmtMoney(page.big3.total), bold: true },
             { text: ' — about ' },
             { text: `$${fmtInt(Math.round(page.big3.perStudent))} per student`, bold: true },
-            { text: ` — that ${page.shortName} covers from local levies and other local money.` },
+            { text: ` — that ${page.shortName} covers from local levy and other general-fund money.` },
           ]
         : [{ text: 'Funding covers the cost of all three programs here.' }];
     const boxW = W - 16;
     const note =
-      '“Funding” counts every revenue line for these programs: state, federal special education (IDEA) and Medicaid money, and payments from other districts.';
+      `“Funding” counts every revenue line: state, federal IDEA, Medicaid, and payments from other districts. Special education is ${page.big3.year} actuals, before the 2025 increase (E2SSB 5263).`;
     const leadH = pdf.rich(lead, { x: 0, top: 0, width: boxW, size: 8, colour: INK, leading: 10.4, measureOnly: true });
     const noteH = pdf.at(note, { x: 0, top: 0, width: boxW, size: 6.6, leading: 8.4, measureOnly: true });
     const boxH = 5 + leadH + 2 + noteH + 4;
