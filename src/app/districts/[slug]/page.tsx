@@ -330,10 +330,10 @@ export default function DistrictPage({ params }: Params) {
           )}
           {p.gaps.some((g) => g.key === 'sped' && g.gap > 0) && (
             <p className="mt-3 text-sm text-ink-muted">
-              The special education figures are {p.schoolYear}. E2SSB 5263 took
-              effect September 1, 2025, raising the special-education multiplier
-              and removing the enrollment cap, so this gap is narrower under
-              current law than the figure above shows.
+              The special education figures are {p.schoolYear}, before E2SSB 5263
+              took effect September 1, 2025, raising the special-education
+              multiplier and removing the enrollment cap. These actuals predate
+              that change and do not measure the gap under the current formula.
             </p>
           )}
           <p className="mt-3 text-sm text-ink-muted">
@@ -621,10 +621,13 @@ export default function DistrictPage({ params }: Params) {
               {p.reserveRatio < 0 ? (
                 p.reserveRatio > RESERVE_MARGINAL_NEGATIVE_PCT ? (
                   <>
-                    The district ended {p.schoolYear} just below breakeven,
-                    drawing its general-fund balance marginally negative
-                    ({p.reserveRatio}% of spending). That is a small year-end
-                    shortfall, not a sign its savings are gone.
+                    The district&apos;s general-fund balance ended {p.schoolYear}{' '}
+                    marginally below zero ({p.reserveRatio}% of spending) - a
+                    small year-end balance rather than depleted savings
+                    {p.surplus < 0
+                      ? `, though the year still ran a ${fmtMoney(Math.abs(p.surplus))} deficit`
+                      : ''}
+                    .
                   </>
                 ) : (
                   <>

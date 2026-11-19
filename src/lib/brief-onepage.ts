@@ -26,7 +26,7 @@ import {
 } from '@/lib/diagnosis';
 import { BIG3_KEYS, big3Totals, type Big3Key } from '@/lib/big3';
 import { fmtInt, fmtMoney, fmtMoneyFull } from '@/lib/format';
-import { balanceGapIsMaterial, fundBalanceChange } from '@/lib/reserves';
+import { balanceGapIsMaterial, fundBalanceChange, RESERVE_MARGINAL_NEGATIVE_PCT } from '@/lib/reserves';
 import { isSchoolDistrict } from '@/lib/entity';
 
 /** The three problems the Big 3 section already covers on their own. */
@@ -240,9 +240,11 @@ export function onePageFor(code: string): OnePage | null {
       ? `Savings ${balanceChange < 0 ? 'fell' : 'rose'} ${fmtMoney(Math.abs(balanceChange))}`
       : record.reserveRatio == null
         ? ''
-        : record.reserveRatio < 0
+        : record.reserveRatio <= RESERVE_MARGINAL_NEGATIVE_PCT
           ? 'No savings left'
-          : `Savings: ${record.reserveRatio.toFixed(1)}% of spending`;
+          : record.reserveRatio < 0
+            ? 'Balance just below zero'
+            : `Savings: ${record.reserveRatio.toFixed(1)}% of spending`;
   const tiles: Tile[] = [
     {
       label: 'Revenue per student',

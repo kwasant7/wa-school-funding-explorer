@@ -35,7 +35,7 @@ import { oversightFor, type Oversight } from '@/data/oversight';
 import { fmtMoney, fmtMoneyFull, fmtInt, alignPair } from '@/lib/format';
 import { big3For, big3Gap, big3Totals, type Big3Record } from '@/lib/big3';
 import { PROTOTYPES } from '@/lib/prototypical-model';
-import { RESERVE_BENCHMARK_PCT, RESERVE_THIN_PCT, fundBalanceChange, reserveDays } from '@/lib/reserves';
+import { RESERVE_BENCHMARK_PCT, RESERVE_THIN_PCT, RESERVE_MARGINAL_NEGATIVE_PCT, fundBalanceChange, reserveDays } from '@/lib/reserves';
 import { isCharter, isCompact, isSchoolDistrict } from '@/lib/entity';
 
 type DistrictRecord = (typeof districtsJson.districts)[number];
@@ -654,23 +654,38 @@ const reservesIssue: Builder = (m) => {
     whole brief dismissed, so this describes the cash flow instead.
   */
   const negativeBalance = rr < 0;
+  // A balance a hair below zero (Bellevue: -0.2%) is not "the savings are gone":
+  // the real story there is the year's deficit, not a depleted cushion. Only a
+  // balance deeper than the marginal line gets the exhausted-savings framing;
+  // a marginal one is described as a small year-end shortfall, and leads with
+  // the deficit when there is a material one.
+  const deepNegative = rr <= RESERVE_MARGINAL_NEGATIVE_PCT;
+  const marginalNegative = negativeBalance && !deepNegative;
 
   return {
     id: 'reserves',
-    title: negativeBalance
+    title: deepNegative
       ? 'The savings are gone'
-      : materialDeficit
-        ? balanceChange != null
-          ? 'Savings fell last year'
-          : 'Spending outran revenue last year'
-        : 'Savings are running low',
-    fact: negativeBalance
+      : marginalNegative
+        ? materialDeficit
+          ? 'Spending outran revenue last year'
+          : 'Savings dipped just below zero'
+        : materialDeficit
+          ? balanceChange != null
+            ? 'Savings fell last year'
+            : 'Spending outran revenue last year'
+          : 'Savings are running low',
+    fact: deepNegative
       ? `${m.name} ended ${LATEST_YEAR} with a negative fund balance - it has spent its savings and is carrying a shortfall forward.`
-      : materialDeficit
-        ? balanceChange != null
-          ? `${m.name}'s fund balance fell by ${plainMoney(drop)} last year, leaving about ${reserveDays(rr)} days of spending in savings.`
-          : `${m.name} spent ${plainMoney(Math.abs(m.surplus))} more than it took in last year, covering the difference out of savings.`
-        : `${m.name} has enough savings to run for only about ${reserveDays(rr)} days, less than one month of spending.`,
+      : marginalNegative
+        ? materialDeficit
+          ? `${m.name} spent ${plainMoney(Math.abs(m.surplus))} more than it took in last year, ending with its general-fund balance just below zero (${rr.toFixed(1)}% of spending).`
+          : `${m.name} ended ${LATEST_YEAR} with its general-fund balance just below zero (${rr.toFixed(1)}% of spending) - a small year-end shortfall rather than depleted savings.`
+        : materialDeficit
+          ? balanceChange != null
+            ? `${m.name}'s fund balance fell by ${plainMoney(drop)} last year, leaving about ${reserveDays(rr)} days of spending in savings.`
+            : `${m.name} spent ${plainMoney(Math.abs(m.surplus))} more than it took in last year, covering the difference out of savings.`
+          : `${m.name} has enough savings to run for only about ${reserveDays(rr)} days, less than one month of spending.`,
     visual: {
       kind: 'gauge',
       value: rr,
@@ -679,7 +694,11 @@ const reservesIssue: Builder = (m) => {
       safeLabel: "State Auditor's 60-day benchmark",
     },
     refs: [BILLS.budget, BILLS.enrollment],
-    severity: rr < 0 ? 90 : materialDeficit && thinReserves ? 78 : materialDeficit ? 68 : 60,
+    severity: deepNegative
+      ? 90
+      : marginalNegative
+        ? materialDeficit ? 78 : 60
+        : materialDeficit && thinReserves ? 78 : materialDeficit ? 68 : 60,
   };
 };
 
@@ -1124,13 +1143,15 @@ function statsFor(m: Metrics): BriefStat[] {
       label: 'Reserves',
       value: `${m.reserveRatio.toFixed(1)}%`,
       note:
-        m.reserveRatio < 0
+        m.reserveRatio <= RESERVE_MARGINAL_NEGATIVE_PCT
           ? 'No savings left'
-          : m.reserveRatio < RESERVE_THIN_PCT
-            ? 'Less than one month of spending'
-            : m.reserveRatio < RESERVE_BENCHMARK_PCT
-              ? "Below the State Auditor's 60-day benchmark"
-              : "Meets the State Auditor's 60-day benchmark",
+          : m.reserveRatio < 0
+            ? 'Balance just below zero'
+            : m.reserveRatio < RESERVE_THIN_PCT
+              ? 'Less than one month of spending'
+              : m.reserveRatio < RESERVE_BENCHMARK_PCT
+                ? "Below the State Auditor's 60-day benchmark"
+                : "Meets the State Auditor's 60-day benchmark",
     });
   }
   return stats;
