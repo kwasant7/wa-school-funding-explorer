@@ -37,6 +37,16 @@ export const RESERVE_BENCHMARK_PCT = percentOfYear(RESERVE_BENCHMARK_DAYS);
 /** About 8.2 - one month of spending. */
 export const RESERVE_THIN_PCT = percentOfYear(RESERVE_THIN_DAYS);
 
+/**
+ * Depth past which a negative fund balance is a real reserve shortfall rather
+ * than a near-breakeven miss. A district can close a hair below zero - Bellevue
+ * ended 2024-25 at -0.2% of spending, about $694K on a $426M budget - without
+ * having "spent all its savings". Five days of spending (~1.4%) is the line:
+ * shallower than this is described as a small year-end shortfall, deeper as
+ * exhausted reserves carried forward.
+ */
+export const RESERVE_MARGINAL_NEGATIVE_PCT = -percentOfYear(5);
+
 /** A reserve ratio (percent of annual spending) as days of operation. */
 export function reserveDays(ratioPct: number) {
   return Math.round((ratioPct * 365) / 100);

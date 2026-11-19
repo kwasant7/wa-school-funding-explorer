@@ -18,6 +18,7 @@ import levyJson from '@/data/levy.json';
 import {
   RESERVE_BENCHMARK_PCT,
   RESERVE_THIN_PCT,
+  RESERVE_MARGINAL_NEGATIVE_PCT,
   balanceGapIsMaterial,
   fundBalanceChange,
   reserveDays,
@@ -327,6 +328,14 @@ export default function DistrictPage({ params }: Params) {
               sets it apart when it weighs this program.
             </p>
           )}
+          {p.gaps.some((g) => g.key === 'sped' && g.gap > 0) && (
+            <p className="mt-3 text-sm text-ink-muted">
+              The special education figures are {p.schoolYear}. E2SSB 5263 took
+              effect September 1, 2025, raising the special-education multiplier
+              and removing the enrollment cap, so this gap is narrower under
+              current law than the figure above shows.
+            </p>
+          )}
           <p className="mt-3 text-sm text-ink-muted">
             {p.gaps[0].aesd ? (
               <>
@@ -610,10 +619,19 @@ export default function DistrictPage({ params }: Params) {
           <>
             <p className="mt-4 text-ink-secondary">
               {p.reserveRatio < 0 ? (
-                <>
-                  A negative fund balance means the district has spent all of its
-                  savings and is carrying a shortfall into the next year.
-                </>
+                p.reserveRatio > RESERVE_MARGINAL_NEGATIVE_PCT ? (
+                  <>
+                    The district ended {p.schoolYear} just below breakeven,
+                    drawing its general-fund balance marginally negative
+                    ({p.reserveRatio}% of spending). That is a small year-end
+                    shortfall, not a sign its savings are gone.
+                  </>
+                ) : (
+                  <>
+                    A negative fund balance means the district has spent all of
+                    its savings and is carrying a shortfall into the next year.
+                  </>
+                )
               ) : p.reserveRatio >= RESERVE_BENCHMARK_PCT ? (
                 <>
                   A fund balance of {p.reserveRatio}% of spending would run the
