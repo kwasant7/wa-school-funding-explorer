@@ -1069,8 +1069,7 @@ function DistrictDetail({
           &ldquo;Low income&rdquo; is OSPI&apos;s Report Card low-income count -
           free or reduced-price meal eligible plus students identified by direct
           certification - which is broader than a raw free/reduced-price-lunch
-          (FRPL) figure and will not match FRPL-based tables such as OSPI&apos;s
-          funding-equity reports.
+          (FRPL) figure.
         </p>
       </div>
 
