@@ -133,7 +133,7 @@ function Gauge({ visual }: { visual: Extract<Visual, { kind: 'gauge' }> }) {
     <figure
       className="mt-3"
       role="img"
-      aria-label={`${visual.label}: ${visual.value.toFixed(1)} percent of a year of spending. ${visual.safeLabel}: ${visual.safe} percent.`}
+      aria-label={`${visual.label}: ${visual.value.toFixed(1)} percent of a year of spending. ${visual.safeLabel}: ${visual.safe.toFixed(1)} percent.`}
     >
       <div className="flex items-baseline gap-2">
         <span
@@ -159,8 +159,8 @@ function Gauge({ visual }: { visual: Extract<Visual, { kind: 'gauge' }> }) {
         />
       </div>
       <figcaption className="mt-2 text-xs text-ink-secondary">
-        The black line is the {visual.safeLabel} ({visual.safe}% of a year&apos;s
-        spending). The Auditor rates reserves below it as concerning.
+        The black line is the {visual.safeLabel} ({visual.safe.toFixed(1)}% of a
+        year&apos;s spending). The Auditor rates reserves below it as concerning.
       </figcaption>
     </figure>
   );
