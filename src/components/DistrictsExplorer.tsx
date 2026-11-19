@@ -669,7 +669,7 @@ function Big3Card({ district: d }: { district: District }) {
       <p className="mt-3 text-xs text-ink-muted">
         These are the same figures as{' '}
         <a
-          href="https://www.waschoolfunding.org/"
+          href="https://app.powerbi.com/view?r=eyJrIjoiMzNiMGJlMjUtMTcwNC00YWMwLTg0ODktYTU5Zjg3NGJmOWJmIiwidCI6ImE5ZWIyNzExLTg0M2YtNDhjMC04M2NkLWM0M2FjNjAwOTgzMSJ9"
           target="_blank"
           rel="noopener noreferrer"
           className="font-semibold text-accent hover:underline"

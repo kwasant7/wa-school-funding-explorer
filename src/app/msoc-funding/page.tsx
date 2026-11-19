@@ -168,7 +168,7 @@ export default function MsocFundingPage() {
           Both sides follow the MSOC definition in the Superintendent of Public
           Instruction&apos;s 2026 budget request - the same scope behind{' '}
           <a
-            href="https://www.waschoolfunding.org/"
+            href="https://app.powerbi.com/view?r=eyJrIjoiMzNiMGJlMjUtMTcwNC00YWMwLTg0ODktYTU5Zjg3NGJmOWJmIiwidCI6ImE5ZWIyNzExLTg0M2YtNDhjMC04M2NkLWM0M2FjNjAwOTgzMSJ9"
             target="_blank"
             rel="noopener noreferrer"
             className="text-accent hover:underline"

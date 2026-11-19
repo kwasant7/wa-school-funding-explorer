@@ -230,7 +230,7 @@ the actual is two years older).
 
 **Source:** the Association of Educational Service Districts' (AESD) Big 3
 dashboard, a public Power BI report built from OSPI's F-196 actuals and
-apportionment data: https://www.waschoolfunding.org/. The site prints AESD's
+apportionment data: https://app.powerbi.com/view?r=eyJrIjoiMzNiMGJlMjUtMTcwNC00YWMwLTg0ODktYTU5Zjg3NGJmOWJmIiwidCI6ImE5ZWIyNzExLTg0M2YtNDhjMC04M2NkLWM0M2FjNjAwOTgzMSJ9. The site prints AESD's
 own figures so that the card, the brief and the PDF match the dashboard
 exactly. [`scripts/fetch-big3.py`](scripts/fetch-big3.py) asks the report's
 public query endpoint for each district's 2024-25 revenue and cost in the three

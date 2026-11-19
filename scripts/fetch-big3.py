@@ -8,7 +8,7 @@ apportionment data. This script asks the report's own public query endpoint for
 the same measures its tables print (the dashboard's "Funding (Revenue)" and
 "Costs (Expenditures)" for each program, and the student count under its per
 pupil amounts), once per district.
-  https://www.waschoolfunding.org/
+  https://app.powerbi.com/view?r=eyJrIjoiMzNiMGJlMjUtMTcwNC00YWMwLTg0ODktYTU5Zjg3NGJmOWJmIiwidCI6ImE5ZWIyNzExLTg0M2YtNDhjMC04M2NkLWM0M2FjNjAwOTgzMSJ9
 
 How AESD defines the three programs (worked out by matching the dashboard to
 the F-196 files to the cent for Lake Washington, Bellevue and Tacoma):

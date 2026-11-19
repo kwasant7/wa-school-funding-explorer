@@ -430,7 +430,7 @@ export default function SourcesPage() {
             program 99 divided by headcount enrollment; MSOC follows the
             definition in the Superintendent of Public Instruction&apos;s 2026
             budget request - the same scope behind{' '}
-            <Ext href="https://www.waschoolfunding.org/">
+            <Ext href="https://app.powerbi.com/view?r=eyJrIjoiMzNiMGJlMjUtMTcwNC00YWMwLTg0ODktYTU5Zjg3NGJmOWJmIiwidCI6ImE5ZWIyNzExLTg0M2YtNDhjMC04M2NkLWM0M2FjNjAwOTgzMSJ9">
               AESD&apos;s Big 3 dashboard
             </Ext>
             : non-staff objects across basic education, career and technical
