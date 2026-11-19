@@ -272,7 +272,7 @@ export const KNOWLEDGE: readonly Chunk[] = [
   {
     id: 'local-effort-assistance',
     title: 'Local Effort Assistance (levy equalization)',
-    text: "Local Effort Assistance is state money that partly compensates districts whose property wealth cannot raise what a wealthier district's can. It is a wealth test, not a match on the district's actual levy. The state calculates what the district's assessed value could raise at $1.50 per $1,000, compares that per-student capacity with a statewide goal (about $2,432 per student in 2027), and pays the shortfall. The payment is then prorated by local effort: a district levying below $1.50 per $1,000 receives only that fraction of what it otherwise qualifies for. LEA is sometimes called levy equalization.",
+    text: "Local Effort Assistance is state money that partly compensates districts whose property wealth cannot raise what a wealthier district's can. It is a wealth test, not a match on the district's actual levy. The state calculates what the district's assessed value could raise at $1.50 per $1,000, compares that per-student capacity with a statewide goal (about $2,449 per student in 2027), and pays the shortfall. The payment is then prorated by local effort: a district levying below $1.50 per $1,000 receives only that fraction of what it otherwise qualifies for. LEA is sometimes called levy equalization.",
     sourceIds: ['site-lea', 'rcw-28a-500-015', 'hb-2050'],
     keywords: ['lea', 'local effort assistance', 'levy equalization', 'equalization', 'property wealth', 'assessed value', 'threshold', 'proration'],
   },
@@ -370,7 +370,7 @@ export const KNOWLEDGE: readonly Chunk[] = [
   {
     id: 'data-coverage',
     title: 'Data coverage and how to verify a number',
-    text: 'This site covers school years 2019-20 through 2024-25 for 315 districts and charter schools. Enrollment and demographics come from OSPI Report Card datasets on data.wa.gov, one per year. Funding enrollment comes from OSPI final enrollment summaries on the SAFS page. Finances are F-196 General Fund actuals, also from SAFS. Fund balance and reserve ratio come from the fiscal.wa.gov school-finance workbook. Oversight status is transcribed by hand from OSPI and dated. Every dataset ID, CSV URL, statute and court record is listed on the Sources page so any figure can be traced back to its original.',
+    text: 'This site covers school years 2019-20 through 2024-25 for 293 school districts plus charter schools and tribal compact schools (315 reporting entities in all). Enrollment and demographics come from OSPI Report Card datasets on data.wa.gov, one per year. Funding enrollment comes from OSPI final enrollment summaries on the SAFS page. Finances are F-196 General Fund actuals, also from SAFS. Fund balance and reserve ratio come from the fiscal.wa.gov school-finance workbook. Oversight status is transcribed by hand from OSPI and dated. Every dataset ID, CSV URL, statute and court record is listed on the Sources page so any figure can be traced back to its original.',
     sourceIds: ['site-sources', 'ospi-safs', 'data-wa-enrollment', 'fiscal-wa-k12', 'ospi-report-card'],
     keywords: ['sources', 'verify', 'methodology', 'data', 'coverage', 'years', 'where', 'citation', 'dataset', 'download'],
   },

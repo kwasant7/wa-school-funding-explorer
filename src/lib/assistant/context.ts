@@ -20,10 +20,9 @@ import {
   type ContextStatewide,
 } from '@/lib/assistant/types';
 import { assistantSnapshot } from '@/lib/assistant/store';
-import { LATEST, YEARS, yearData } from '@/lib/data';
+import { LATEST, YEARS, yearData, districtCount } from '@/lib/data';
 import { oversightFor } from '@/data/oversight';
 import { fundBalanceChange } from '@/lib/reserves';
-import districtsData from '@/data/districts.json';
 
 const MAX_HEADINGS = 8;
 const MAX_EXCERPT_CHARS = 1_200;
@@ -44,7 +43,10 @@ export function statewideContext(schoolYear: string): ContextStatewide {
   const record = yearData(year).statewide;
   return {
     schoolYear: year,
-    districtCount: record.districts,
+    // School districts proper, charters and tribal compacts excluded, to match
+    // the "School districts" tile (293 in 2024-25). record.districts counts
+    // every reporting entity (315) and would contradict the page.
+    districtCount: districtCount(year),
     headcount: record.enrollment,
     fundingEnrollment: Math.round(record.fundingEnrollment),
     revenue: {
@@ -261,7 +263,7 @@ export function buildContext(options: {
     dataCoverage: {
       firstYear: YEARS[0],
       latestYear: LATEST,
-      districtCount: districtsData.districts.length,
+      districtCount: districtCount(LATEST),
     },
   };
 }
