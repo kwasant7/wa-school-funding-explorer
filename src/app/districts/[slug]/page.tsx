@@ -12,6 +12,7 @@ import {
   webPageJsonLd,
 } from '@/lib/site-metadata';
 import { fmtInt, fmtMoney, fmtMoneyFull, fmtSignedMoney, ordinal, pct } from '@/lib/format';
+import { aleContractsMaterial } from '@/lib/diagnosis';
 import { OVERSIGHT_CHECKED_ON, oversightFor } from '@/data/oversight';
 import levyJson from '@/data/levy.json';
 import {
@@ -312,6 +313,18 @@ export default function DistrictPage({ params }: Params) {
               <strong>{fmtMoney(p.coveredLocally)}</strong> from its own general
               money beyond what their dedicated funding paid for in{' '}
               {p.schoolYear}.
+            </p>
+          )}
+          {aleContractsMaterial(p.metrics) && (
+            <p className="mt-3 text-sm text-ink-muted">
+              The MSOC cost above includes{' '}
+              <strong className="text-ink-secondary">
+                {fmtMoney(p.metrics.spend?.msocBig3AleContracts ?? 0)}
+              </strong>{' '}
+              that {p.name}&apos;s alternative learning (online) program paid
+              outside providers to teach its students - teaching more than a true
+              operating cost, which AESD&apos;s figure folds in here. The brief
+              sets it apart when it weighs this program.
             </p>
           )}
           <p className="mt-3 text-sm text-ink-muted">
