@@ -18,7 +18,7 @@ export const metadata: Metadata = {
 
 const DESTINATIONS = [
   { href: '/', title: 'How it works', blurb: 'The prototypical school model, start to finish.' },
-  { href: '/districts', title: 'District Explorer', blurb: 'Funding and trends for all 315 districts.' },
+  { href: '/districts', title: 'District Explorer', blurb: 'Funding and trends for all 315 districts, charter and tribal compact schools.' },
   { href: '/simulator', title: 'Policy Simulator', blurb: 'Move the levers and see what each costs.' },
   { href: '/take-action', title: 'Take Action', blurb: 'Your district brief and your legislators.' },
   { href: '/sources', title: 'Sources & Methodology', blurb: 'Every dataset, statute and script.' },

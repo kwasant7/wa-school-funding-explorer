@@ -278,13 +278,14 @@ export default function LeaPage() {
         <li>
           <a
             className="text-accent hover:underline"
-            href="https://app.leg.wa.gov/billsummary?BillNumber=2050&Year=2025"
+            href="https://app.leg.wa.gov/billsummary?BillNumber=6260&Year=2026"
             target="_blank"
             rel="noopener noreferrer"
           >
-            HB 2050 (2025)
+            ESSB 6260 (2026)
           </a>{' '}
-          - most recent change to the enrollment counted in LEA.
+          - most recent change to the enrollment counted in LEA, tightening the
+          alternative-learning exclusion HB 2050 (2025) introduced.
         </li>
         <li>
           <Link href="/sources" className="text-accent hover:underline">

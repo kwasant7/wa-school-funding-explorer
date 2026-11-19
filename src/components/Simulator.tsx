@@ -425,11 +425,11 @@ const LEVERS = [
         Most recently changed by{' '}
         <a
           className="font-semibold underline underline-offset-2"
-          href="https://app.leg.wa.gov/billsummary?BillNumber=2050&Year=2025"
+          href="https://app.leg.wa.gov/billsummary?BillNumber=6260&Year=2026"
           target="_blank"
           rel="noopener noreferrer"
         >
-          HB 2050 (2025)
+          ESSB 6260 (2026)
         </a>
         , which changed the enrollment counted in LEA calculations.
       </>

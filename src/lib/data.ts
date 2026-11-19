@@ -94,14 +94,16 @@ export function yearData(year: string): YearData {
 // Charter / compact classification lives in lib/entity; re-exported here for
 // the callers that already import it from lib/data.
 export { isCharter } from '@/lib/entity';
-import { isCharter } from '@/lib/entity';
+import { isSchoolDistrict } from '@/lib/entity';
 
 /**
- * School districts in a year, charters excluded. statewide.districts counts
- * every reporting entity, charters included - 315 rather than 298 in 2024-25.
+ * School districts proper in a year - charters and tribal compact schools
+ * excluded. statewide.districts counts every reporting entity - 315 rather
+ * than 293 in 2024-25. (Washington is usually said to have 295 districts;
+ * two appear in neither the enrollment nor the F-196 data this site uses.)
  */
 export function districtCount(year: string): number {
-  return yearData(year).districts.filter((d) => !isCharter(d)).length;
+  return yearData(year).districts.filter(isSchoolDistrict).length;
 }
 
 export function districtSeries<T>(
