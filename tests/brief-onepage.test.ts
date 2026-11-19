@@ -95,7 +95,11 @@ describe('one-page Big 3', () => {
     const sped = columns.find((c) => c.key === 'sped')!;
     const transportation = columns.find((c) => c.key === 'transportation')!;
     assert.equal(sped.isAsk, false);
-    assert.ok(sped.note.startsWith('Funding covers the cost here.'));
+    // Covered, but the note must not read as a clean "fully funded" verdict:
+    // it is covered only once federal IDEA/Medicaid count on the funding side,
+    // which in a high-disability district the bare green would misstate.
+    assert.ok(sped.note.includes('not a sign the service is fully paid for'));
+    assert.ok(sped.note.includes('disabilities'));
     assert.equal(transportation.isAsk, true);
     assert.ok(transportation.note.includes('SB 5858'));
   });

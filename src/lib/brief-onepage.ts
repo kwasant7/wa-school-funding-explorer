@@ -315,7 +315,10 @@ export function onePageFor(code: string): OnePage | null {
       const covered = gap <= 0;
       const note =
         covered && key === 'sped' && record.demo.sped > 0
-          ? `Funding covers the cost here. ${fmtInt(record.demo.sped)} students (${Math.round(metrics.spedRate)}% of enrollment) have disabilities.`
+          ? // "Covered" here only because federal IDEA and Medicaid count on the
+            // funding side; it is not a verdict that services are fully resourced,
+            // which in a high-disability district the bare green would imply.
+            `Covered only once federal IDEA and Medicaid count as funding - not a sign the service is fully paid for. ${fmtInt(record.demo.sped)} students (${Math.round(metrics.spedRate)}% of enrollment) have disabilities.`
           : covered
             ? 'Funding covers the cost here.'
             : ISSUE_ASKS[key];
