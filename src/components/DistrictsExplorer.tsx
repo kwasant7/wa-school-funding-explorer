@@ -1065,6 +1065,13 @@ function DistrictDetail({
         <ChartErrorBoundary label="This chart">
           <NeedVsFundingChart points={needPoints} highlight={d.code} />
         </ChartErrorBoundary>
+        <p className="mt-2 text-xs text-ink-muted">
+          &ldquo;Low income&rdquo; is OSPI&apos;s Report Card low-income count -
+          free or reduced-price meal eligible plus students identified by direct
+          certification - which is broader than a raw free/reduced-price-lunch
+          (FRPL) figure and will not match FRPL-based tables such as OSPI&apos;s
+          funding-equity reports.
+        </p>
       </div>
 
       <div data-assistant-section="funding-sources" className="mt-4 grid lg:grid-cols-2 gap-4 items-start">

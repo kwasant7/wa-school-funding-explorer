@@ -213,6 +213,13 @@ export default function SourcesPage() {
           </Ext>
           .
         </p>
+        <p className="mt-3 text-sm text-ink-muted">
+          &ldquo;Low income&rdquo; is OSPI&apos;s Report Card low-income student
+          count - free or reduced-price meal eligible plus students identified by
+          direct certification (SNAP, TANF, foster care, and the like) - which is
+          broader than a raw free/reduced-price-lunch (FRPL) count, so it will not
+          match FRPL-based tables such as OSPI&apos;s K-12 funding-equity reports.
+        </p>
         <div className="mt-4 card overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
