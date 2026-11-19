@@ -236,7 +236,7 @@ describe('brief PDF content', () => {
   it('asks lawmakers for something, and says who they are', async () => {
     const text = readable(await bytesFor(TACOMA));
     for (const expected of [
-      'REQUEST',
+      'ASK',
       'Raise the local levy cap.',
       'Yasmin Trudeau',
       'Laurie Jinkins',
