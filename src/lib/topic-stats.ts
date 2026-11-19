@@ -3,6 +3,7 @@ import allocationJson from '@/data/allocation.json';
 import spendingJson from '@/data/spending.json';
 import levyJson from '@/data/levy.json';
 import { districtPath } from '@/lib/district-slug';
+import { big3For, big3Gap } from '@/lib/big3';
 
 /**
  * Statewide roll-ups and per-district rankings for the topic pages.
@@ -96,35 +97,59 @@ export const ALLOCATION_TOTALS = (() => {
   return sum;
 })();
 
-export const SPENDING_TOTALS = spendingJson.statewide;
-
 export type ProgramGap = {
-  /** Statewide state allocation for the program. */
+  /** Statewide funding for the program, on AESD's Big 3 definition - every revenue line that pays for it. `allocated` is kept as the field name the topic pages read. */
   allocated: number;
-  /** Statewide actual general-fund spending on the program. */
+  /** Statewide cost of the program, on AESD's Big 3 definition. */
   spent: number;
   gap: number;
-  /** How many districts spent more than the formula allocated. */
+  /** How many districts cost more than the funding that arrived. */
   districtsAbove: number;
   districtsCompared: number;
 };
 
-export function programGap(program: ProgramKey): ProgramGap {
+/**
+ * One district's funding and cost for a program, on AESD's Big 3 definition
+ * where AESD publishes it (nearly all districts), and on the site's own
+ * state-program figures for the few entities AESD omits (some charters and
+ * tribal compact schools). `allocated` holds the funding side either way.
+ */
+function fundingAndCost(
+  code: string,
+  program: ProgramKey
+): { funding: number; cost: number } | null {
+  const aesd = big3For(code);
+  if (aesd) {
+    const p = aesd[program];
+    return { funding: p.revenue, cost: p.cost };
+  }
+  const a = ALLOC[code];
+  const s = SPEND[code];
+  if (!a || !s) return null;
   const line = ALLOC_LINE[program];
   const spendLine = SPEND_LINE[program];
+  const other =
+    program === 'sped'
+      ? s.spedOtherRevenue
+      : program === 'transportation'
+        ? s.transportationOtherRevenue
+        : 0;
+  return { funding: a[line] + other, cost: s[spendLine] };
+}
+
+export function programGap(program: ProgramKey): ProgramGap {
   let allocated = 0;
   let spent = 0;
   let districtsAbove = 0;
   let districtsCompared = 0;
 
   for (const d of districtsJson.districts) {
-    const a = ALLOC[d.code];
-    const s = SPEND[d.code];
-    if (!a || !s) continue;
+    const fc = fundingAndCost(d.code, program);
+    if (!fc) continue;
     districtsCompared += 1;
-    allocated += a[line];
-    spent += s[spendLine];
-    if (s[spendLine] > a[line]) districtsAbove += 1;
+    allocated += fc.funding;
+    spent += fc.cost;
+    if (fc.cost > fc.funding) districtsAbove += 1;
   }
 
   return { allocated, spent, gap: spent - allocated, districtsAbove, districtsCompared };
@@ -152,24 +177,25 @@ export function rankedByGap(
   program: ProgramKey,
   { limit = 8, minFte = 0 }: { limit?: number; minFte?: number } = {}
 ): RankedDistrict[] {
-  const line = ALLOC_LINE[program];
-  const spendLine = SPEND_LINE[program];
   const rows: RankedDistrict[] = [];
 
   for (const d of districtsJson.districts) {
-    const a = ALLOC[d.code];
-    const s = SPEND[d.code];
-    if (!a || !s) continue;
+    const fc = fundingAndCost(d.code, program);
+    if (!fc) continue;
     const fte = d.fundingEnrollment || d.enrollment || 0;
     if (fte < minFte) continue;
-    const gap = s[spendLine] - a[line];
+    // Per-student uses AESD's own student count where it has one, so the
+    // ranking matches the dashboard; the fallback divides by funding FTE.
+    const aesd = big3For(d.code);
+    const divisor = aesd && aesd.students > 0 ? aesd.students : fte;
+    const gap = fc.cost - fc.funding;
     rows.push({
       code: d.code,
       name: d.name,
       href: districtPath(d.code),
       fte,
       gap,
-      gapPerPupil: fte > 0 ? gap / fte : 0,
+      gapPerPupil: divisor > 0 ? gap / divisor : 0,
     });
   }
 

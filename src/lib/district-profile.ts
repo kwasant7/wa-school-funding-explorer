@@ -1,6 +1,7 @@
 import { districtSeries, yearData, LATEST, YEARS } from '@/lib/data';
 import { metricsFor, percentileOf, type Metrics } from '@/lib/diagnosis';
 import { fmtMoney, fmtMoneyFull, fmtInt } from '@/lib/format';
+import { big3For, big3Gap } from '@/lib/big3';
 import districtsJson from '@/data/districts.json';
 
 /**
@@ -30,19 +31,20 @@ const PER_PUPIL_SORTED = [...districtsJson.districts]
 export type GapRow = {
   key: 'sped' | 'msoc' | 'transportation';
   label: string;
-  /** What the state formula allocated for this program. */
-  allocated: number;
-  /** What the district's F-196 actuals show it spent. */
-  spent: number;
   /**
-   * Other revenue booked to the same programs - for special education,
-   * payments from other districts, Medicaid and other agencies; for
-   * transportation, other districts' and agencies' payments. 0 for MSOC.
+   * All funding that arrives for this program. On AESD's Big 3 definition
+   * (`aesd: true`) this is every revenue line - state, federal IDEA, Medicaid,
+   * and payments from other districts. On the state-only fallback it is the
+   * state allocation plus other program revenue.
    */
-  otherRevenue: number;
-  /** spent − allocated − otherRevenue. Positive means the district covered the difference. */
+  funding: number;
+  /** What the program costs. AESD scope (state + federal) or, on the fallback, F-196 state-program actuals. */
+  cost: number;
+  /** cost − funding. Positive means the district covered the difference from its own money. */
   gap: number;
   gapPerPupil: number;
+  /** True when these are AESD's Big 3 figures; false on the state-only fallback (districts AESD omits). */
+  aesd: boolean;
 };
 
 export type TrendRow = {
@@ -132,39 +134,70 @@ function demographics(m: Metrics): DemographicRow[] {
 }
 
 function gaps(m: Metrics): GapRow[] {
-  // Both sides of every comparison have to exist, or the "gap" is just one
-  // number minus nothing - which is how a missing dataset turns into a
-  // headline claiming the state funds zero percent of a program.
+  // The Big 3 gaps follow AESD's Big 3 dashboard (waschoolfunding.org) - the
+  // same definition OSPI, JLARC and the "Big 3" legislation use: a program's
+  // full cost (state plus federal) minus every revenue line that funds it
+  // (state, federal IDEA, Medicaid, payments from other districts), divided by
+  // AESD's own K-12-plus-ALE student count. Every surface on the site - this
+  // page, the explorer, the brief and the PDF - now quotes those figures.
+  const aesd = big3For(m.code);
+  if (aesd && aesd.students > 0) {
+    const row = (
+      key: GapRow['key'],
+      label: string,
+      p: { revenue: number; cost: number }
+    ): GapRow => {
+      const gap = big3Gap(p);
+      return {
+        key,
+        label,
+        funding: p.revenue,
+        cost: p.cost,
+        gap,
+        gapPerPupil: gap / aesd.students,
+        aesd: true,
+      };
+    };
+    return [
+      row('sped', 'Special education', aesd.sped),
+      row('msoc', 'Materials, supplies & operating costs (MSOC)', aesd.msoc),
+      row('transportation', 'Student transportation', aesd.transportation),
+    ];
+  }
+
+  // Fallback for the handful of entities AESD does not publish (some charters
+  // and tribal compact schools): the site's own state-program figures. Both
+  // sides of every comparison have to exist, or the "gap" is just one number
+  // minus nothing - which is how a missing dataset turns into a headline
+  // claiming the state funds zero percent of a program.
   if (!m.alloc || !m.spend) return [];
   return [
     {
       key: 'sped' as const,
       label: 'Special education',
-      allocated: m.alloc.specialEd,
-      spent: m.spend.sped,
-      otherRevenue: m.spend.spedOtherRevenue,
+      funding: m.alloc.specialEd + m.spend.spedOtherRevenue,
+      cost: m.spend.sped,
       gap: m.spedGap,
       gapPerPupil: m.spedGapPerPupil,
+      aesd: false,
     },
     {
       key: 'msoc' as const,
       label: 'Materials, supplies & operating costs (MSOC)',
-      // Big-3 scope, matching msocGap above - the GenEd-only pair would not
-      // subtract to the gap printed next to it.
-      allocated: m.alloc.msocBig3,
-      spent: m.spend.msocBig3,
-      otherRevenue: 0,
+      funding: m.alloc.msocBig3,
+      cost: m.spend.msocBig3,
       gap: m.msocGap,
       gapPerPupil: m.msocGapPerPupil,
+      aesd: false,
     },
     {
       key: 'transportation' as const,
       label: 'Student transportation',
-      allocated: m.alloc.transportation,
-      spent: m.spend.transportation,
-      otherRevenue: m.spend.transportationOtherRevenue,
+      funding: m.alloc.transportation + m.spend.transportationOtherRevenue,
+      cost: m.spend.transportation,
       gap: m.transGap,
       gapPerPupil: m.transGapPerPupil,
+      aesd: false,
     },
   ];
 }
@@ -233,7 +266,7 @@ export function districtMetaDescription(p: DistrictProfile): string {
   ];
   if (p.coveredLocally > 0) {
     parts.push(
-      `with ${fmtMoney(p.coveredLocally)} of special education, MSOC and transportation costs covered beyond the state formula`
+      `with ${fmtMoney(p.coveredLocally)} of special education, MSOC and transportation costs covered from local and other money`
     );
   }
   return `${parts.join(', ')}. State, local levy and federal breakdown from official OSPI data.`;

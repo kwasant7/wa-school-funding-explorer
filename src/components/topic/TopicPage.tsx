@@ -125,20 +125,20 @@ export function GapSummary({
   return (
     <div className="mt-4 grid sm:grid-cols-3 gap-3">
       <div className="card p-4">
-        <div className="stat-label">State allocation</div>
+        <div className="stat-label">Funding it receives</div>
         <div className="text-2xl font-semibold">{fmtMoneyFull(allocated)}</div>
         <p className="mt-1 text-xs text-ink-muted">Statewide, {program}</p>
       </div>
       <div className="card p-4">
-        <div className="stat-label">Districts actually spent</div>
+        <div className="stat-label">What it costs</div>
         <div className="text-2xl font-semibold">{fmtMoneyFull(spent)}</div>
-        <p className="mt-1 text-xs text-ink-muted">General fund only</p>
+        <p className="mt-1 text-xs text-ink-muted">State and federal programs</p>
       </div>
       <div className="card p-4">
         <div className="stat-label">Difference</div>
         <div className="text-2xl font-semibold">{fmtSignedMoney(gap)}</div>
         <p className="mt-1 text-xs text-ink-muted">
-          {districtsAbove} of {districtsCompared} districts spent more than allocated
+          {districtsAbove} of {districtsCompared} districts cost more than their funding
         </p>
       </div>
     </div>

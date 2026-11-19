@@ -7,7 +7,7 @@ import {
   TopicSection,
 } from '@/components/topic/TopicPage';
 import { pageMetadata } from '@/lib/site-metadata';
-import { programGap, rankedByGap, SPENDING_TOTALS } from '@/lib/topic-stats';
+import { programGap, rankedByGap, STATEWIDE } from '@/lib/topic-stats';
 import { fmtMoney, fmtMoneyFull } from '@/lib/format';
 import { LATEST } from '@/lib/years';
 
@@ -93,7 +93,7 @@ export default function TransportationFundingPage() {
         </p>
       </TopicSection>
 
-      <TopicSection id="the-gap" title="Allocation versus actual spending">
+      <TopicSection id="the-gap" title="What transportation costs vs. what funds it">
         <div className="not-prose">
           <GapSummary
             program="student transportation"
@@ -107,16 +107,18 @@ export default function TransportationFundingPage() {
         <p>
           Statewide that is{' '}
           <strong className="text-ink">
-            {fmtMoneyFull(SPENDING_TOTALS.transportationPerStudent)}
+            {fmtMoneyFull(gap.spent / STATEWIDE.enrollment)}
           </strong>{' '}
-          of general-fund transportation spending per enrolled student in{' '}
-          {LATEST}, against {fmtMoney(gap.allocated)} allocated.
+          of transportation cost per enrolled student in {LATEST}, against{' '}
+          {fmtMoney(gap.allocated)} of funding - the state allocation plus
+          payments from other districts and agencies.
         </p>
         <p>
           Transportation is the least uniform of the three published gaps:{' '}
-          {gap.districtsAbove} of {gap.districtsCompared} districts spent above
-          their allocation, meaning a substantial minority spent less than the
-          formula provided. Geography, not policy, explains most of that split.
+          {gap.districtsAbove} of {gap.districtsCompared} districts cost more
+          than their funding, meaning a substantial minority were funded for
+          more than they spent. Geography, not policy, explains most of that
+          split.
         </p>
       </TopicSection>
 
@@ -145,17 +147,19 @@ export default function TransportationFundingPage() {
 
       <TopicSection id="caveats" title="How to read these numbers">
         <p>
-          The spending side is F-196 program 99, general fund only. Because bus
-          purchases sit outside the general fund, this figure understates the
-          full cost of running student transportation - it describes operations,
-          not fleet replacement.
+          Both sides follow AESD&apos;s Big 3 dashboard. The cost is F-196
+          program 99, general fund only: because bus purchases sit outside the
+          general fund - they run through the separate Transportation Vehicle
+          Fund - this figure understates the full cost of running student
+          transportation. The funding counts the state allocation plus payments
+          from other districts and agencies for routes run on their behalf.
         </p>
         <p>
           This site does not attempt to reproduce the state&apos;s STARS
           allocation model, which computes an expected cost from ridership and
-          distance. The comparison here is between what a district received and
-          what it spent, which is a narrower question than whether the formula
-          is correctly calibrated.
+          distance. The comparison here is between the funding that arrived and
+          what it cost, which is a narrower question than whether the formula is
+          correctly calibrated.
         </p>
         <p className="text-sm text-ink-muted">
           Relevant bills: ESSB 5009 (vehicle types), SB 5858 (a safety net for

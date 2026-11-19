@@ -683,33 +683,31 @@ function Big3Card({ district: d }: { district: District }) {
           AESD&apos;s operating-cost figure here includes{' '}
           <strong className="text-ink-secondary">{fmtMoney(aleContracts)}</strong>{' '}
           that the district&apos;s alternative learning (online) program paid
-          outside providers to teach its students. That is teaching, not
-          operating costs, so the rest of this site leaves it out.
+          outside providers to teach its students - teaching more than a
+          true operating cost.
         </p>
       )}
 
       <div className="mt-3 overflow-x-auto">
-        <table className="w-full min-w-[560px] text-xs text-ink-secondary">
+        <table className="w-full min-w-[480px] text-xs text-ink-secondary">
           <caption className="sr-only">
-            What each Big 3 figure counts, beside the same figure elsewhere on this site
+            What each Big 3 figure counts
           </caption>
           <thead>
             <tr className="text-left text-ink">
               <th scope="col" className="w-36 py-1.5 pr-3 font-semibold">
                 <span className="sr-only">Program</span>
               </th>
-              <th scope="col" className="py-1.5 pr-3 font-semibold">Rest of this site</th>
-              <th scope="col" className="py-1.5 font-semibold">Big 3 gap (above)</th>
+              <th scope="col" className="py-1.5 font-semibold">What AESD counts</th>
             </tr>
           </thead>
           <tbody>
-            {BIG3_DEFINITIONS.map(([term, site, big3]) => (
+            {BIG3_DEFINITIONS.map(([term, definition]) => (
               <tr key={term} className="border-t border-line align-top">
                 <th scope="row" className="py-1.5 pr-3 text-left font-semibold text-ink">
                   {term}
                 </th>
-                <td className="py-1.5 pr-3">{site}</td>
-                <td className="py-1.5">{big3}</td>
+                <td className="py-1.5">{definition}</td>
               </tr>
             ))}
           </tbody>
@@ -726,24 +724,21 @@ function Big3Card({ district: d }: { district: District }) {
 }
 
 /*
-  What each Big 3 figure counts in AESD's definitions, beside the definition
-  the rest of this site (topic pages, simulator, district brief) uses.
+  What each Big 3 figure counts in AESD's definition - the same definition the
+  district pages, topic pages and brief now use.
 */
-const BIG3_DEFINITIONS: [string, string, string][] = [
+const BIG3_DEFINITIONS: [string, string][] = [
   [
     'Special education',
-    'Cost: state special education programs only (F-196 programs 21, 22, 26). Funding: the state special education allocation.',
-    'Cost: state and federal programs together (programs 21 and 24). Funding: every special education revenue line - state, federal IDEA grants, Medicaid, and payments from other districts.',
+    'Cost: state and federal programs together (F-196 programs 21 and 24). Funding: every special education revenue line - state, federal IDEA grants, Medicaid, and payments from other districts.',
   ],
   [
     'Transportation',
-    'Cost: student transportation from the general fund (program 99); buses bought through the Transportation Vehicle Fund are not included. Funding: the state transportation allocation.',
-    'Cost: the same (program 99). Funding: the state transportation allocation plus payments from other agencies and districts.',
+    'Cost: student transportation from the general fund (program 99); buses bought through the Transportation Vehicle Fund are not included. Funding: the state transportation allocation plus payments from other agencies and districts.',
   ],
   [
     'MSOC',
-    'Cost: non-staff spending such as supplies, technology, utilities, and insurance, leaving out contracted transportation, tuition, debt, and building improvements. Funding: the state allocation for these costs.',
-    'The same definition. Funding differs slightly because AESD counts alternative learning students separately.',
+    'Cost: non-staff spending such as supplies, technology, utilities, and insurance, leaving out contracted transportation, tuition, debt, and building improvements. Funding: the state allocation for these costs plus the amount AESD counts for alternative learning students.',
   ],
 ];
 

@@ -7,7 +7,7 @@ import {
   TopicSection,
 } from '@/components/topic/TopicPage';
 import { pageMetadata } from '@/lib/site-metadata';
-import { programGap, rankedByGap, SPENDING_TOTALS, STATEWIDE } from '@/lib/topic-stats';
+import { programGap, rankedByGap, STATEWIDE } from '@/lib/topic-stats';
 import { fmtInt, fmtMoney, fmtMoneyFull } from '@/lib/format';
 import { LATEST } from '@/lib/years';
 import districtsJson from '@/data/districts.json';
@@ -42,11 +42,14 @@ export default function SpecialEducationFundingPage() {
       lede={
         <>
           Washington funds special education as a multiplier on top of basic
-          education, under RCW 28A.150.390. In {LATEST} the state allocated{' '}
-          <strong className="text-ink">{fmtMoney(gap.allocated)}</strong> while
-          districts reported spending{' '}
-          <strong className="text-ink">{fmtMoney(gap.spent)}</strong> from their
-          general funds on the same programs.
+          education, under RCW 28A.150.390. In {LATEST} every source that pays
+          for it - the state, federal IDEA grants, Medicaid, and payments from
+          other districts - brought{' '}
+          <strong className="text-ink">{fmtMoney(gap.allocated)}</strong>, while
+          the programs cost{' '}
+          <strong className="text-ink">{fmtMoney(gap.spent)}</strong>, leaving{' '}
+          <strong className="text-ink">{fmtMoney(gap.gap)}</strong> for districts
+          to cover from local and other money.
         </>
       }
       related={[
@@ -105,11 +108,14 @@ export default function SpecialEducationFundingPage() {
         </p>
       </TopicSection>
 
-      <TopicSection id="the-gap" title="Allocation versus actual spending">
+      <TopicSection id="the-gap" title="What special education costs vs. what funds it">
         <p>
-          Both figures below cover the same thing: state special education
-          programs 21, 22 and 26. Federally funded IDEA money (program 24) is
-          excluded from both sides, so the comparison is like-for-like.
+          These follow AESD&apos;s Big 3 definition. The cost counts state and
+          federal special education programs together; the funding counts every
+          revenue line that pays for them - the state allocation, federal IDEA
+          grants, Medicaid, and payments from other districts. A federal dollar
+          appears on both sides, so the difference is what the district covers
+          from its own money.
         </p>
         <div className="not-prose">
           <GapSummary
@@ -122,14 +128,14 @@ export default function SpecialEducationFundingPage() {
           />
         </div>
         <p>
-          Statewide that works out to{' '}
+          Statewide that is{' '}
           <strong className="text-ink">
-            {fmtMoneyFull(SPENDING_TOTALS.spedPerStudent)}
+            {fmtMoneyFull(gap.spent / spedStudents)}
           </strong>{' '}
-          of general-fund spending per student with disabilities.{' '}
-          {gap.districtsAbove} of the {gap.districtsCompared} districts with both
-          figures published spent more than the formula allocated; the
-          difference comes from local levy, federal or other revenue.
+          of special education cost per student with disabilities.{' '}
+          {gap.districtsAbove} of the {gap.districtsCompared} districts cost more
+          than the funding that arrived; the difference comes out of local levy
+          and other general-fund money.
         </p>
       </TopicSection>
 
@@ -160,21 +166,22 @@ export default function SpecialEducationFundingPage() {
 
       <TopicSection id="caveats" title="How to read these numbers">
         <p>
-          The spending side is general-fund only. It deliberately excludes
-          federal IDEA money, because including federally funded spending on the
-          cost side while comparing it against a state-only allocation
-          overstates the state&apos;s shortfall - by roughly $254 million
-          statewide.
+          Both sides follow AESD&apos;s Big 3 dashboard, built from OSPI&apos;s
+          apportionment and F-196 actuals. Counting federal IDEA money on both
+          the cost and the funding side - rather than state-only spending
+          against the state allocation - keeps the comparison like-for-like: the
+          gap is what the district pays beyond every dedicated dollar, not an
+          artifact of leaving federal money off one side.
         </p>
         <p>
-          These are reported actuals, not a needs assessment. A district
-          spending above its allocation is evidence that the formula did not
-          cover its costs that year, not a measure of what adequate services
-          would cost.
+          These are reported actuals, not a needs assessment. A district whose
+          costs run above its funding is evidence that the money did not cover
+          its costs that year, not a measure of what adequate services would
+          cost.
         </p>
         <p className="text-sm text-ink-muted">
-          Sources: OSPI Apportionment final extract for the allocation, F-196
-          actuals for spending, {LATEST}. Full detail on{' '}
+          Sources: AESD&apos;s Big 3 dashboard, from OSPI apportionment and F-196
+          actuals, {LATEST}. Full detail on{' '}
           <Link href="/sources" className="text-accent hover:underline">
             Sources &amp; Methodology
           </Link>

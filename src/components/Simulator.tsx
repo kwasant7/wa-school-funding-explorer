@@ -8,6 +8,7 @@ import spendingData from '@/data/spending.json';
 import allocationData from '@/data/allocation.json';
 import DistrictCombobox from '@/components/DistrictCombobox';
 import { fmtInt, fmtMoney, fmtMoneyFull, fmtSignedMoney } from '@/lib/format';
+import { big3For } from '@/lib/big3';
 import {
   BASELINE_TRANSPORTATION_PER_STUDENT,
   simulatorControl,
@@ -116,9 +117,8 @@ function stateTransportationPerStudent(
  * can show the real cost next to what the state formula pays. Returns null for
  * levers with no comparable F-196 line.
  */
-function actualSpendPerUnit(leverId: LeverId, code: string): number | null {
-  const spend = SPENDING[code];
-  if (!spend) return null;
+function actualSpendPerUnit(leverId: LeverId, record: DistrictRecord): number | null {
+  const code = record.code;
   switch (leverId) {
     case 'spedMultiplier': {
       /*
@@ -129,21 +129,34 @@ function actualSpendPerUnit(leverId: LeverId, code: string): number | null {
         on - no assumed dollar figure. Spending is net of the other revenue
         booked to the same programs (other districts' payments, Medicaid), the
         same net the district page's special-ed gap uses.
+
+        This stays on the state special-education scope on purpose: the lever
+        raises the state multiplier, so federal IDEA cost belongs on neither
+        side. The AESD Big 3 figure quoted on the topic pages is larger because
+        it folds in federal money the multiplier does not move.
       */
+      const spend = SPENDING[code];
       const alloc = ALLOCATION[code];
-      const netSpend = spend.sped - spend.spedOtherRevenue;
-      if (!alloc || alloc.specialEd <= 0 || netSpend <= 0) return null;
+      const netSpend = spend ? spend.sped - spend.spedOtherRevenue : 0;
+      if (!spend || !alloc || alloc.specialEd <= 0 || netSpend <= 0) return null;
       return (netSpend * SPED_BASELINE_MULTIPLIER) / alloc.specialEd;
     }
-    case 'msoc':
-      // Big-3 scope (OSPI's 2026 budget-request definition), so the spending
-      // line here is the same number the district brief and the Big 3 card
-      // quote - one MSOC figure per district across the whole site.
-      return spend.msocBig3PerStudent > 0 ? spend.msocBig3PerStudent : null;
-    case 'transportation':
-      return spend.transportationPerStudent > 0
-        ? spend.transportationPerStudent
+    case 'msoc': {
+      // AESD's Big 3 operating cost per funding FTE - the same figure the MSOC
+      // topic page and the district Big 3 table now quote.
+      const aesd = big3For(code);
+      return aesd && record.fundingEnrollment > 0
+        ? aesd.msoc.cost / record.fundingEnrollment
         : null;
+    }
+    case 'transportation': {
+      // AESD's Big 3 transportation cost per enrolled student - the same
+      // denominator as the state allotment it is charted against.
+      const aesd = big3For(code);
+      return aesd && record.enrollment > 0
+        ? aesd.transportation.cost / record.enrollment
+        : null;
+    }
     default:
       return null;
   }
@@ -1098,7 +1111,7 @@ function LeverBar({
   // formula, rather than as a made-up dollar amount per student. The dashed
   // line is the multiplier that would cover what this district really spends.
   if (lever.id === 'spedMultiplier') {
-    const spent = actualSpendPerUnit('spedMultiplier', district.record.code);
+    const spent = actualSpendPerUnit('spedMultiplier', district.record);
     const spentPerStudent = SPENDING[district.record.code]?.spedPerStudent ?? 0;
     // Headroom keeps the dashed spending rule off the bar's right edge.
     const scale = Math.max(lever.max, spent ? spent * 1.02 : 0);
@@ -1171,8 +1184,8 @@ function LeverBar({
           <p className="mt-4 text-sm text-ink-secondary">
             <span data-no-translate>{name}</span> spends{' '}
             <strong className="text-ink">{fmtMoneyFull(spentPerStudent)}</strong>{' '}
-            per student with a disability - about{' '}
-            <strong className="text-ink">{spent.toFixed(2)}×</strong> basic
+            of state special education money per student with a disability -
+            about <strong className="text-ink">{spent.toFixed(2)}×</strong> basic
             education.{' '}
             {covered
               ? 'Your plan covers that in full.'
@@ -1247,7 +1260,7 @@ function LeverBar({
   if (!c) return null;
   // MSOC and transportation have a real F-196 spending line to compare with;
   // the rest are formula-only, so the chart stays a plain today-vs-plan bar.
-  const spent = actualSpendPerUnit(lever.id, district.record.code);
+  const spent = actualSpendPerUnit(lever.id, district.record);
   // A hair of headroom past the spending line so its dashed rule never sits
   // on the bar's right edge, where it would render half outside.
   const scale = Math.max(c.now, c.base, spent ? spent * 1.02 : 0) || 1;
@@ -1255,19 +1268,18 @@ function LeverBar({
   const added = Math.max(0, c.now - c.base);
   const covered = spent != null && c.now >= spent;
   /*
-    Transportation only: allotment and spending are both whole-dollar lines in
-    the source data, so the district-wide gap can be stated without a
-    per-student denominator at all - and it reconciles exactly with AESD's Big
-    3 dashboard embedded further down the site. The other levers mix
-    denominators (MSOC is allotted per funding FTE but spent per headcount) or
-    are not dollars at all (sped is charted as a multiplier), so they keep the
-    per-student sentence alone.
+    Transportation only: AESD's Big 3 funding and cost are both whole-dollar
+    lines, so the district-wide gap can be stated without a per-student
+    denominator at all - and it is exactly the gap AESD's dashboard, embedded
+    further down the site, publishes. The other levers mix denominators (MSOC
+    is allotted per funding FTE but spent per headcount) or are not dollars at
+    all (sped is charted as a multiplier), so they keep the per-student
+    sentence alone.
   */
-  const transportAlloc = ALLOCATION[district.record.code];
-  const transportSpend = SPENDING[district.record.code];
+  const aesdTransport = big3For(district.record.code);
   const gapDollars =
-    lever.id === 'transportation' && transportAlloc && transportSpend
-      ? transportAlloc.transportation - transportSpend.transportation
+    lever.id === 'transportation' && aesdTransport
+      ? aesdTransport.transportation.cost - aesdTransport.transportation.revenue
       : null;
 
   return (

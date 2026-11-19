@@ -7,7 +7,7 @@ import {
   TopicSection,
 } from '@/components/topic/TopicPage';
 import { pageMetadata } from '@/lib/site-metadata';
-import { programGap, rankedByGap, SPENDING_TOTALS } from '@/lib/topic-stats';
+import { programGap, rankedByGap, STATEWIDE } from '@/lib/topic-stats';
 import { fmtMoney, fmtMoneyFull } from '@/lib/format';
 import { LATEST } from '@/lib/years';
 import { MSOC } from '@/lib/prototypical-model';
@@ -126,15 +126,15 @@ export default function MsocFundingPage() {
           />
         </div>
         <p>
-          Statewide, actual MSOC spending works out to{' '}
+          Statewide, MSOC cost works out to{' '}
           <strong className="text-ink">
-            {fmtMoneyFull(SPENDING_TOTALS.msocBig3PerStudent)}
+            {fmtMoneyFull(gap.spent / STATEWIDE.fundingEnrollment)}
           </strong>{' '}
           per funded student, against a formula built on the{' '}
           {fmtMoneyFull(MSOC_FORMULA_RATE)} general-education rate. This is the
           most widely shared gap on the site:{' '}
           <strong className="text-ink">{gap.districtsAbove}</strong> of{' '}
-          {gap.districtsCompared} districts spent more than they were allocated,
+          {gap.districtsCompared} districts cost more than their funding,
           totalling {fmtMoney(gap.gap)}.
         </p>
       </TopicSection>

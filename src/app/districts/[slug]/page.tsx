@@ -246,26 +246,39 @@ export default function DistrictPage({ params }: Params) {
       {p.gaps.length > 0 && (
         <Section
           id="formula-vs-actual"
-          title="What the formula pays vs. what these programs cost"
+          title="The “Big 3”: what these programs cost vs. what funds them"
         >
           <p className="text-ink-secondary">
-            For three programs the state publishes both an allocation and what
-            districts actually spent. Where spending runs above the allocation
-            and any other revenue booked to the program, the difference comes
-            out of local levy and other general-fund money.
+            {p.gaps[0].aesd ? (
+              <>
+                Special education, student transportation, and materials,
+                supplies &amp; operating costs (MSOC) are the three programs the
+                Legislature calls the &ldquo;Big 3.&rdquo; Each line below is a
+                program&apos;s full cost against every revenue line that funds
+                it. Where cost runs above funding, the difference comes out of
+                local levy and other general-fund money.
+              </>
+            ) : (
+              <>
+                For three programs the site compares what the district spent with
+                what funded it. Where cost runs above funding, the difference
+                comes out of local levy and other general-fund money. AESD
+                publishes no Big 3 figures for this school, so these are the
+                site&apos;s own state-program figures.
+              </>
+            )}
           </p>
           <div className="mt-4 overflow-x-auto">
             <table className="w-full text-sm">
               <caption className="sr-only">
-                {p.name} state allocation compared with actual spending,{' '}
-                {p.schoolYear}
+                {p.name} Big 3 program cost compared with the funding it
+                receives, {p.schoolYear}
               </caption>
               <thead>
                 <tr className="border-b border-line text-left">
                   <th scope="col" className="py-2 pr-4 font-semibold">Program</th>
-                  <th scope="col" className="py-2 pr-4 font-semibold text-right">State allocation</th>
-                  <th scope="col" className="py-2 pr-4 font-semibold text-right">Other program revenue</th>
-                  <th scope="col" className="py-2 pr-4 font-semibold text-right">Actually spent</th>
+                  <th scope="col" className="py-2 pr-4 font-semibold text-right">Funding it receives</th>
+                  <th scope="col" className="py-2 pr-4 font-semibold text-right">What it costs</th>
                   <th scope="col" className="py-2 pr-4 font-semibold text-right">Difference</th>
                   <th scope="col" className="py-2 font-semibold text-right">Per student</th>
                 </tr>
@@ -277,13 +290,10 @@ export default function DistrictPage({ params }: Params) {
                       {g.label}
                     </th>
                     <td className="py-2 pr-4 text-right tabular-nums">
-                      {fmtMoneyFull(g.allocated)}
+                      {fmtMoneyFull(g.funding)}
                     </td>
                     <td className="py-2 pr-4 text-right tabular-nums">
-                      {g.otherRevenue ? fmtMoneyFull(g.otherRevenue) : '-'}
-                    </td>
-                    <td className="py-2 pr-4 text-right tabular-nums">
-                      {fmtMoneyFull(g.spent)}
+                      {fmtMoneyFull(g.cost)}
                     </td>
                     <td className="py-2 pr-4 text-right tabular-nums">
                       {fmtSignedMoney(g.gap)}
@@ -300,19 +310,36 @@ export default function DistrictPage({ params }: Params) {
             <p className="mt-3">
               Across these three programs, {p.name} covered about{' '}
               <strong>{fmtMoney(p.coveredLocally)}</strong> from its own general
-              money beyond what the state formula and other program revenue paid
-              for in {p.schoolYear}.
+              money beyond what their dedicated funding paid for in{' '}
+              {p.schoolYear}.
             </p>
           )}
           <p className="mt-3 text-sm text-ink-muted">
-            Special education here is state programs 21, 22 and 26 - federally
-            funded IDEA (program 24) is excluded from both sides. Its other
-            program revenue is what the same programs took in beyond the state
-            allocation: payments from other districts for students served for
-            them, Medicaid and other agencies (F-196 revenue codes ending 21, 22
-            and 26). For transportation it is other districts&apos; and
-            agencies&apos; payments for buses run for them (codes ending 99
-            other than the state allocation, 4199). Read more on{' '}
+            {p.gaps[0].aesd ? (
+              <>
+                These are the same figures as{' '}
+                <a
+                  href="https://app.powerbi.com/view?r=eyJrIjoiMzNiMGJlMjUtMTcwNC00YWMwLTg0ODktYTU5Zjg3NGJmOWJmIiwidCI6ImE5ZWIyNzExLTg0M2YtNDhjMC04M2NkLWM0M2FjNjAwOTgzMSJ9"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-accent hover:underline"
+                >
+                  AESD&apos;s Big 3 dashboard ↗
+                </a>
+                , built from OSPI F-196 actuals and apportionment - the same
+                definition OSPI and the Legislature use. &ldquo;Funding&rdquo;
+                counts every revenue line for a program: state, federal special
+                education (IDEA) and Medicaid money, and payments from other
+                districts. Per-student amounts divide by AESD&apos;s K-12 plus
+                alternative-learning student count. Read more on{' '}
+              </>
+            ) : (
+              <>
+                AESD publishes no Big 3 line for this school, so these are the
+                site&apos;s own state-program figures - cost and the state
+                allocation plus other program revenue. Read more on{' '}
+              </>
+            )}
             <Link href="/special-education-funding" className="text-accent hover:underline">
               special education funding
             </Link>
