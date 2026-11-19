@@ -93,13 +93,15 @@ export default function MsocFundingPage() {
         <p>
           The state pays a flat allocation per student -{' '}
           <strong className="text-ink">{fmtMoneyFull(MSOC_FORMULA_RATE)}</strong>{' '}
-          per student under current law, with a further{' '}
+          per student, the statutory floor set for the 2025-26 school year (the
+          year funded by this site&apos;s 2024-25 data), with a further{' '}
           {fmtMoneyFull(MSOC.highSchoolAddOn)} per student in grades 9-12.
           Unlike staffing allocations, it does not vary with a district&apos;s
           size, its regional labour costs, or the mix of students it serves.
           Both figures are statutory floors that the Legislature indexed to
           inflation beginning in {MSOC.inflationIndexedFrom}, so from that year
-          the operative rate is set in the budget rather than the statute. The
+          the operative rate is set in the budget rather than the statute - for
+          2026-27 the budget puts the general-education rate at about $1,656. The
           spending they are compared against below is {LATEST} actuals, the most
           recent year OSPI has published.
         </p>

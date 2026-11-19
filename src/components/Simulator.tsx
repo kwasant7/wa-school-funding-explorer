@@ -628,10 +628,14 @@ const LEVERS = [
         technology, utilities, insurance, and more. Because MSOC is largely
         funded at a set rate per student, increasing it provides additional
         funding to districts across the state. The slider below increases the
-        amount of MSOC funding provided per student.
+        amount of MSOC funding provided per student. It starts at the $1,614
+        statutory rate set for 2025-26 - the school year funded by this
+        site&apos;s 2024-25 data; since 2026-27 the operative rate is set in
+        the budget with inflation indexing, about $1,656 for 2026-27.
       </>
     ),
     impactKey: 'msoc',
+    todayLabel: '$1,614 per student, the 2025-26 statutory rate',
     // max is $4,500: statewide, districts spend about $1,776 per FTE on the
     // operating costs MSOC is meant to cover; the median district runs $2,179
     // and small districts far more, because fixed costs spread over few
@@ -1919,6 +1923,18 @@ export default function Simulator() {
               transportation excludes buses bought through the Transportation
               Vehicle Fund and so understates the true cost - for most districts
               it lands below the modeled state allocation for that reason.
+            </li>
+            <li>
+              The levers do not all share one &ldquo;today&rdquo;. The levy cap
+              and LEA levers start at the{' '}
+              <strong className="text-ink">calendar-2027</strong> schedule
+              already in statute (displayed as the 2026-27 school year); MSOC
+              starts at the rate set for{' '}
+              <strong className="text-ink">2025-26</strong>, the school year
+              funded by this site&apos;s 2024-25 data (the 2026-27 budget rate
+              is about $1,656); the special education multiplier (1.16x) has
+              not changed since September 2025; and transportation starts at
+              the 2024-25 statewide average.
             </li>
             <li>
               The MSOC slider starts at the{' '}
