@@ -41,12 +41,13 @@ export default function LeviesAndLeaPage() {
       path="/school-levies-and-lea/"
       lede={
         <>
-          Local enrichment levies raised{' '}
+          Local revenue - most of it voter-approved enrichment levies, the rest
+          fees, interest and the like - raised{' '}
           <strong className="text-ink">{fmtMoney(rev.local)}</strong> in {LATEST}
           , {pct(rev.local, rev.total)} of all school revenue. State law caps how
-          much a district may collect per student, and Local Effort Assistance
-          sends state money to districts whose property base cannot raise the
-          statewide goal.
+          much a district may collect per student in enrichment levies, and Local
+          Effort Assistance sends state money to districts whose property base
+          cannot raise the statewide goal.
         </>
       }
       related={[

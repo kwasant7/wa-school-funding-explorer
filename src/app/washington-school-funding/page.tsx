@@ -21,7 +21,7 @@ export const metadata: Metadata = pageMetadata({
 });
 
 const REVENUE_CODES: [string, string][] = [
-  ['1000', 'Local taxes - voter-approved enrichment levies'],
+  ['1000', 'Local taxes - mostly voter-approved enrichment levies'],
   ['2000', 'Local support non-tax - fees, rentals, interest'],
   ['3000', 'State, general purpose - the apportionment formula and Local Effort Assistance'],
   ['4000', 'State, special purpose - special education, transportation, learning assistance'],
@@ -53,8 +53,8 @@ export default function WashingtonSchoolFundingPage() {
             {fmtInt(Math.round(STATEWIDE.fundingEnrollment))}
           </strong>{' '}
           funded students. Most of that is state money distributed by a single
-          statutory formula; the rest is local levy and federal funding raised
-          and targeted separately.
+          statutory formula; the rest is local and federal money, raised and
+          targeted separately.
         </>
       }
       related={[
@@ -105,7 +105,7 @@ export default function WashingtonSchoolFundingPage() {
             </p>
           </div>
           <div className="card p-4">
-            <div className="stat-label">Local levy</div>
+            <div className="stat-label">Local</div>
             <div className="text-2xl font-semibold">{fmtMoney(rev.local)}</div>
             <p className="mt-1 text-xs text-ink-muted">
               {pct(rev.local, rev.total)} of all revenue
