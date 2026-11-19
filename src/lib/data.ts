@@ -16,6 +16,7 @@ export type District = {
     runningStart: number;
     openDoors: number;
     transitionalK: number;
+    nonStandard: number;
   };
   demo: {
     lowIncome: number;

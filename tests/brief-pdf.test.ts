@@ -221,7 +221,7 @@ describe('brief PDF content', () => {
     for (const expected of [
       'WA SCHOOL FUNDING EXPLORER',
       'Tacoma School District',
-      '$20,599', // revenue per student, from the District Explorer
+      '$20,578', // revenue per student, from the District Explorer
       'Where the money comes from',
       'Revenue per student, six years',
       'funding gaps',

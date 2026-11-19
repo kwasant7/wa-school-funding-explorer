@@ -46,26 +46,31 @@ https://ospi.k12.wa.us/sites/default/files/2024-11/historical-enrollment-summary
 
 For each district and year, funding enrollment equals the workbook's
 `K-12 FTE - Includes ALE` grade columns plus the separately reported Running
-Start-at-college, Open Doors (non-vocational and vocational), and Transitional
-Kindergarten FTE columns. The TK column is present only from 2023-24 on (the
-year the line became separately reported); earlier years carry no TK and are
-unaffected. This matches the **OSPI Apportionment AAFTE** reported by
+Start-at-college, Open Doors (non-vocational and vocational), Transitional
+Kindergarten, and `NonStandard - Total K-12` FTE columns. The TK column is
+present only from 2023-24 on (the year the line became separately reported);
+nonstandard K-12 is regular-year enrollment in nonstandard settings, chiefly
+students a district sends to a regional skills center. This matches the **OSPI
+Apportionment AAFTE** reported by
 [fiscal.wa.gov](https://fiscal.wa.gov/K12/K12FinanceDistrict) ("Enrollment from
-OSPI Apportionment, excluding Summer Skills Centers, Institutions, and pre-K
-Special Ed"). Tacoma 2024-25 = 26,272.81 K-12 + 452.54 Running Start + 378.54
-Open Doors + 648.13 Transitional Kindergarten = **27,752.02 ≈ 27,781**, the
-fiscal.wa.gov figure (a ~29-FTE residual remains because fiscal.wa.gov reads
-the apportionment report directly). A district with no TK matches exactly:
-Bellevue 2024-25 = 18,911.68 K-12 + 571.04 Running Start + 25.80 Open Doors +
-0 TK = **19,508.52 ≈ 19,509 FTE**.
+OSPI Apportionment, excluding **Summer** Skills Centers, Institutions, and
+pre-K Special Ed") to the student. Tacoma 2024-25 = 26,272.81 K-12 + 452.54
+Running Start + 378.54 Open Doors + 648.13 Transitional Kindergarten + 28.54
+nonstandard = **27,780.56 ≈ 27,781**, the exact fiscal.wa.gov figure; its
+`$/FTE` of $20,578 against our general-fund total matches too. Aberdeen 2024-25
+= 3,085.79 + 18.94 nonstandard = **3,104.73 ≈ 3,105**, and fiscal.wa.gov's
+`$20,129` per FTE reproduces to the dollar. A district that hosts no skills
+center and has no TK matches on K-12 + Running Start + Open Doors alone:
+Bellevue 2024-25 = 18,911.68 + 571.04 + 25.80 = **19,508.52 ≈ 19,509 FTE**.
 OSPI's enrollment handbook explains that September–June annual-average FTE
 reported through the P-223 system is used to calculate state basic-education
 funding:
 
 The K–3, grades 4–6, grades 7–8, and grades 9–12 FTE subtotals are also
 retained so the prototypical-school explainer can scale the state formula to
-the district selected by the user. Running Start and Open Doors college FTE is
-shown separately and is not treated as an on-campus prototypical school.
+the district selected by the user. Running Start, Open Doors, Transitional
+Kindergarten, and nonstandard FTE are shown separately and are not treated as
+on-campus prototypical schools.
 
 https://ospi.k12.wa.us/policy-funding/school-apportionment/guidance-and-tools/enrollment-reporting
 

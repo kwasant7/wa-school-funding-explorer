@@ -159,21 +159,33 @@ function rowCells(rowInner, sharedStrings) {
 }
 
 function parseFundingSheet(sheetXml, sharedStrings, runningStartStart) {
-  // Transitional Kindergarten became a separately reported, apportionment-
-  // funded FTE line beginning in 2023-24; earlier layouts have no TK column.
-  // When present it sits immediately after Open Doors, under a merged section
-  // header that reads "TK" (2024-25) or "Trans-" (2023-24). OSPI's
-  // Apportionment AAFTE on fiscal.wa.gov includes it, so the funding-FTE total
-  // must too, or TK-heavy districts (Tacoma ran 648 TK FTE in 2024-25) read
-  // high on every per-student figure. Detected by header, not assumed, so a
-  // year without the column keeps TK at zero.
+  // Two year-specific lines are located by their row-2 merged section header
+  // rather than a fixed offset, because the column layout shifts between years:
+  //
+  //  - Transitional Kindergarten: a separately apportioned line present from
+  //    2023-24 on, headed "TK" (2024-25) or "Trans-" (2023-24); absent before.
+  //  - NonStandard - Total K-12: regular-year enrollment in nonstandard
+  //    settings (chiefly students a district sends to a regional skills center)
+  //    that OSPI apportions to this district. It spans five grade columns
+  //    (K-3, 4, 5-6, 7-8, 9-12); the "- CTE"/"- ALE" sections that follow are
+  //    breakdowns of it, not additions.
+  //
+  // fiscal.wa.gov's "Total FTE Enrollment (1)" (OSPI Apportionment AAFTE,
+  // excluding only *summer* skills centers, institutions and pre-K special ed)
+  // includes both lines, and the matching state revenue is already in the
+  // district's F-196 general fund - so the funding-FTE denominator must include
+  // them too, or skills-center hosts and TK-heavy districts read high on every
+  // per-student figure. Verified exact against fiscal.wa.gov: Tacoma 27,781,
+  // Aberdeen 3,105 for 2024-25.
   const headerRow = [...sheetXml.matchAll(/<row\s+[^>]*\br="(\d+)"[^>]*>([\s\S]*?)<\/row>/g)]
     .find((match) => match[1] === '2');
-  const tkCandidate = runningStartStart + 4;
-  const tkSection = headerRow
-    ? String(rowCells(headerRow[2], sharedStrings).get(tkCandidate) ?? '')
-    : '';
-  const transitionalKColumn = /^(TK|Trans)/i.test(tkSection) ? tkCandidate : null;
+  const sections = headerRow ? rowCells(headerRow[2], sharedStrings) : new Map();
+  const sectionStart = (test) => {
+    for (const [col, name] of sections) if (test(String(name ?? ''))) return col;
+    return null;
+  };
+  const transitionalKColumn = sectionStart((name) => /^(TK|Trans)/i.test(name));
+  const nonStandardStart = sectionStart((name) => name === 'NonStandard - Total K-12');
 
   const result = new Map();
   for (const rowMatch of sheetXml.matchAll(/<row\s+[^>]*>([\s\S]*?)<\/row>/g)) {
@@ -205,10 +217,13 @@ function parseFundingSheet(sheetXml, sharedStrings, runningStartStart) {
       num(cells.get(runningStartStart + 2)) +
       num(cells.get(runningStartStart + 3));
     const transitionalK = transitionalKColumn ? num(cells.get(transitionalKColumn)) : 0;
-    // Matches OSPI Apportionment AAFTE (fiscal.wa.gov): basic-ed K-12 + Running
-    // Start + Open Doors + Transitional Kindergarten. Excludes pre-K special
-    // ed, skills centers, institutions.
-    const total = elementary + middle + high + runningStart + openDoors + transitionalK;
+    const nonStandard = nonStandardStart ? sumColumns(nonStandardStart, nonStandardStart + 4) : 0;
+    // Matches OSPI Apportionment AAFTE (fiscal.wa.gov): basic-ed K-12 (incl.
+    // ALE) + Running Start + Open Doors + Transitional Kindergarten +
+    // NonStandard K-12. Excludes summer skills centers, institutions, pre-K
+    // special ed - the categories fiscal.wa.gov's footnote (1) also excludes.
+    const total =
+      elementary + middle + high + runningStart + openDoors + transitionalK + nonStandard;
     if (total > 0) {
       result.set(code, {
         total,
@@ -220,6 +235,7 @@ function parseFundingSheet(sheetXml, sharedStrings, runningStartStart) {
         runningStart,
         openDoors,
         transitionalK,
+        nonStandard,
       });
     }
   }
@@ -457,6 +473,7 @@ async function buildYear({ label, enrollmentId, revenueFile, expenditureFile, re
         runningStart: roundFte(districtFunding.runningStart),
         openDoors: roundFte(districtFunding.openDoors),
         transitionalK: roundFte(districtFunding.transitionalK),
+        nonStandard: roundFte(districtFunding.nonStandard),
       },
       demo: {
         lowIncome: num(row.low_income),

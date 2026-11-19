@@ -337,11 +337,13 @@ export default function SchoolBuilder({
           <p className="mt-2">
             Funding FTE ({fmtFteLong(district.fundingEnrollment)}) is the
             apportionment total behind every per-student figure. It runs above
-            the on-campus K-12 total by three lines funded outside the
-            prototype: Running Start at college (
+            the on-campus K-12 total by four lines funded outside the prototype:
+            Running Start at college (
             {fmtFteLong(district.fundingFte.runningStart)} FTE), Open Doors (
-            {fmtFteLong(district.fundingFte.openDoors)} FTE), and Transitional
-            Kindergarten ({fmtFteLong(district.fundingFte.transitionalK)} FTE).
+            {fmtFteLong(district.fundingFte.openDoors)} FTE), Transitional
+            Kindergarten ({fmtFteLong(district.fundingFte.transitionalK)} FTE),
+            and nonstandard enrollment such as regional skills centers (
+            {fmtFteLong(district.fundingFte.nonStandard)} FTE).
           </p>
         </details>
       </div>
