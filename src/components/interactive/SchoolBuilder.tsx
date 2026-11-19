@@ -335,8 +335,13 @@ export default function SchoolBuilder({
             Calculation notes
           </summary>
           <p className="mt-2">
-            Running Start college enrollment: {fmtFteLong(district.fundingFte.runningStart)} FTE.
-            Funded separately from the on-campus prototype calculation.
+            Funding FTE ({fmtFteLong(district.fundingEnrollment)}) is the
+            apportionment total behind every per-student figure. It runs above
+            the on-campus K-12 total by three lines funded outside the
+            prototype: Running Start at college (
+            {fmtFteLong(district.fundingFte.runningStart)} FTE), Open Doors (
+            {fmtFteLong(district.fundingFte.openDoors)} FTE), and Transitional
+            Kindergarten ({fmtFteLong(district.fundingFte.transitionalK)} FTE).
           </p>
         </details>
       </div>

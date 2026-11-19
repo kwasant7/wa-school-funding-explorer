@@ -46,12 +46,18 @@ https://ospi.k12.wa.us/sites/default/files/2024-11/historical-enrollment-summary
 
 For each district and year, funding enrollment equals the workbook's
 `K-12 FTE - Includes ALE` grade columns plus the separately reported Running
-Start-at-college and Open Doors non-vocational and vocational FTE columns. This
-matches the **OSPI Apportionment AAFTE** reported by
+Start-at-college, Open Doors (non-vocational and vocational), and Transitional
+Kindergarten FTE columns. The TK column is present only from 2023-24 on (the
+year the line became separately reported); earlier years carry no TK and are
+unaffected. This matches the **OSPI Apportionment AAFTE** reported by
 [fiscal.wa.gov](https://fiscal.wa.gov/K12/K12FinanceDistrict) ("Enrollment from
 OSPI Apportionment, excluding Summer Skills Centers, Institutions, and pre-K
-Special Ed") — e.g. Bellevue 2024-25 = 18,911.68 K-12 + 571.04 Running Start +
-25.80 Open Doors = **19,508.52 ≈ 19,509 FTE**, the exact fiscal.wa.gov figure.
+Special Ed"). Tacoma 2024-25 = 26,272.81 K-12 + 452.54 Running Start + 378.54
+Open Doors + 648.13 Transitional Kindergarten = **27,752.02 ≈ 27,781**, the
+fiscal.wa.gov figure (a ~29-FTE residual remains because fiscal.wa.gov reads
+the apportionment report directly). A district with no TK matches exactly:
+Bellevue 2024-25 = 18,911.68 K-12 + 571.04 Running Start + 25.80 Open Doors +
+0 TK = **19,508.52 ≈ 19,509 FTE**.
 OSPI's enrollment handbook explains that September–June annual-average FTE
 reported through the P-223 system is used to calculate state basic-education
 funding:

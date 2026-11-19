@@ -29,9 +29,9 @@ describe('one-page tiles and charts', () => {
   it('carries the District Explorer headline numbers', () => {
     const tacoma = page(TACOMA);
     const byLabel = Object.fromEntries(tacoma.tiles.map((t) => [t.label, t]));
-    assert.equal(byLabel['Revenue per student'].value, '$21,092');
-    assert.equal(byLabel['Revenue per student'].note, 'Statewide median $20,083');
-    assert.equal(byLabel['Funded students'].value, '27,104');
+    assert.equal(byLabel['Revenue per student'].value, '$20,599');
+    assert.equal(byLabel['Revenue per student'].note, 'Statewide median $19,867');
+    assert.equal(byLabel['Funded students'].value, '27,752');
     assert.equal(byLabel['Low-income students'].value, '59%');
     // A district that spent more than it took in says so, in the warning tone.
     const deficit = byLabel['Spent more than it took in'];
@@ -57,7 +57,7 @@ describe('one-page tiles and charts', () => {
     assert.equal(tacoma.values.length, 6);
     assert.equal(tacoma.median.length, 6);
     assert.deepEqual(tacoma.years, ['19-20', '20-21', '21-22', '22-23', '23-24', '24-25']);
-    assert.equal(tacoma.values[5], 21092);
+    assert.equal(tacoma.values[5], 20599);
     // A school that opened in 2021 has no earlier years to draw.
     assert.deepEqual(page(NO_BIG3).trend.values.slice(0, 2), [null, null]);
   });

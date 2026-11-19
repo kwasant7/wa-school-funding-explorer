@@ -269,7 +269,9 @@ export default function SourcesPage() {
           </p>
           <p className="text-sm text-ink-secondary">
             The denominator is the workbook&apos;s K-12 FTE (including ALE) plus
-            separately reported Running Start-at-college FTE. See the{' '}
+            the separately reported Running Start-at-college, Open Doors, and
+            Transitional Kindergarten FTE - the same lines OSPI&apos;s
+            Apportionment AAFTE (on fiscal.wa.gov) counts. See the{' '}
             <Ext href="https://ospi.k12.wa.us/sites/default/files/2024-11/historical-enrollment-summary-2001-02.xlsx">
               Final Enrollment Summary workbook
             </Ext>{' '}
@@ -279,8 +281,8 @@ export default function SourcesPage() {
             </Ext>
             . We also retain the K-3, grades 4-6, grades 7-8, and grades 9-12
             subtotals to personalize the prototypical-school explainer, and show
-            Running Start college FTE separately rather than as an on-campus
-            model school.
+            Running Start, Open Doors, and Transitional Kindergarten FTE
+            separately rather than as on-campus model schools.
           </p>
         </div>
       </section>
