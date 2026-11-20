@@ -13,6 +13,7 @@ import districtsJson from '@/data/districts.json';
 import levyJson from '@/data/levy.json';
 import representation from '@/data/legislators.json';
 import trendJson from '@/data/per-pupil-trend.json';
+import reserveTrendJson from '@/data/reserve-ratio-trend.json';
 import {
   allIssuesFor,
   briefFor,
@@ -93,6 +94,10 @@ export type OnePage = {
   tiles: Tile[];
   revenue: { total: number; parts: RevenuePart[] };
   trend: { years: string[]; values: (number | null)[]; median: number[] };
+  /** Reserve ratio (fund balance / spending, percent) per year, for the health chart. */
+  reserveTrend: { years: string[]; ratios: (number | null)[] };
+  /** Where this district's revenue per student sits across the statewide range. */
+  perPupilScale: { value: number; median: number; min: number; max: number };
   big3: {
     year: string;
     columns: Big3Column[];
@@ -381,6 +386,18 @@ export function onePageFor(code: string): OnePage | null {
       years: trendJson.years.map(shortYear),
       values: series,
       median: trendJson.median,
+    },
+    reserveTrend: {
+      years: reserveTrendJson.years.map(shortYear),
+      ratios:
+        (reserveTrendJson.districts as Record<string, (number | null)[]>)[code] ??
+        reserveTrendJson.years.map(() => null),
+    },
+    perPupilScale: {
+      value: Math.round(record.perPupil),
+      median: Math.round(districtsJson.statewide.medianPerPupil),
+      min: Math.round(districtsJson.statewide.minPerPupil),
+      max: Math.round(districtsJson.statewide.maxPerPupil),
     },
     big3,
     problems,

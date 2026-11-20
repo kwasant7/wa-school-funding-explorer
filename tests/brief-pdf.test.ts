@@ -144,7 +144,7 @@ describe('brief PDF structure', () => {
 
   it('puts where the district stands on page one and what to do about it on page two', async () => {
     const [one, two] = pageTexts(await bytesFor(TACOMA));
-    for (const expected of ['Where the money comes from', 'funding gaps', 'Page 1 of 2']) {
+    for (const expected of ['Where the money comes from', 'Reserve ratio by year', 'Page 1 of 2']) {
       assert.ok(one.includes(expected), `page one is missing "${expected}"`);
     }
     for (const expected of ['What else needs to change', 'Who to ask', 'SAY IT IN THIRTY SECONDS', 'Page 2 of 2']) {
@@ -219,15 +219,15 @@ describe('brief PDF content', () => {
   it('carries the district name, headline numbers and the Big 3', async () => {
     const text = readable(await bytesFor(TACOMA));
     for (const expected of [
-      'WA SCHOOL FUNDING EXPLORER',
+      'K12FUNDING.ORG',
       'Tacoma School District',
       '$20,578', // revenue per student, from the District Explorer
       'Where the money comes from',
-      'Revenue per student, six years',
-      'funding gaps',
+      'Reserve ratio by year',
+      'the state median',
       '$2.56M', // transportation, as AESD's dashboard prints it
-      'Covered by its funding', // special education
-      'Where funding fell short',
+      'Covered', // special education verdict chip
+      'covered about', // the locally-covered sentence
     ]) {
       assert.ok(text.includes(expected), `missing "${expected}"`);
     }
@@ -293,28 +293,30 @@ describe('brief PDF content', () => {
     );
   });
 
-  it('keeps a space between a bold label and the sentence after it', async () => {
-    // Pieces that touch across a change of style are joined with no space, so a
-    // label has to carry its own: "Ask:Pay the real cost" ran together before.
+  it('keeps a space between a regular word and a bold run after it', async () => {
+    // Pieces that touch across a change of style are joined with no space, so
+    // rich() has to carry its own: a bold amount mid-sentence ("covered about
+    // $3.7M from...") ran into the word before it.
     for (const code of [TACOMA, BELLEVUE]) {
       const words = drawnText(await bytesFor(code));
-      const labels = words.filter((w) => w.text === 'Ask:' || w.text === 'Already done:');
-      assert.ok(labels.length > 0, `${code}: no labels found`);
-      for (const label of labels) {
-        const next = words[words.indexOf(label) + 1];
-        const end = label.x + measureForTest(label.text, label.font, label.size);
-        assert.ok(
-          next.x - end > 1,
-          `${code}: "${label.text}" runs into "${next.text}" (${(next.x - end).toFixed(2)}pt apart)`
-        );
-      }
+      const pair = words.find((w, k) => {
+        const n = words[k + 1];
+        return n != null && w.font === 'regular' && n.font === 'bold' && Math.abs(n.y - w.y) < 0.1 && n.x > w.x;
+      });
+      assert.ok(pair, `${code}: no regular-then-bold pair on a line`);
+      const next = words[words.indexOf(pair) + 1];
+      const end = pair.x + measureForTest(pair.text, pair.font, pair.size);
+      assert.ok(
+        next.x - end > 1,
+        `${code}: "${pair.text}" runs into "${next.text}" (${(next.x - end).toFixed(2)}pt apart)`
+      );
     }
   });
 
   it('escapes parentheses so they cannot terminate a PDF string early', async () => {
-    // The transportation ask carries a bill number in parentheses.
+    // The MSOC program title carries "(MSOC)" in parentheses.
     const pdf = await bytesFor(TACOMA);
-    assert.ok(pdf.includes('\\(SB'), 'expected an escaped parenthesis');
+    assert.ok(pdf.includes('\\(MSOC'), 'expected an escaped parenthesis');
     // A bare "(" inside a drawn string would break the content stream.
     for (const match of Array.from(pdf.matchAll(/\(((?:[^()\\]|\\.)*)\) Tj/g))) {
       assert.equal(
