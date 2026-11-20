@@ -15,6 +15,7 @@ import { fmtInt, fmtMoney, fmtMoneyFull, fmtSignedMoney, ordinal, pct } from '@/
 import { aleContractsMaterial } from '@/lib/diagnosis';
 import { OVERSIGHT_CHECKED_ON, oversightFor } from '@/data/oversight';
 import levyJson from '@/data/levy.json';
+import { LEVY_ELECTIONS_THROUGH } from '@/lib/levy-coverage';
 import {
   RESERVE_BENCHMARK_PCT,
   RESERVE_THIN_PCT,
@@ -310,10 +311,25 @@ export default function DistrictPage({ params }: Params) {
           </div>
           {p.coveredLocally > 0 && (
             <p className="mt-3">
-              Across these three programs, {p.name} covered about{' '}
+              Where funding fell short, {p.name} covered about{' '}
               <strong>{fmtMoney(p.coveredLocally)}</strong> from its own general
-              money beyond what their dedicated funding paid for in{' '}
+              money beyond what the programs&apos; dedicated funding paid for in{' '}
               {p.schoolYear}.
+              {p.msocAhead > 0 && (
+                <>
+                  {' '}
+                  MSOC funding, which is not restricted to its own use, exceeded its cost by{' '}
+                  <strong>{fmtMoney(p.msocAhead)}</strong>.{' '}
+                  {p.coveredLocally > p.msocAhead ? (
+                    <>
+                      After subtracting that, the remaining shortfall is{' '}
+                      <strong>{fmtMoney(p.coveredLocally - p.msocAhead)}</strong>.
+                    </>
+                  ) : (
+                    <>That is more than the shortfall.</>
+                  )}
+                </>
+              )}
             </p>
           )}
           {aleContractsMaterial(p.metrics) && (
@@ -579,6 +595,8 @@ export default function DistrictPage({ params }: Params) {
             </p>
           )}
           <p className="mt-3 text-sm text-ink-muted">
+            Levy amounts are OSPI&apos;s and include elections through{' '}
+            {LEVY_ELECTIONS_THROUGH}; a levy passed since then is not shown yet.{' '}
             {p.levy.eligible
               ? 'This district qualifies for Local Effort Assistance.'
               : 'This district does not qualify for Local Effort Assistance - its property base raises more than the statewide goal at the standard rate.'}{' '}

@@ -36,6 +36,17 @@ export type Big3Totals = {
   gaps: Record<Big3Key, number>;
   /** Only the programs that fall short, added together. */
   total: number;
+  /**
+   * How far MSOC funding ran ahead of MSOC cost (0 when it fell short).
+   * `total` follows AESD and counts shortfalls only, but MSOC money is part
+   * of general apportionment and not tied to its line, so a surplus there
+   * really is available for the other two - and a sentence quoting `total`
+   * without it overstates the gap (Shelton's $1.1M shortfall against a $1.2M
+   * MSOC surplus). Special education and transportation surpluses are not
+   * netted: that money stays with its program (and special education's
+   * "funding" includes federal IDEA and Medicaid).
+   */
+  msocAhead: number;
   /** `total` divided by AESD's student count, as its per-pupil amounts are. */
   perStudent: number;
 };
@@ -50,6 +61,7 @@ export function big3Totals(record: Big3Record): Big3Totals {
   return {
     gaps,
     total,
+    msocAhead: Math.max(0, -gaps.msoc),
     perStudent: record.students > 0 ? total / record.students : 0,
   };
 }

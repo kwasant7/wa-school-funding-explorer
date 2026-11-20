@@ -32,6 +32,7 @@ import levyJson from '@/data/levy.json';
 */
 import baselineJson from '@/data/enrollment-baseline.json';
 import { oversightFor, type Oversight } from '@/data/oversight';
+import { LEVY_ELECTIONS_THROUGH } from '@/lib/levy-coverage';
 import { fmtMoney, fmtMoneyFull, fmtInt, alignPair } from '@/lib/format';
 import { big3For, big3Gap, big3Totals, type Big3Record } from '@/lib/big3';
 import { PROTOTYPES } from '@/lib/prototypical-model';
@@ -772,7 +773,7 @@ const noLevyIssue: Builder = (m) => {
       lea > 0
         ? `. Without a levy the district also gets no Local Effort Assistance, which brought in ${plainMoney(lea)} in ${LATEST_YEAR}`
         : ''
-    }.`,
+    }. This counts elections through ${LEVY_ELECTIONS_THROUGH}; a levy passed since then is not reflected yet.`,
     visual: fig.visual,
     refs: [LEVY_STATUTE, LEA_STATUTE],
     severity: 75 + Math.min(20, share),
@@ -1100,6 +1101,36 @@ export const ISSUE_ASKS: Record<IssueId, string> = {
 };
 
 /**
+ * The "Covered locally" tile note: names only the programs that actually fell
+ * short (Lake Washington's said all three when only special education did),
+ * and flags an MSOC surplus that offsets them (see Big3Totals.msocAhead).
+ * Whole literal strings, not assembled, because the page translator matches
+ * entire text nodes and scripts/build-translations.mjs collects literals.
+ */
+const COVERED_NOTES: { key: string; note: string }[] = [
+  { key: 'sped', note: 'Special ed costs above their funding' },
+  { key: 'msoc', note: 'Operating costs above their funding' },
+  { key: 'transportation', note: 'Transport costs above their funding' },
+  { key: 'sped,msoc', note: 'Special ed and operating costs above their funding' },
+  { key: 'sped,transportation', note: 'Special ed and transport costs above their funding' },
+  { key: 'msoc,transportation', note: 'Operating and transport costs above their funding' },
+  { key: 'sped,msoc,transportation', note: 'Special ed, operating and transport costs above their funding' },
+  { key: 'sped+msoc', note: 'Special ed costs above their funding; operating funding exceeded its cost' },
+  { key: 'transportation+msoc', note: 'Transport costs above their funding; operating funding exceeded its cost' },
+  { key: 'sped,transportation+msoc', note: 'Special ed and transport costs above their funding; operating funding exceeded its cost' },
+];
+
+function coveredNote(m: Metrics): string {
+  const gaps = m.big3
+    ? big3Totals(m.big3).gaps
+    : { sped: m.spedGap, msoc: m.msocGap, transportation: m.transGap };
+  const short = (['sped', 'msoc', 'transportation'] as const).filter((k) => gaps[k] > 0);
+  if (short.length === 0) return 'No Big 3 program cost more than its funding';
+  const key = short.join(',') + (gaps.msoc < 0 ? '+msoc' : '');
+  return COVERED_NOTES.find((n) => n.key === key)?.note ?? 'Big 3 costs above their funding';
+}
+
+/**
  * Whether AESD's MSOC cost carries enough contracted ALE teaching to mention -
  * the same test the Big 3 card uses for its note.
  */
@@ -1135,7 +1166,7 @@ function statsFor(m: Metrics): BriefStat[] {
       note:
         m.big3 && aleContractsMaterial(m)
           ? `AESD figure; includes ${fmtMoney(m.spend?.msocBig3AleContracts ?? 0)} of contracted online (ALE) teaching`
-          : 'Special ed, operating and transport costs above their funding',
+          : coveredNote(m),
     },
   ];
   if (m.reserveRatio != null) {

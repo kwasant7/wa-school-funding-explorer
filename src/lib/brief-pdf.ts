@@ -795,9 +795,17 @@ function drawBrief(
   const coverRuns: Run[] =
     page.big3 && page.big3.total > 0
       ? [
-          { text: `Across these three programs ${page.shortName} covered about ` },
+          { text: `Where funding fell short, ${page.shortName} covered about ` },
           { text: fmtMoney(page.big3.total), bold: true, colour: AMBER },
-          { text: ' from local and other general-fund money beyond what their dedicated funding paid for.' },
+          { text: ' from other general-fund money beyond what dedicated funding paid for.' },
+          ...(page.big3.msocAhead > 0
+            ? [{
+                text: ` MSOC funding, which is not restricted to its own use, exceeded its cost by ${fmtMoney(page.big3.msocAhead)}; ` +
+                  (page.big3.total > page.big3.msocAhead
+                    ? `after subtracting that, the remaining shortfall is ${fmtMoney(page.big3.total - page.big3.msocAhead)}.`
+                    : 'that is more than the shortfall.'),
+              }]
+            : []),
           // The district page carries this caveat; the printed copy is the one
           // read in a legislator's office, where the first reply would be "we
           // raised the multiplier in 2025".

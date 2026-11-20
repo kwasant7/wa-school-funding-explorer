@@ -614,6 +614,8 @@ function Big3Card({ district: d }: { district: District }) {
       ?.msocBig3AleContracts ?? 0;
 
   const gaps = [big3.sped, big3.transportation, big3.msoc].map((p) => p.cost - p.revenue);
+  // MSOC is the last of the three; only its surplus offsets the others.
+  const msocAhead = Math.max(0, -gaps[2]);
   const totalGap = gaps.filter((g) => g > 0).reduce((sum, g) => sum + g, 0);
   const perStudent = big3.students > 0 ? totalGap / big3.students : 0;
 
@@ -663,6 +665,21 @@ function Big3Card({ district: d }: { district: District }) {
             ${fmtInt(Math.round(perStudent))} per student
           </strong>
           .
+          {msocAhead > 0 && (
+            <>
+              {' '}
+              MSOC funding, which is not restricted to its own use, exceeded its cost by{' '}
+              <strong className="text-ink">{fmtMoney(msocAhead)}</strong>.{' '}
+              {totalGap > msocAhead ? (
+                <>
+                  After subtracting that, the remaining shortfall is{' '}
+                  <strong className="text-ink">{fmtMoney(totalGap - msocAhead)}</strong>.
+                </>
+              ) : (
+                <>That is more than the shortfall.</>
+              )}
+            </>
+          )}
         </p>
       )}
 

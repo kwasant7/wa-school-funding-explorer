@@ -89,6 +89,8 @@ export type DistrictProfile = {
   gaps: GapRow[];
   /** Sum of the positive gaps: locally covered dollars above the formula. */
   coveredLocally: number;
+  /** MSOC funding above MSOC cost (0 when short); see Big3Totals.msocAhead. */
+  msocAhead: number;
   demographics: DemographicRow[];
   levy: Metrics['levy'];
   capBlocked: number;
@@ -242,6 +244,7 @@ export function districtProfile(code: string): DistrictProfile | null {
     enrollmentChange: m.enrollmentChange,
     gaps: gapRows,
     coveredLocally: gapRows.reduce((sum, g) => sum + Math.max(0, g.gap), 0),
+    msocAhead: Math.max(0, -(gapRows.find((g) => g.key === 'msoc')?.gap ?? 0)),
     demographics: demographics(m),
     levy: m.levy,
     capBlocked: m.capBlocked,
@@ -266,7 +269,7 @@ export function districtMetaDescription(p: DistrictProfile): string {
   ];
   if (p.coveredLocally > 0) {
     parts.push(
-      `with ${fmtMoney(p.coveredLocally)} of special education, MSOC and transportation costs covered from local and other money`
+      `with ${fmtMoney(p.coveredLocally)} of Big 3 program shortfalls covered from other general-fund money`
     );
   }
   return `${parts.join(', ')}. State, local levy and federal breakdown from official OSPI data.`;

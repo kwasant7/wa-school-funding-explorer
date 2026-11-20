@@ -102,6 +102,8 @@ export type OnePage = {
     year: string;
     columns: Big3Column[];
     total: number;
+    /** MSOC funding above MSOC cost; see Big3Totals.msocAhead. */
+    msocAhead: number;
     perStudent: number;
   } | null;
   problems: ProblemRow[];
@@ -350,6 +352,7 @@ export function onePageFor(code: string): OnePage | null {
       year: DIAGNOSIS_YEAR,
       columns,
       total: totals.total,
+      msocAhead: totals.msocAhead,
       perStudent: totals.perStudent,
     };
   }

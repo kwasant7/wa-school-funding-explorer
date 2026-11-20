@@ -21,11 +21,13 @@ import districtsJson from '@/data/districts.json';
 import levyJson from '@/data/levy.json';
 import spendingJson from '@/data/spending.json';
 import { OVERSIGHT_CHECKED_ON } from '@/data/oversight';
+import { LEVY_ELECTIONS_THROUGH } from '@/lib/levy-coverage';
 import { aleContractsMaterial, allIssuesFor, briefFor, metricsFor } from '@/lib/diagnosis';
 import { onePageFor } from '@/lib/brief-onepage';
 import { districtProfile } from '@/lib/district-profile';
 import { big3Gap, big3Totals } from '@/lib/big3';
 import { isSchoolDistrict } from '@/lib/entity';
+import { RESERVE_MARGINAL_NEGATIVE_PCT } from '@/lib/reserves';
 
 type Status = 'fail' | 'info';
 type Row = { code: string; name: string; check: string; status: Status; detail: string };
@@ -71,6 +73,10 @@ const CHECKS: Record<string, { status: Status; text: string }> = {
     status: 'info',
     text: '"Other" revenue over 8% of the total (2000 fees/donations/interest, 8200 grants, 7121 payments from other districts, 9000 transfers)',
   },
+  headlineOneOff: {
+    status: 'info',
+    text: 'Transfers in (9000) and timber (3600) are over 3% of revenue, or lift the per-student figure above the statewide median',
+  },
   missingData: { status: 'info', text: 'A data file the pages draw on has no entry' },
   emptyBrief: { status: 'info', text: 'The brief finds no problem' },
   oversight: { status: 'info', text: `On OSPI oversight (list checked ${OVERSIGHT_CHECKED_ON})` },
@@ -102,7 +108,51 @@ const BAD_TEXT: [RegExp, string][] = [
   [/started in/, '"started in"'],
   [/\$0 short/, '"$0 short"'],
   [/\b0 students \(0%/, '"0 students (0%"'],
+  // Regression guards for wording the 2026-11-20 superintendent reviews got
+  // removed: stale "last year", the district-voiced heading, the "taken from"
+  // special-education line, and the oversight ask.
+  [/\blast year\b/, '"last year"'],
+  [/What needs to change in/, '"What needs to change in"'],
+  [/taken from every student/, '"taken from every student"'],
+  [/Watching a shortfall/, '"Watching a shortfall"'],
 ];
+
+/*
+  One-off and pass-through revenue inside the headline per-student figure:
+  code 9000 (other financing sources, mostly transfers in from other district
+  funds) and 3600 (state forest / timber proceeds). Read from the raw F-196
+  rows when they are present locally; the check is skipped otherwise.
+*/
+const ONE_OFF = new Map<string, { financing: number; timber: number }>();
+{
+  // The data year's raw file, e.g. 2024-25 -> gf-revenues-2425.csv / '2024-2025'.
+  const [y1, y2] = districtsJson.schoolYear.split('-');
+  const rawYear = `${y1}-${y1.slice(0, 2)}${y2}`;
+  const file = path.resolve(`scripts/raw/gf-revenues-${y1.slice(2)}${y2}.csv`);
+  if (fs.existsSync(file)) {
+    const [header, ...lines] = fs.readFileSync(file, 'utf8').replace(/^\uFEFF/, '').split(/\r?\n/);
+    const cols = header.split(',').map((c) => c.replace(/"/g, ''));
+    const at = (name: string) => cols.indexOf(name);
+    const [iCode, iYear, iDist, iAmt] = [at('Revenue Code'), at('School Year Code'), at('County District Code'), at('Amount')];
+    for (const line of lines) {
+      const f = line.split(',').map((c) => c.replace(/"/g, ''));
+      if (f[iYear] !== rawYear || (f[iCode] !== '9000' && f[iCode] !== '3600')) continue;
+      const code = f[iDist].padStart(5, '0');
+      const row = ONE_OFF.get(code) ?? { financing: 0, timber: 0 };
+      if (f[iCode] === '9000') row.financing += Number(f[iAmt]) || 0;
+      else row.timber += Number(f[iAmt]) || 0;
+      ONE_OFF.set(code, row);
+    }
+  }
+}
+const MEDIAN_PER_PUPIL = districtsJson.statewide.medianPerPupil;
+
+// The pages print the last levy election OSPI's worksheet covers; if a new
+// worksheet arrives, its note changes and this stops the audit until the
+// constant in src/lib/levy-coverage.ts is updated to match.
+if (!levyJson.sources.note.includes(LEVY_ELECTIONS_THROUGH)) {
+  throw new Error(`levy.json no longer mentions ${LEVY_ELECTIONS_THROUGH}; update src/lib/levy-coverage.ts`);
+}
 
 for (const d of districts) {
   const m = metricsFor(d.code);
@@ -162,7 +212,10 @@ for (const d of districts) {
   const reserves = tile('Reserves');
   if (reserves && d.fundBalance != null && d.exp > 0) {
     const days = (365 * d.fundBalance) / d.exp;
-    const expected = days < 0 ? 'No savings left'
+    // A balance a hair below zero is labelled as such on purpose (ea61163);
+    // only one past the marginal line reads "No savings left".
+    const expected = days < 0
+      ? (d.reserveRatio != null && d.reserveRatio > RESERVE_MARGINAL_NEGATIVE_PCT ? 'Balance just below zero' : 'No savings left')
       : days < 30 ? 'Less than one month of spending'
         : days < 60 ? "Below the State Auditor's 60-day benchmark"
           : "Meets the State Auditor's 60-day benchmark";
@@ -176,7 +229,10 @@ for (const d of districts) {
     const gap = Math.abs(change - d.surplus);
     if (gap > 100_000 && gap > 0.005 * d.exp) {
       const note = page.tiles[3]?.note ?? '';
-      result(d.code, d.name, 'balanceChangeShown', /^Savings (fell|rose)/.test(note),
+      // The tile has said "Fell $X in <year>" / "Rose ..." since 08c3c27; the
+      // direction must match the balance's own movement.
+      const shown = change < 0 ? /^Fell /.test(note) : /^Rose /.test(note);
+      result(d.code, d.name, 'balanceChangeShown', shown,
         `surplus ${fmt(d.surplus)}, balance change ${fmt(change)}, tile note "${note}"`);
     }
   }
@@ -224,6 +280,16 @@ for (const d of districts) {
   const otherShare = d.rev.total > 0 ? (100 * d.rev.other) / d.rev.total : 0;
   result(d.code, d.name, 'otherRevenueLarge', otherShare <= 8,
     `other ${fmt(d.rev.other)} = ${pct(otherShare)} of ${fmt(d.rev.total)}`);
+  const oneOff = ONE_OFF.get(d.code);
+  if (oneOff && d.fundingEnrollment > 0) {
+    const amount = oneOff.financing + oneOff.timber;
+    const without = (d.rev.total - amount) / d.fundingEnrollment;
+    const crosses = d.perPupil > MEDIAN_PER_PUPIL && without <= MEDIAN_PER_PUPIL;
+    result(d.code, d.name, 'headlineOneOff', amount <= 0.03 * d.rev.total && !crosses,
+      `9000 ${fmt(oneOff.financing)}, 3600 ${fmt(oneOff.timber)} = ${pct((100 * amount) / d.rev.total)}; ` +
+      `$${Math.round(d.perPupil).toLocaleString()} per student, $${Math.round(without).toLocaleString()} without` +
+      (crosses ? ' (drops below the statewide median)' : ''));
+  }
   result(d.code, d.name, 'emptyBrief', brief.issues.length > 0, `${Math.round(d.fundingEnrollment)} funded FTE`);
   result(d.code, d.name, 'oversight', !m.oversight, m.oversight ? `${m.oversight.level}, ${m.oversight.since}` : '');
   void SPENDING;
