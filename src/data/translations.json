@@ -1675,7 +1675,14 @@
     "Savings fell": "Los ahorros cayeron",
     "Spending outran revenue": "Gastar más que ingresos",
     "The $2.50 rate limit. OSPI estimate, from current property values.": "El límite de tarifa de $2.50. Estimación de OSPI, a partir de los valores de propiedad actuales.",
-    "Set by the state's per-student limit (": "Establecido por el límite estatal por estudiante ("
+    "Set by the state's per-student limit (": "Establecido por el límite estatal por estudiante (",
+    "Compared with Washington's school districts, the biggest funding pressure here is": "En comparación con los distritos escolares de Washington, la mayor presión financiera aquí es",
+    "Compared with Washington's school districts, the biggest funding pressures here are": "En comparación con los distritos escolares de Washington, las mayores presiones financieras aquí son",
+    "could not pass a balanced budget, so the state stepped in.": "no pudo aprobar un presupuesto equilibrado, por lo que el Estado intervino.",
+    "Analysis by K12Funding.org from public OSPI data. Not prepared, reviewed or endorsed by the school district.": "Análisis realizado por K12Funding.org a partir de datos públicos de OSPI. No preparado, revisado ni respaldado por el distrito escolar.",
+    "Where funding falls short in": "Cuando la financiación es insuficiente",
+    "An independent civic education project. Not affiliated with OSPI, any school district, or the Washington State Legislature. Simulator results are educational estimates, not official fiscal projections.": "Un proyecto independiente de educación cívica. No está afiliado a OSPI, a ningún distrito escolar ni a la Legislatura del Estado de Washington. Los resultados del simulador son estimaciones educativas, no proyecciones fiscales oficiales.",
+    "per student, covered from local levy and other general-fund money. That funding already counts state, federal and Medicaid dollars.": "por estudiante, cubierto con impuestos locales y otros fondos del fondo general. Esa financiación ya cuenta con dólares estatales, federales y de Medicaid."
   },
   "zh": {
     "- a flat per-student amount covering everything that is not staff pay.": "- 每个学生的固定金额，涵盖员工工资以外的所有费用。",
@@ -3353,7 +3360,14 @@
     "Savings fell": "储蓄下降",
     "Spending outran revenue": "支出超过收入",
     "The $2.50 rate limit. OSPI estimate, from current property values.": "2.50 美元的利率限制。 OSPI 根据当前财产价值进行估算。",
-    "Set by the state's per-student limit (": "由州每个学生的限额设定（"
+    "Set by the state's per-student limit (": "由州每个学生的限额设定（",
+    "Compared with Washington's school districts, the biggest funding pressure here is": "与华盛顿的学区相比，这里最大的资金压力是",
+    "Compared with Washington's school districts, the biggest funding pressures here are": "与华盛顿的学区相比，这里最大的资金压力是",
+    "could not pass a balanced budget, so the state stepped in.": "无法通过平衡预算，因此国家介入。",
+    "Analysis by K12Funding.org from public OSPI data. Not prepared, reviewed or endorsed by the school district.": "K12Funding.org 根据公开的 OSPI 数据进行分析。未经学区准备、审查或认可。",
+    "Where funding falls short in": "资金短缺的地方",
+    "An independent civic education project. Not affiliated with OSPI, any school district, or the Washington State Legislature. Simulator results are educational estimates, not official fiscal projections.": "一个独立的公民教育项目。不隶属于 OSPI、任何学区或华盛顿州立法机关。模拟器结果是教育估计，而不是官方财政预测。",
+    "per student, covered from local levy and other general-fund money. That funding already counts state, federal and Medicaid dollars.": "每个学生的费用由地方税和其他普通基金支付。这笔资金已经计入州、联邦和医疗补助资金。"
   },
   "vi": {
     "- a flat per-student amount covering everything that is not staff pay.": "- một khoản tiền cố định cho mỗi học sinh bao gồm mọi thứ không phải là lương của nhân viên.",
@@ -5031,7 +5045,14 @@
     "Savings fell": "Tiết kiệm giảm",
     "Spending outran revenue": "Chi tiêu vượt doanh thu",
     "The $2.50 rate limit. OSPI estimate, from current property values.": "Giới hạn tỷ giá $ 2,50. Ước tính OSPI, từ giá trị thuộc tính hiện tại.",
-    "Set by the state's per-student limit (": "Được đặt theo giới hạn của tiểu bang cho mỗi học sinh ("
+    "Set by the state's per-student limit (": "Được đặt theo giới hạn của tiểu bang cho mỗi học sinh (",
+    "Compared with Washington's school districts, the biggest funding pressure here is": "So với các khu học chánh của Washington, áp lực tài trợ lớn nhất ở đây là",
+    "Compared with Washington's school districts, the biggest funding pressures here are": "So với các khu học chánh của Washington, áp lực tài trợ lớn nhất ở đây là",
+    "could not pass a balanced budget, so the state stepped in.": "không thể thông qua một ngân sách cân bằng nên nhà nước đã vào cuộc.",
+    "Analysis by K12Funding.org from public OSPI data. Not prepared, reviewed or endorsed by the school district.": "Phân tích của K12Funding.org từ dữ liệu OSPI công khai. Không được khu học chánh chuẩn bị, xem xét hoặc xác nhận.",
+    "Where funding falls short in": "Khi nguồn tài trợ bị thiếu hụt",
+    "An independent civic education project. Not affiliated with OSPI, any school district, or the Washington State Legislature. Simulator results are educational estimates, not official fiscal projections.": "Một dự án giáo dục công dân độc lập. Không liên kết với OSPI, bất kỳ khu học chánh nào hoặc Cơ quan lập pháp Tiểu bang Washington. Kết quả mô phỏng là ước tính giáo dục chứ không phải dự báo tài chính chính thức.",
+    "per student, covered from local levy and other general-fund money. That funding already counts state, federal and Medicaid dollars.": "mỗi học sinh, được chi trả từ thuế địa phương và các khoản tiền từ quỹ chung khác. Khoản tài trợ đó đã tính cả tiền của tiểu bang, liên bang và Medicaid."
   },
   "ru": {
     "- a flat per-student amount covering everything that is not staff pay.": "- фиксированная сумма на одного учащегося, покрывающая все, кроме заработной платы персонала.",
@@ -6709,7 +6730,14 @@
     "Savings fell": "Сбережения упали",
     "Spending outran revenue": "Расходы превысили доходы",
     "The $2.50 rate limit. OSPI estimate, from current property values.": "Ограничение ставки в размере 2,50 доллара США. Оценка OSPI на основе текущей стоимости недвижимости.",
-    "Set by the state's per-student limit (": "Устанавливается в соответствии с лимитом штата на одного учащегося ("
+    "Set by the state's per-student limit (": "Устанавливается в соответствии с лимитом штата на одного учащегося (",
+    "Compared with Washington's school districts, the biggest funding pressure here is": "По сравнению со школьными округами Вашингтона, здесь наибольшее давление на финансирование наблюдается",
+    "Compared with Washington's school districts, the biggest funding pressures here are": "По сравнению со школьными округами Вашингтона, здесь самая большая проблема с финансированием",
+    "could not pass a balanced budget, so the state stepped in.": "не смог принять сбалансированный бюджет, поэтому вмешалось государство.",
+    "Analysis by K12Funding.org from public OSPI data. Not prepared, reviewed or endorsed by the school district.": "Анализ K12Funding.org на основе общедоступных данных OSPI. Не подготовлено, не проверено и не одобрено школьным округом.",
+    "Where funding falls short in": "Там, где финансирования не хватает",
+    "An independent civic education project. Not affiliated with OSPI, any school district, or the Washington State Legislature. Simulator results are educational estimates, not official fiscal projections.": "Независимый проект гражданского образования. Не связан с OSPI, каким-либо школьным округом или Законодательным собранием штата Вашингтон. Результаты моделирования представляют собой образовательные оценки, а не официальные бюджетные прогнозы.",
+    "per student, covered from local levy and other general-fund money. That funding already counts state, federal and Medicaid dollars.": "на одного учащегося, покрывается за счет местных сборов и других денег из общего фонда. Это финансирование уже включает в себя доллары штата, федеральные деньги и деньги Medicaid."
   },
   "tl": {
     "- a flat per-student amount covering everything that is not staff pay.": "- isang flat na halagang bawat mag-aaral na sumasaklaw sa lahat ng hindi suweldo ng kawani.",
@@ -8387,7 +8415,14 @@
     "Savings fell": "Bumagsak ang ipon",
     "Spending outran revenue": "Paggastos ng higit sa kita",
     "The $2.50 rate limit. OSPI estimate, from current property values.": "Ang $2.50 na limitasyon sa rate. pagtatantya ng OSPI, mula sa kasalukuyang mga halaga ng ari-arian.",
-    "Set by the state's per-student limit (": "Itinakda ng estado sa bawat-estudyante na limitasyon ("
+    "Set by the state's per-student limit (": "Itinakda ng estado sa bawat-estudyante na limitasyon (",
+    "Compared with Washington's school districts, the biggest funding pressure here is": "Kung ikukumpara sa mga distrito ng paaralan ng Washington, ang pinakamalaking pressure sa pagpopondo dito ay",
+    "Compared with Washington's school districts, the biggest funding pressures here are": "Kung ikukumpara sa mga distrito ng paaralan ng Washington, ang pinakamalalaking panggigipit sa pagpopondo dito ay",
+    "could not pass a balanced budget, so the state stepped in.": "hindi makapasa ng balanseng badyet, kaya pumasok ang estado.",
+    "Analysis by K12Funding.org from public OSPI data. Not prepared, reviewed or endorsed by the school district.": "Pagsusuri ng K12Funding.org mula sa pampublikong data ng OSPI. Hindi inihanda, nirepaso o inendorso ng distrito ng paaralan.",
+    "Where funding falls short in": "Kung saan kulang ang pondo",
+    "An independent civic education project. Not affiliated with OSPI, any school district, or the Washington State Legislature. Simulator results are educational estimates, not official fiscal projections.": "Isang malayang proyekto sa edukasyong sibiko. Hindi kaakibat sa OSPI, anumang distrito ng paaralan, o Lehislatura ng Estado ng Washington. Ang mga resulta ng simulator ay mga pagtatantya na pang-edukasyon, hindi mga opisyal na projection sa pananalapi.",
+    "per student, covered from local levy and other general-fund money. That funding already counts state, federal and Medicaid dollars.": "bawat mag-aaral, saklaw mula sa lokal na pataw at iba pang pera ng pangkalahatang pondo. Binibilang na ng pondong iyon ang mga dolyar ng estado, pederal at Medicaid."
   },
   "ko": {
     "- a flat per-student amount covering everything that is not staff pay.": "- 교직원 급여가 아닌 모든 금액을 포함하는 학생당 정액 금액입니다.",
@@ -10065,6 +10100,13 @@
     "Savings fell": "저축액 감소",
     "Spending outran revenue": "지출이 수익을 초과함",
     "The $2.50 rate limit. OSPI estimate, from current property values.": "$2.50 요율 제한. 현재 속성 값을 기준으로 한 OSPI 추정치입니다.",
-    "Set by the state's per-student limit (": "해당 주의 학생 1인당 한도에 따라 설정됩니다("
+    "Set by the state's per-student limit (": "해당 주의 학생 1인당 한도에 따라 설정됩니다(",
+    "Compared with Washington's school districts, the biggest funding pressure here is": "워싱턴의 학군과 비교할 때 이곳의 가장 큰 자금 압박은 다음과 같습니다.",
+    "Compared with Washington's school districts, the biggest funding pressures here are": "워싱턴의 학군과 비교할 때 이곳의 가장 큰 자금 압박은 다음과 같습니다.",
+    "could not pass a balanced budget, so the state stepped in.": "균형예산을 통과시킬 수 없어 국가가 개입했다.",
+    "Analysis by K12Funding.org from public OSPI data. Not prepared, reviewed or endorsed by the school district.": "공개 OSPI 데이터를 K12Funding.org에서 분석했습니다. 교육구에서 준비, 검토 또는 승인하지 않았습니다.",
+    "Where funding falls short in": "자금이 부족한 곳",
+    "An independent civic education project. Not affiliated with OSPI, any school district, or the Washington State Legislature. Simulator results are educational estimates, not official fiscal projections.": "독립적인 시민 교육 프로젝트입니다. OSPI, 학군 또는 워싱턴 주 의회와 제휴하지 않습니다. 시뮬레이터 결과는 공식적인 재정 예측이 아닌 교육적 예측입니다.",
+    "per student, covered from local levy and other general-fund money. That funding already counts state, federal and Medicaid dollars.": "학생 1인당, 지역 부담금 및 기타 일반 기금에서 충당됩니다. 해당 자금에는 이미 주, 연방, 메디케이드 자금이 포함되어 있습니다."
   }
 }

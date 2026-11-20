@@ -80,7 +80,10 @@ export const OVERSIGHT: Record<string, Oversight> = {
   '39120': {
     level: 'binding',
     since: 'April 2026',
-    detail: 'Most recent OSPI binding conditions update April 2026.',
+    // From OSPI's April 17, 2026 update letter (binding conditions began with
+    // its June 4, 2025 letter).
+    detail:
+      "On binding conditions since June 2025. OSPI's April 2026 update says the district \"has made significant progress\" and expects it to continue toward solvency.",
   },
   // Kiona-Benton City
   '03052': {
@@ -88,14 +91,15 @@ export const OVERSIGHT: Record<string, Oversight> = {
     since: 'June 2026',
     detail: 'Binding conditions letter issued June 2026.',
   },
-  // Marysville - had a state-appointed special administrator from September
-  // 2024; OSPI changed its level of oversight in December 2025 and updated its
-  // binding conditions in January 2026.
+  // Marysville - from OSPI's January 13, 2026 letter: requested binding
+  // conditions August 2023; Enhanced Financial Oversight with a special
+  // administrator from August 2024; released "as an outcome of their improved
+  // financial position"; binding conditions re-established through 2026-27.
   '31025': {
     level: 'binding',
     since: 'January 2026',
     detail:
-      'On binding conditions since 2023, with a state-appointed special administrator from 2024 until OSPI changed its level of oversight in December 2025; most recent OSPI update January 2026.',
+      'The district asked for binding conditions in 2023 and had a state-appointed special administrator from 2024. OSPI released it from that enhanced oversight in December 2025, citing its improved financial position, and kept binding conditions through 2026-27.',
   },
   // Burlington-Edison
   '29100': {

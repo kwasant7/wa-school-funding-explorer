@@ -134,8 +134,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               .
             </p>
             <p className="text-ink-muted">
-              An independent civic education project. Not affiliated with OSPI or
-              the Washington State Legislature. Simulator results are educational
+              An independent civic education project. Not affiliated with OSPI,
+              any school district, or the Washington State Legislature. Simulator results are educational
               estimates, not official fiscal projections.
             </p>
             <p className="text-ink-muted">

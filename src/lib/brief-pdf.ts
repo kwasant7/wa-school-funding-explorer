@@ -701,7 +701,7 @@ function drawBrief(
       ? '. The Big 3 figures are those of the AESD Big 3 dashboard, built from OSPI F-196 actuals and apportionment.'
       : '.') +
     " Each problem is ranked against Washington's school districts; charter and tribal compact schools are left out of that comparison. Not an official fiscal or legal source: " +
-    'an independent civic education project, not affiliated with OSPI or the Washington State Legislature. ' +
+    'an independent civic education project, not affiliated with OSPI, any school district, or the Washington State Legislature. ' +
     `Sources: ${siteHost}/sources`;
   const pageLabelW = 40;
   const footerH = pdf.at(footer, {
@@ -769,7 +769,10 @@ function drawBrief(
   const sub = [`${page.county} County`, page.esd, `${fmtInt(page.fundedStudents)} funded students`]
     .filter(Boolean)
     .join('  ·  ');
-  y += pdf.at(sub, { x: X, top: y, width: W, size: 8.2, colour: SLATE, leading: 10.4 }) + 6;
+  y += pdf.at(sub, { x: X, top: y, width: W, size: 8.2, colour: SLATE, leading: 10.4 }) + 2;
+  y += pdf.at('Analysis by K12Funding.org from public OSPI data. Not prepared, reviewed or endorsed by the school district.', {
+    x: X, top: y, width: W, size: 7.4, bold: true, colour: SLATE, leading: 9.4,
+  }) + 6;
   y += pdf.at(page.summary, { x: X, top: y, width: W, size: 8.8, colour: INK, leading: 12 }) + 2;
 
   // --- Centred label helper (the writer aligns left or right only) --------------------
@@ -795,6 +798,12 @@ function drawBrief(
           { text: `Across these three programs ${page.shortName} covered about ` },
           { text: fmtMoney(page.big3.total), bold: true, colour: AMBER },
           { text: ' from local and other general-fund money beyond what their dedicated funding paid for.' },
+          // The district page carries this caveat; the printed copy is the one
+          // read in a legislator's office, where the first reply would be "we
+          // raised the multiplier in 2025".
+          ...(page.big3.columns.some((c) => c.key === 'sped' && c.gap > 0)
+            ? [{ text: ` Special education figures are ${meta.year}, before E2SSB 5263 raised its funding from September 2025.` }]
+            : []),
         ]
       : [{ text: 'Funding covers the cost of all three Big 3 programs here.' }];
   const coverH = page.big3

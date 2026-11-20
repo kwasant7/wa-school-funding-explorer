@@ -236,9 +236,18 @@ export default function DistrictBrief({ code }: { code: string }) {
   return (
     <section data-assistant-section="district-brief" className="mt-8">
       <h2 className="text-2xl md:text-3xl font-bold">
-        What needs to change in{' '}
+        Where funding falls short in{' '}
         <span data-no-translate>{brief.name}</span>
       </h2>
+      {/*
+        The brief carries the district's name in large type and is meant to be
+        handed to legislators, so it says outright that the district did not
+        write it - every superintendent review asked for this.
+      */}
+      <p className="mt-1 text-sm text-ink-muted">
+        Analysis by K12Funding.org from public OSPI data. Not prepared, reviewed
+        or endorsed by the school district.
+      </p>
 
       <p className="mt-2 text-ink-secondary">{brief.summary}</p>
 

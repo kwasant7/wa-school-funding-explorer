@@ -604,7 +604,7 @@ const oversightIssue: Builder = (m) => {
     title: enhanced ? 'The state took over the budget' : 'The state is watching the budget',
     fact: enhanced
       ? `${m.name} could not fix its budget on its own, so the state sent in someone to help run it.`
-      : `${m.name} could not pass a balanced budget, so the state stepped in. OSPI's most recent update was in ${m.oversight.since}.`,
+      : `${m.name} could not pass a balanced budget, so the state stepped in. ${m.oversight.detail}`,
     visual: {
       kind: 'steps',
       steps: ['Healthy', 'Warning', 'State steps in', 'State takes over'],
@@ -830,7 +830,7 @@ const spedIssue: Builder = (m) => {
   return {
     id: 'sped',
     title: 'Special education is underfunded',
-    fact: `Special education costs ${plainMoney(fig.gap)} more than the funding that arrives for it - about ${round(m.big3SpedPerPupil)} taken from every student's regular school money. That funding already counts state, federal and Medicaid dollars.`,
+    fact: `Special education costs ${plainMoney(fig.gap)} more than the funding that arrives for it - about ${round(m.big3SpedPerPupil)} per student, covered from local levy and other general-fund money. That funding already counts state, federal and Medicaid dollars.`,
     visual: fig.visual,
     refs: [BILLS.budget, BILLS.spedIncrease],
     severity: 50 + pctile * 0.4,
@@ -1051,8 +1051,8 @@ function summaryFor(m: Metrics, issues: Issue[]): string {
       ? names[0]
       : `${names.slice(0, -1).join(', ')} and ${names[names.length - 1]}`;
   return names.length === 1
-    ? `Compared with Washington's school districts, the biggest problem here is ${list}.`
-    : `Compared with Washington's school districts, the biggest problems here are ${list}.`;
+    ? `Compared with Washington's school districts, the biggest funding pressure here is ${list}.`
+    : `Compared with Washington's school districts, the biggest funding pressures here are ${list}.`;
 }
 
 // The reserves card has three variants; the summary names the one shown.
@@ -1064,7 +1064,7 @@ const RESERVES_SHORT: Record<string, string> = {
 };
 
 const ISSUE_SHORT: Record<IssueId, string> = {
-  oversight: 'state oversight of the budget',
+  oversight: 'a budget under state oversight',
   reserves: 'spending that outran revenue',
   levyCap: 'the cap on local school taxes',
   noLevy: 'no approved school levy',
@@ -1072,8 +1072,8 @@ const ISSUE_SHORT: Record<IssueId, string> = {
   sped: 'special education',
   msoc: 'everyday running costs',
   transportation: 'buses',
-  ell: 'students learning English',
-  lowIncome: 'student poverty',
+  ell: 'funding for students learning English',
+  lowIncome: 'funding for high student poverty',
   enrollmentDecline: 'falling enrollment',
   smallScale: 'being a very small district',
 };
@@ -1085,7 +1085,7 @@ const ISSUE_SHORT: Record<IssueId, string> = {
  * problem it is named, and nothing here invents a bill number.
  */
 export const ISSUE_ASKS: Record<IssueId, string> = {
-  oversight: 'Fix what caused this. Watching a shortfall does not pay for it.',
+  oversight: 'Steady funding while districts under state oversight rebuild their reserves.',
   reserves: 'Steady funding every year, not a one-time patch.',
   levyCap: 'Raise the local levy cap. This money needs no new vote.',
   noLevy: 'Fund more of basic education, so losing a levy does not cut what every school needs.',
