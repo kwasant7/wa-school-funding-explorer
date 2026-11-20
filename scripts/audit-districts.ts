@@ -69,7 +69,7 @@ const CHECKS: Record<string, { status: Status; text: string }> = {
   },
   otherRevenueLarge: {
     status: 'info',
-    text: '"Other" revenue over 8% of the total (code 8200 grants, 7121 payments from other districts)',
+    text: '"Other" revenue over 8% of the total (2000 fees/donations/interest, 8200 grants, 7121 payments from other districts, 9000 transfers)',
   },
   missingData: { status: 'info', text: 'A data file the pages draw on has no entry' },
   emptyBrief: { status: 'info', text: 'The brief finds no problem' },

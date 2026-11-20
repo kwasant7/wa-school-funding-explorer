@@ -102,11 +102,11 @@ export default function DistrictPage({ params }: Params) {
       rev.local,
       // Charter and tribal compact schools cannot levy a property tax.
       isSchoolDistrict(p.metrics.record)
-        ? 'Voter-approved enrichment levies and other local revenue.'
-        : 'Local revenue other than a levy, such as fees and donations - this school cannot levy a property tax.',
+        ? 'Local property taxes, mostly voter-approved enrichment levies.'
+        : 'Local property taxes - this school cannot levy one, so this is zero or close to it.',
     ],
     ['Federal', rev.federal, 'Title I, IDEA, child nutrition and other federal programs.'],
-    ['Other', rev.other, 'Grants, fees and revenue from other districts and agencies.'],
+    ['Other', rev.other, 'Fees, donations, interest, grants, payments from other districts and agencies, and transfers in.'],
   ] as const;
 
   return (

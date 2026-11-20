@@ -258,7 +258,7 @@ export const KNOWLEDGE: readonly Chunk[] = [
   {
     id: 'revenue-sources',
     title: 'State, local, federal and other revenue',
-    text: 'District general-fund revenue is grouped into four sources from F-196 revenue codes. State (codes 3000 general-purpose apportionment and 4000 special-purpose categorical programs) is the largest share for nearly every district. Local (1000 local property tax levies and 2000 non-tax local support) depends on local property wealth and what voters approved. Federal (5000 general purpose and 6000 special purpose such as Title I and IDEA) is a small share that bulged during the pandemic with ESSER money and has fallen back as that expired. Other (7000-9000) covers revenue from other districts, other agencies, and transfers.',
+    text: 'District general-fund revenue is grouped into four sources from F-196 revenue codes. State (codes 3000 general-purpose apportionment and 4000 special-purpose categorical programs) is the largest share for nearly every district. Local (code 1000 local property taxes, mostly levies) depends on local property wealth and what voters approved. Federal (5000 general purpose and 6000 special purpose such as Title I and IDEA) is a small share that bulged during the pandemic with ESSER money and has fallen back as that expired. Other (code 2000 non-tax local support such as fees, donations and interest, plus 7000-9000) covers that and revenue from other districts, other agencies, and transfers. These groupings match the fiscal.wa.gov district report (Local Taxes and Other Revenues).',
     sourceIds: ['site-districts', 'site-sources', 'ospi-safs'],
     keywords: ['revenue', 'state', 'local', 'federal', 'other', 'f-196', 'sources', 'esser', 'title i', 'idea', 'apportionment'],
   },

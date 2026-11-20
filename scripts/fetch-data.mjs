@@ -433,10 +433,15 @@ async function buildYear({ label, enrollmentId, revenueFile, expenditureFile, re
     const roundedFundingEnrollment =
       Math.round(districtFunding.total * 100) / 100;
     const roundFte = (value) => Math.round(value * 100) / 100;
-    const local = (rev.localTaxes || 0) + (rev.localNonTax || 0);
+    // Buckets follow fiscal.wa.gov's K12FinanceDistrict report exactly, so each
+    // dollar figure can be checked against a row there: "Local Taxes" is code
+    // 1000 only, and "Other Revenues" is 2000 local non-tax + 7000 + 8000 +
+    // 9000. Checked against Aberdeen and Crescent 2024-25 to the dollar.
+    const local = rev.localTaxes || 0;
     const state = (rev.stateGeneral || 0) + (rev.stateSpecial || 0);
     const federal = (rev.federalGeneral || 0) + (rev.federalSpecial || 0);
     const other =
+      (rev.localNonTax || 0) +
       (rev.otherDistricts || 0) +
       (rev.otherAgencies || 0) +
       (rev.otherFinancing || 0);

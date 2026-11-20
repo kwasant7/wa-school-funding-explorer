@@ -1657,7 +1657,15 @@
     "Local revenue - most of it voter-approved enrichment levies, the rest fees, interest and the like - raised": "Los ingresos locales (la mayor parte impuestos de enriquecimiento aprobados por los votantes, el resto tasas, intereses y similares) aumentaron",
     "Local taxes - mostly voter-approved enrichment levies": "Impuestos locales: en su mayoría impuestos de enriquecimiento aprobados por los votantes",
     "funded students. Most of that is state money distributed by a single statutory formula; the rest is local and federal money, raised and targeted separately.": "estudiantes financiados. La mayor parte es dinero estatal distribuido mediante una única fórmula legal; el resto es dinero local y federal, recaudado y destinado por separado.",
-    "of all school revenue. State law caps how much a district may collect per student in enrichment levies, and Local Effort Assistance sends state money to districts whose property base cannot raise the statewide goal.": "de todos los ingresos escolares. La ley estatal limita la cantidad que un distrito puede recaudar por estudiante en impuestos de enriquecimiento, y la Asistencia de Esfuerzo Local envía dinero estatal a los distritos cuya base de propiedades no puede alcanzar la meta estatal."
+    "of all school revenue. State law caps how much a district may collect per student in enrichment levies, and Local Effort Assistance sends state money to districts whose property base cannot raise the statewide goal.": "de todos los ingresos escolares. La ley estatal limita la cantidad que un distrito puede recaudar por estudiante en impuestos de enriquecimiento, y la Asistencia de Esfuerzo Local envía dinero estatal a los distritos cuya base de propiedades no puede alcanzar la meta estatal.",
+    "Local property taxes, mostly voter-approved enrichment levies.": "Impuestos locales a la propiedad, en su mayoría impuestos de enriquecimiento aprobados por los votantes.",
+    "Local property taxes - this school cannot levy one, so this is zero or close to it.": "Impuestos locales a la propiedad: esta escuela no puede imponer uno, por lo que es cero o cercano.",
+    "Fees, donations, interest, grants, payments from other districts and agencies, and transfers in.": "Tarifas, donaciones, intereses, subvenciones, pagos de otros distritos y agencias y transferencias.",
+    "Local property taxes, mostly voter-approved enrichment levies": "Impuestos locales a la propiedad, en su mayoría impuestos de enriquecimiento aprobados por los votantes",
+    "Fees, donations, interest, payments from other districts and agencies, and transfers in": "Tarifas, donaciones, intereses, pagos de otros distritos y agencias y transferencias en",
+    "Local support, non-tax (fees, donations, interest)": "Apoyo local, no tributario (honorarios, donaciones, intereses)",
+    "Local property taxes - nearly all of them voter-approved enrichment levies - raised": "Se aumentaron los impuestos locales a la propiedad, casi todos ellos impuestos de enriquecimiento aprobados por los votantes.",
+    "Total funding = codes 1000-9000, general fund only. The four sources use fiscal.wa.gov's own groupings, so every figure matches a row on its district report: Local is code 1000 (“Local Taxes”), and Other is codes 2000 and 7000-9000 (“Other Revenues”).": "Financiamiento total = códigos 1000-9000, fondo general únicamente. Las cuatro fuentes utilizan las propias agrupaciones de fiscal.wa.gov, por lo que cada cifra coincide con una fila en su informe de distrito: Local es el código 1000 (“Impuestos locales”) y Otros son los códigos 2000 y 7000-9000 (“Otros ingresos”)."
   },
   "zh": {
     "- a flat per-student amount covering everything that is not staff pay.": "- 每个学生的固定金额，涵盖员工工资以外的所有费用。",
@@ -3317,7 +3325,15 @@
     "Local taxes - mostly voter-approved enrichment levies": "地方税——主要是选民批准的富豪税",
     "Local revenue - most of it voter-approved enrichment levies, the rest fees, interest and the like - raised": "地方收入——其中大部分是选民批准的浓缩税，其余费用、利息等——筹集",
     "funded students. Most of that is state money distributed by a single statutory formula; the rest is local and federal money, raised and targeted separately.": "资助的学生。其中大部分是按照单一法定公式分配的国家资金；其余的则是地方和联邦资金，分别筹集和定向。",
-    "of all school revenue. State law caps how much a district may collect per student in enrichment levies, and Local Effort Assistance sends state money to districts whose property base cannot raise the statewide goal.": "占学校全部收入。州法律限制了学区可以向每个学生征收的浓缩税的金额，地方努力援助将州资金发送给财产基础无法提高全州目标的学区。"
+    "of all school revenue. State law caps how much a district may collect per student in enrichment levies, and Local Effort Assistance sends state money to districts whose property base cannot raise the statewide goal.": "占学校全部收入。州法律限制了学区可以向每个学生征收的浓缩税的金额，地方努力援助将州资金发送给财产基础无法提高全州目标的学区。",
+    "Local property taxes, mostly voter-approved enrichment levies.": "地方财产税，大部分是选民批准的财富税。",
+    "Local property taxes - this school cannot levy one, so this is zero or close to it.": "当地财产税 - 这所学校不能征收，因此为零或接近零。",
+    "Fees, donations, interest, grants, payments from other districts and agencies, and transfers in.": "其他地区和机构的费用、捐赠、利息、赠款、付款以及转入。",
+    "Local property taxes, mostly voter-approved enrichment levies": "地方财产税，大部分是选民批准的财富税",
+    "Fees, donations, interest, payments from other districts and agencies, and transfers in": "其他地区和机构的费用、捐赠、利息、付款以及转账",
+    "Local support, non-tax (fees, donations, interest)": "本地支持，非税（费用、捐赠、利息）",
+    "Local property taxes - nearly all of them voter-approved enrichment levies - raised": "地方财产税——几乎全部都是选民批准的富豪税——提高了",
+    "Total funding = codes 1000-9000, general fund only. The four sources use fiscal.wa.gov's own groupings, so every figure matches a row on its district report: Local is code 1000 (“Local Taxes”), and Other is codes 2000 and 7000-9000 (“Other Revenues”).": "总资金 = 代码 1000-9000，仅限普通资金。这四个来源使用财政.wa.gov 自己的分组，因此每个数字都与其地区报告中的一行相匹配：本地是代码 1000（“地方税”），其他是代码 2000 和 7000-9000（“其他收入”）。"
   },
   "vi": {
     "- a flat per-student amount covering everything that is not staff pay.": "- một khoản tiền cố định cho mỗi học sinh bao gồm mọi thứ không phải là lương của nhân viên.",
@@ -4977,7 +4993,15 @@
     "Local revenue - most of it voter-approved enrichment levies, the rest fees, interest and the like - raised": "Doanh thu địa phương - hầu hết là thuế làm giàu được cử tri phê duyệt, phần phí còn lại, tiền lãi và những khoản tương tự - được huy động",
     "funded students. Most of that is state money distributed by a single statutory formula; the rest is local and federal money, raised and targeted separately.": "sinh viên được tài trợ. Phần lớn trong số đó là tiền nhà nước được phân bổ theo một công thức luật định duy nhất; phần còn lại là tiền của địa phương và liên bang, được huy động và nhắm mục tiêu riêng biệt.",
     "Local taxes - mostly voter-approved enrichment levies": "Thuế địa phương - chủ yếu là thuế làm giàu được cử tri phê duyệt",
-    "of all school revenue. State law caps how much a district may collect per student in enrichment levies, and Local Effort Assistance sends state money to districts whose property base cannot raise the statewide goal.": "trong toàn bộ doanh thu của trường. Luật tiểu bang giới hạn số tiền mà một học khu có thể thu từ thuế làm giàu cho mỗi học sinh và Hỗ trợ Nỗ lực Địa phương sẽ gửi tiền của tiểu bang đến các học khu có cơ sở tài sản không thể nâng cao mục tiêu toàn tiểu bang."
+    "of all school revenue. State law caps how much a district may collect per student in enrichment levies, and Local Effort Assistance sends state money to districts whose property base cannot raise the statewide goal.": "trong toàn bộ doanh thu của trường. Luật tiểu bang giới hạn số tiền mà một học khu có thể thu từ thuế làm giàu cho mỗi học sinh và Hỗ trợ Nỗ lực Địa phương sẽ gửi tiền của tiểu bang đến các học khu có cơ sở tài sản không thể nâng cao mục tiêu toàn tiểu bang.",
+    "Local property taxes, mostly voter-approved enrichment levies.": "Thuế tài sản địa phương, chủ yếu là thuế làm giàu đã được cử tri phê chuẩn.",
+    "Local property taxes - this school cannot levy one, so this is zero or close to it.": "Thuế tài sản địa phương - trường này không thể đánh thuế một khoản, vì vậy số tiền này bằng 0 hoặc gần bằng.",
+    "Fees, donations, interest, grants, payments from other districts and agencies, and transfers in.": "Phí, quyên góp, lãi suất, trợ cấp, thanh toán từ các quận và cơ quan khác và chuyển khoản.",
+    "Local property taxes, mostly voter-approved enrichment levies": "Thuế tài sản địa phương, chủ yếu là thuế làm giàu được cử tri phê duyệt",
+    "Fees, donations, interest, payments from other districts and agencies, and transfers in": "Phí, quyên góp, lãi, các khoản thanh toán từ các quận và cơ quan khác và chuyển khoản trong",
+    "Local support, non-tax (fees, donations, interest)": "Hỗ trợ địa phương, phi thuế (phí, quyên góp, lãi suất)",
+    "Local property taxes - nearly all of them voter-approved enrichment levies - raised": "Thuế tài sản địa phương - gần như tất cả đều là thuế làm giàu được cử tri chấp thuận - đã được tăng",
+    "Total funding = codes 1000-9000, general fund only. The four sources use fiscal.wa.gov's own groupings, so every figure matches a row on its district report: Local is code 1000 (“Local Taxes”), and Other is codes 2000 and 7000-9000 (“Other Revenues”).": "Tổng kinh phí = mã 1000-9000, chỉ quỹ chung. Bốn nguồn sử dụng các nhóm riêng của Financial.wa.gov nên mỗi số liệu khớp với một hàng trong báo cáo của quận: Địa phương là mã 1000 (“Thuế địa phương”) và Khác là mã 2000 và 7000-9000 (“Doanh thu khác”)."
   },
   "ru": {
     "- a flat per-student amount covering everything that is not staff pay.": "- фиксированная сумма на одного учащегося, покрывающая все, кроме заработной платы персонала.",
@@ -6637,7 +6661,15 @@
     "Local taxes - mostly voter-approved enrichment levies": "Местные налоги - в основном одобренные избирателями сборы на обогащение.",
     "Local revenue - most of it voter-approved enrichment levies, the rest fees, interest and the like - raised": "Местные доходы - большая часть которых состоит из одобренных избирателями сборов на обогащение, остальная часть - сборов, процентов и т.п. - собраны.",
     "of all school revenue. State law caps how much a district may collect per student in enrichment levies, and Local Effort Assistance sends state money to districts whose property base cannot raise the statewide goal.": "всех доходов школы. Закон штата ограничивает сумму, которую округ может собирать в виде дополнительных сборов с каждого учащегося, а программа Local Effort Assistance направляет деньги штата в округа, чья база собственности не может достичь цели в масштабе всего штата.",
-    "funded students. Most of that is state money distributed by a single statutory formula; the rest is local and federal money, raised and targeted separately.": "финансируемые студенты. Большая часть этой суммы — государственные деньги, распределяемые по единой установленной законом формуле; остальное — это местные и федеральные деньги, собранные и предназначенные отдельно."
+    "funded students. Most of that is state money distributed by a single statutory formula; the rest is local and federal money, raised and targeted separately.": "финансируемые студенты. Большая часть этой суммы — государственные деньги, распределяемые по единой установленной законом формуле; остальное — это местные и федеральные деньги, собранные и предназначенные отдельно.",
+    "Local property taxes, mostly voter-approved enrichment levies.": "Местные налоги на недвижимость, в основном одобренные избирателями сборы на обогащение.",
+    "Local property taxes - this school cannot levy one, so this is zero or close to it.": "Местный налог на недвижимость – эта школа не может его взимать, поэтому он равен нулю или близок к этому.",
+    "Fees, donations, interest, grants, payments from other districts and agencies, and transfers in.": "Сборы, пожертвования, проценты, гранты, платежи от других округов и агентств, а также переводы.",
+    "Local property taxes, mostly voter-approved enrichment levies": "Местные налоги на недвижимость, в основном одобренные избирателями сборы на обогащение.",
+    "Fees, donations, interest, payments from other districts and agencies, and transfers in": "Сборы, пожертвования, проценты, выплаты из других округов и агентств, а также переводы в",
+    "Local support, non-tax (fees, donations, interest)": "Местная поддержка, не связанная с налогами (сборы, пожертвования, проценты)",
+    "Local property taxes - nearly all of them voter-approved enrichment levies - raised": "Местные налоги на недвижимость (почти все из которых представляют собой одобренные избирателями сборы на обогащение) повышены",
+    "Total funding = codes 1000-9000, general fund only. The four sources use fiscal.wa.gov's own groupings, so every figure matches a row on its district report: Local is code 1000 (“Local Taxes”), and Other is codes 2000 and 7000-9000 (“Other Revenues”).": "Общее финансирование = коды 1000–9000, только общий фонд. Четыре источника используют собственные группы сайта Financial.wa.gov, поэтому каждая цифра соответствует строке в отчете по округу: «Местный» — это код 1000 («Местные налоги»), а «Другой» — коды 2000 и 7000–9000 («Прочие доходы»)."
   },
   "tl": {
     "- a flat per-student amount covering everything that is not staff pay.": "- isang flat na halagang bawat mag-aaral na sumasaklaw sa lahat ng hindi suweldo ng kawani.",
@@ -8297,7 +8329,15 @@
     "Local taxes - mostly voter-approved enrichment levies": "Mga lokal na buwis - karamihan ay inaprubahan ng mga botante sa pagpapayaman",
     "Local revenue - most of it voter-approved enrichment levies, the rest fees, interest and the like - raised": "Lokal na kita - karamihan sa mga singil sa pagpapayaman na inaprubahan ng botante, ang iba pang bayarin, interes at iba pa - itinaas",
     "funded students. Most of that is state money distributed by a single statutory formula; the rest is local and federal money, raised and targeted separately.": "pinondohan ng mga mag-aaral. Karamihan sa mga iyon ay pera ng estado na ipinamahagi sa pamamagitan ng isang solong pormula ayon sa batas; ang natitira ay lokal at pederal na pera, nakataas at naka-target nang hiwalay.",
-    "of all school revenue. State law caps how much a district may collect per student in enrichment levies, and Local Effort Assistance sends state money to districts whose property base cannot raise the statewide goal.": "ng lahat ng kita ng paaralan. Nililimitahan ng batas ng estado kung magkano ang maaaring makolekta ng isang distrito sa bawat mag-aaral sa mga buwis sa pagpapayaman, at ang Tulong sa Lokal na Pagsusumikap ay nagpapadala ng pera ng estado sa mga distrito na ang base ng ari-arian ay hindi makapagtaas ng layunin sa buong estado."
+    "of all school revenue. State law caps how much a district may collect per student in enrichment levies, and Local Effort Assistance sends state money to districts whose property base cannot raise the statewide goal.": "ng lahat ng kita ng paaralan. Nililimitahan ng batas ng estado kung magkano ang maaaring makolekta ng isang distrito sa bawat mag-aaral sa mga buwis sa pagpapayaman, at ang Tulong sa Lokal na Pagsusumikap ay nagpapadala ng pera ng estado sa mga distrito na ang base ng ari-arian ay hindi makapagtaas ng layunin sa buong estado.",
+    "Local property taxes, mostly voter-approved enrichment levies.": "Mga buwis sa lokal na ari-arian, karamihan ay inaprubahan ng mga botante sa pagpapayaman.",
+    "Local property taxes - this school cannot levy one, so this is zero or close to it.": "Lokal na buwis sa ari-arian - ang paaralang ito ay hindi maaaring magpataw ng isa, kaya ito ay zero o malapit dito.",
+    "Fees, donations, interest, grants, payments from other districts and agencies, and transfers in.": "Mga bayarin, donasyon, interes, grant, bayad mula sa ibang mga distrito at ahensya, at paglipat sa loob.",
+    "Local property taxes, mostly voter-approved enrichment levies": "Mga buwis sa lokal na ari-arian, karamihan ay inaprubahan ng mga botante sa pagpapayaman",
+    "Fees, donations, interest, payments from other districts and agencies, and transfers in": "Mga bayarin, donasyon, interes, bayad mula sa ibang mga distrito at ahensya, at paglipat sa",
+    "Local support, non-tax (fees, donations, interest)": "Lokal na suporta, hindi buwis (bayad, donasyon, interes)",
+    "Local property taxes - nearly all of them voter-approved enrichment levies - raised": "Ang mga buwis sa lokal na ari-arian - halos lahat ng mga ito ay inaprubahan ng botante sa pagpapayaman - itinaas",
+    "Total funding = codes 1000-9000, general fund only. The four sources use fiscal.wa.gov's own groupings, so every figure matches a row on its district report: Local is code 1000 (“Local Taxes”), and Other is codes 2000 and 7000-9000 (“Other Revenues”).": "Kabuuang pagpopondo = mga code 1000-9000, pangkalahatang pondo lamang. Ang apat na pinagmumulan ay gumagamit ng sariling pagpapangkat ng fiscal.wa.gov, kaya ang bawat figure ay tumutugma sa isang hilera sa ulat ng distrito nito: Ang lokal ay code 1000 (“Mga Lokal na Buwis”), at Ang Iba ay mga code 2000 at 7000-9000 (“Iba Pang Kita”)."
   },
   "ko": {
     "- a flat per-student amount covering everything that is not staff pay.": "- 교직원 급여가 아닌 모든 금액을 포함하는 학생당 정액 금액입니다.",
@@ -9957,6 +9997,14 @@
     "of all school revenue. State law caps how much a district may collect per student in enrichment levies, and Local Effort Assistance sends state money to districts whose property base cannot raise the statewide goal.": "모든 학교 수입의 주법은 교육구가 학생당 농축 부담금을 징수할 수 있는 금액을 제한하고 있으며, 지역 노력 지원은 재산 기반이 주 전체 목표를 달성할 수 없는 교육구에 주 자금을 보냅니다.",
     "funded students. Most of that is state money distributed by a single statutory formula; the rest is local and federal money, raised and targeted separately.": "자금을 지원받은 학생. 그 중 대부분은 단일 법정 공식에 따라 분배되는 주 자금입니다. 나머지는 지역 및 연방 자금으로 별도로 모금되고 목표가 지정됩니다.",
     "Local taxes - mostly voter-approved enrichment levies": "지방세 - 대부분 유권자가 승인한 농축세",
-    "Local revenue - most of it voter-approved enrichment levies, the rest fees, interest and the like - raised": "지역 수입 - 대부분 유권자가 승인한 농축세, 나머지 수수료, 이자 등이 인상됩니다."
+    "Local revenue - most of it voter-approved enrichment levies, the rest fees, interest and the like - raised": "지역 수입 - 대부분 유권자가 승인한 농축세, 나머지 수수료, 이자 등이 인상됩니다.",
+    "Local property taxes, mostly voter-approved enrichment levies.": "지방 재산세는 대부분 유권자가 승인한 농축세입니다.",
+    "Local property taxes - this school cannot levy one, so this is zero or close to it.": "지방 재산세 - 이 학교에서는 부과할 수 없으므로 이 금액은 0이거나 그에 가깝습니다.",
+    "Fees, donations, interest, grants, payments from other districts and agencies, and transfers in.": "수수료, 기부금, 이자, 보조금, 다른 지구 및 기관으로부터의 지불 및 이전.",
+    "Local property taxes, mostly voter-approved enrichment levies": "지방 재산세, 대부분 유권자가 승인한 농축세",
+    "Fees, donations, interest, payments from other districts and agencies, and transfers in": "수수료, 기부금, 이자, 다른 지역 및 기관으로부터의 지불 및 이전",
+    "Local support, non-tax (fees, donations, interest)": "현지지원, 비과세(수수료, 기부금, 이자)",
+    "Local property taxes - nearly all of them voter-approved enrichment levies - raised": "지방 재산세(거의 대부분이 유권자가 승인한 농축세) 인상",
+    "Total funding = codes 1000-9000, general fund only. The four sources use fiscal.wa.gov's own groupings, so every figure matches a row on its district report: Local is code 1000 (“Local Taxes”), and Other is codes 2000 and 7000-9000 (“Other Revenues”).": "총 자금 = 코드 1000-9000, 일반 자금만 해당. 네 가지 소스는 fiscal.wa.gov의 자체 그룹을 사용하므로 모든 수치는 지역 보고서의 행과 일치합니다. Local은 코드 1000(“지방세”)이고 Other는 코드 2000 및 7000-9000(“기타 수익”)입니다."
   }
 }

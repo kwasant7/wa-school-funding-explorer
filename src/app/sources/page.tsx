@@ -65,7 +65,7 @@ const F196_FILES: [string, string][] = [
 
 const REVENUE_CODES: [string, string, string][] = [
   ['1000', 'Local taxes (levies)', 'Local'],
-  ['2000', 'Local support, non-tax', 'Local'],
+  ['2000', 'Local support, non-tax (fees, donations, interest)', 'Other'],
   ['3000', 'State, general purpose (apportionment)', 'State'],
   ['4000', 'State, special purpose (categorical programs)', 'State'],
   ['5000', 'Federal, general purpose', 'Federal'],
@@ -362,9 +362,11 @@ export default function SourcesPage() {
           <div className="card p-5 text-sm text-ink-secondary space-y-2">
             <h3 className="text-base font-bold text-ink">Processing rules</h3>
             <p>
-              Total funding = codes 1000-9000, general fund only. Code 9000
-              is included in “Other” so totals reconcile to OSPI&apos;s full
-              general-fund revenue and other-financing-source presentation.
+              Total funding = codes 1000-9000, general fund only. The four
+              sources use fiscal.wa.gov&apos;s own groupings, so every figure
+              matches a row on its district report: Local is code 1000
+              (&ldquo;Local Taxes&rdquo;), and Other is codes 2000 and
+              7000-9000 (&ldquo;Other Revenues&rdquo;).
             </p>
             <p>
               Finances, October headcount, and funding FTE join on the 5-digit

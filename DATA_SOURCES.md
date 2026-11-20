@@ -102,7 +102,7 @@ them as follows (fund 1 = general fund):
 | F-196 rollup code | Meaning | Our category |
 |---|---|---|
 | 1000 | Local taxes (levies) | Local |
-| 2000 | Local support, non-tax | Local |
+| 2000 | Local support, non-tax (fees, donations, interest) | Other |
 | 3000 | State, general purpose (apportionment) | State |
 | 4000 | State, special purpose (categoricals) | State |
 | 5000 | Federal, general purpose | Federal |
@@ -114,6 +114,13 @@ them as follows (fund 1 = general fund):
 Total funding = codes 1000–9000. Code 9000 is included in “Other” so the
 dashboard reconciles to OSPI's complete general-fund revenue and other
 financing-source presentation.
+
+The four categories copy fiscal.wa.gov's K12FinanceDistrict report
+(https://fiscal.wa.gov/K12/K12FinanceDistrict) so each figure matches a row
+there: Local = 1000 only ("Local Taxes", footnote 7), Other = 2000 + 7000 +
+8000 + 9000 ("Other Revenues", footnote 10). Code 2000 sat in Local until
+2026-11; it moved because fiscal.wa.gov counts it as Other. Checked to the
+dollar for Aberdeen and Crescent 2024-25.
 
 Cross-check totals against OSPI's own Financial Reporting Summary
 (district-by-district revenue tables):

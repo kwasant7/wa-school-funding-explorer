@@ -21,7 +21,7 @@ const SEGMENTS: { key: keyof SourceSlices; label: string; color: string; blurb: 
     key: 'local',
     label: 'Local',
     color: '#1baf7a',
-    blurb: 'Voter-approved enrichment levies and other local revenue',
+    blurb: 'Local property taxes, mostly voter-approved enrichment levies',
   },
   {
     key: 'federal',
@@ -33,7 +33,7 @@ const SEGMENTS: { key: keyof SourceSlices; label: string; color: string; blurb: 
     key: 'other',
     label: 'Other',
     color: '#008300',
-    blurb: 'Payments from other districts and agencies',
+    blurb: 'Fees, donations, interest, payments from other districts and agencies, and transfers in',
   },
 ];
 

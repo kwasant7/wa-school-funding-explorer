@@ -41,8 +41,8 @@ export default function LeviesAndLeaPage() {
       path="/school-levies-and-lea/"
       lede={
         <>
-          Local revenue - most of it voter-approved enrichment levies, the rest
-          fees, interest and the like - raised{' '}
+          Local property taxes - nearly all of them voter-approved enrichment
+          levies - raised{' '}
           <strong className="text-ink">{fmtMoney(rev.local)}</strong> in {LATEST}
           , {pct(rev.local, rev.total)} of all school revenue. State law caps how
           much a district may collect per student in enrichment levies, and Local
