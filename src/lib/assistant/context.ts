@@ -23,12 +23,18 @@ import { assistantSnapshot } from '@/lib/assistant/store';
 import { LATEST, YEARS, yearData, districtCount } from '@/lib/data';
 import { oversightFor } from '@/data/oversight';
 import { fundBalanceChange } from '@/lib/reserves';
+import { groupStatus, withheldByOspi } from '@/lib/privacy';
 
 const MAX_HEADINGS = 8;
 const MAX_EXCERPT_CHARS = 1_200;
 
 function pct(part: number, whole: number): number {
   return whole > 0 ? Math.round((1000 * part) / whole) / 10 : 0;
+}
+
+/** A student-group share, or null where OSPI's small-group rules withhold it (src/lib/privacy.ts). */
+function groupPct(part: number, whole: number, withheld = false): number | null {
+  return groupStatus(part, whole, withheld) === 'ok' ? pct(part, whole) : null;
 }
 
 /**
@@ -101,11 +107,11 @@ export function districtContext(
     })(),
     reserveRatio: record.reserveRatio,
     demographics: {
-      lowIncomePct: pct(record.demo.lowIncome, record.enrollment),
-      ellPct: pct(record.demo.ell, record.enrollment),
-      spedPct: pct(record.demo.sped, record.enrollment),
-      homelessPct: pct(record.demo.homeless, record.enrollment),
-      highlyCapablePct: pct(record.demo.highlyCapable, record.enrollment),
+      lowIncomePct: groupPct(record.demo.lowIncome, record.enrollment, withheldByOspi(record.demo, 'lowIncome')),
+      ellPct: groupPct(record.demo.ell, record.enrollment),
+      spedPct: groupPct(record.demo.sped, record.enrollment),
+      homelessPct: groupPct(record.demo.homeless, record.enrollment),
+      highlyCapablePct: groupPct(record.demo.highlyCapable, record.enrollment),
     },
     oversight: oversight ? `${oversight.level}: ${oversight.detail}` : null,
   };

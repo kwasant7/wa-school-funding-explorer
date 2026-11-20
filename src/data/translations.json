@@ -1701,7 +1701,11 @@
     "Special ed costs above their funding; operating funding exceeded its cost": "Costos de educación especial por encima de su financiación; La financiación operativa superó su coste.",
     "Special ed and transport costs above their funding; operating funding exceeded its cost": "Costos de educación especial y transporte por encima de su financiación; La financiación operativa superó su coste.",
     "That is more than the shortfall.": "Eso es más que el déficit.",
-    "Transport costs above their funding; operating funding exceeded its cost": "Costos de transporte por encima de su financiación; La financiación operativa superó su coste."
+    "Transport costs above their funding; operating funding exceeded its cost": "Costos de transporte por encima de su financiación; La financiación operativa superó su coste.",
+    "faced a negative general-fund balance, so its budget now runs under OSPI's binding conditions - fund-balance targets and regular state reviews.": "enfrentó un saldo negativo del fondo general, por lo que su presupuesto ahora se ejecuta bajo las condiciones vinculantes de OSPI: objetivos de equilibrio de fondos y revisiones estatales periódicas.",
+    "Fewer than 10": "Menos de 10",
+    "Not shown": "No mostrado",
+    "Over 95%": "Más del 95%"
   },
   "zh": {
     "- a flat per-student amount covering everything that is not staff pay.": "- 每个学生的固定金额，涵盖员工工资以外的所有费用。",
@@ -3405,7 +3409,11 @@
     "Special ed costs above their funding; operating funding exceeded its cost": "特殊教育费用超出其资助；运营资金超过其成本",
     "Special ed and transport costs above their funding; operating funding exceeded its cost": "特殊教育和交通费用超出其资助；运营资金超过其成本",
     "That is more than the shortfall.": "这比缺口还多。",
-    "Transport costs above their funding; operating funding exceeded its cost": "运输成本高于其资金；运营资金超过其成本"
+    "Transport costs above their funding; operating funding exceeded its cost": "运输成本高于其资金；运营资金超过其成本",
+    "faced a negative general-fund balance, so its budget now runs under OSPI's binding conditions - fund-balance targets and regular state reviews.": "面临一般基金负余额，因此其预算现在按照 OSPI 的约束条件运行 - 基金余额目标和定期国家审查。",
+    "Fewer than 10": "少于10个",
+    "Not shown": "未显示",
+    "Over 95%": "95%以上"
   },
   "vi": {
     "- a flat per-student amount covering everything that is not staff pay.": "- một khoản tiền cố định cho mỗi học sinh bao gồm mọi thứ không phải là lương của nhân viên.",
@@ -5109,7 +5117,11 @@
     "Special ed costs above their funding; operating funding exceeded its cost": "Chi phí giáo dục đặc biệt cao hơn nguồn tài trợ của họ; kinh phí hoạt động vượt quá chi phí của nó",
     "Special ed and transport costs above their funding; operating funding exceeded its cost": "Chi phí giáo dục và vận chuyển đặc biệt cao hơn mức tài trợ của họ; kinh phí hoạt động vượt quá chi phí của nó",
     "That is more than the shortfall.": "Đó là nhiều hơn sự thiếu hụt.",
-    "Transport costs above their funding; operating funding exceeded its cost": "Chi phí vận chuyển cao hơn kinh phí của họ; kinh phí hoạt động vượt quá chi phí của nó"
+    "Transport costs above their funding; operating funding exceeded its cost": "Chi phí vận chuyển cao hơn kinh phí của họ; kinh phí hoạt động vượt quá chi phí của nó",
+    "faced a negative general-fund balance, so its budget now runs under OSPI's binding conditions - fund-balance targets and regular state reviews.": "phải đối mặt với số dư quỹ chung âm, vì vậy ngân sách của nó hiện đang hoạt động theo các điều kiện ràng buộc của OSPI - các mục tiêu cân bằng quỹ và các đợt đánh giá thường xuyên của tiểu bang.",
+    "Fewer than 10": "Ít hơn 10",
+    "Not shown": "Không hiển thị",
+    "Over 95%": "Trên 95%"
   },
   "ru": {
     "- a flat per-student amount covering everything that is not staff pay.": "- фиксированная сумма на одного учащегося, покрывающая все, кроме заработной платы персонала.",
@@ -6813,7 +6825,11 @@
     "Special ed costs above their funding; operating funding exceeded its cost": "Затраты на специальное обучение превышают их финансирование; операционное финансирование превысило его стоимость",
     "Special ed and transport costs above their funding; operating funding exceeded its cost": "Специальные расходы на обучение и транспорт превышают их финансирование; операционное финансирование превысило его стоимость",
     "That is more than the shortfall.": "Это больше, чем дефицит.",
-    "Transport costs above their funding; operating funding exceeded its cost": "Транспортные расходы превышают их финансирование; операционное финансирование превысило его стоимость"
+    "Transport costs above their funding; operating funding exceeded its cost": "Транспортные расходы превышают их финансирование; операционное финансирование превысило его стоимость",
+    "faced a negative general-fund balance, so its budget now runs under OSPI's binding conditions - fund-balance targets and regular state reviews.": "столкнулся с отрицательным общим балансом фондов, поэтому его бюджет теперь подчиняется обязательным условиям OSPI - целевым показателям баланса фондов и регулярным государственным проверкам.",
+    "Fewer than 10": "Менее 10",
+    "Not shown": "Не показано",
+    "Over 95%": "Более 95%"
   },
   "tl": {
     "- a flat per-student amount covering everything that is not staff pay.": "- isang flat na halagang bawat mag-aaral na sumasaklaw sa lahat ng hindi suweldo ng kawani.",
@@ -8517,7 +8533,11 @@
     "Special ed costs above their funding; operating funding exceeded its cost": "Espesyal na ed gastos sa itaas ng kanilang pagpopondo; ang pagpopondo sa pagpapatakbo ay lumampas sa gastos nito",
     "Special ed and transport costs above their funding; operating funding exceeded its cost": "Espesyal na ed at mga gastos sa transportasyon sa itaas ng kanilang pagpopondo; ang pagpopondo sa pagpapatakbo ay lumampas sa gastos nito",
     "That is more than the shortfall.": "Iyan ay higit pa sa kakulangan.",
-    "Transport costs above their funding; operating funding exceeded its cost": "Ang mga gastos sa transportasyon ay higit sa kanilang pondo; ang pagpopondo sa pagpapatakbo ay lumampas sa gastos nito"
+    "Transport costs above their funding; operating funding exceeded its cost": "Ang mga gastos sa transportasyon ay higit sa kanilang pondo; ang pagpopondo sa pagpapatakbo ay lumampas sa gastos nito",
+    "faced a negative general-fund balance, so its budget now runs under OSPI's binding conditions - fund-balance targets and regular state reviews.": "humarap sa negatibong balanse sa pangkalahatang pondo, kaya ang badyet nito ay tumatakbo na ngayon sa ilalim ng umiiral na mga kondisyon ng OSPI - mga target sa balanse ng pondo at regular na pagsusuri ng estado.",
+    "Fewer than 10": "Mas kaunti sa 10",
+    "Not shown": "Hindi ipinakita",
+    "Over 95%": "Higit sa 95%"
   },
   "ko": {
     "- a flat per-student amount covering everything that is not staff pay.": "- 교직원 급여가 아닌 모든 금액을 포함하는 학생당 정액 금액입니다.",
@@ -10221,6 +10241,10 @@
     "Special ed costs above their funding; operating funding exceeded its cost": "자금을 초과하는 특수 교육 비용; 운영 자금이 비용을 초과했습니다.",
     "Special ed and transport costs above their funding; operating funding exceeded its cost": "자금을 초과하는 특수교육 및 교통비; 운영 자금이 비용을 초과했습니다.",
     "That is more than the shortfall.": "그것은 부족 이상입니다.",
-    "Transport costs above their funding; operating funding exceeded its cost": "자금 조달을 초과하는 운송 비용 운영 자금이 비용을 초과했습니다."
+    "Transport costs above their funding; operating funding exceeded its cost": "자금 조달을 초과하는 운송 비용 운영 자금이 비용을 초과했습니다.",
+    "faced a negative general-fund balance, so its budget now runs under OSPI's binding conditions - fund-balance targets and regular state reviews.": "일반 기금 잔액이 마이너스에 직면했기 때문에 예산은 이제 OSPI의 구속력 있는 조건인 기금 잔액 목표 및 정기적인 주 검토에 따라 운영됩니다.",
+    "Fewer than 10": "10개 미만",
+    "Not shown": "표시되지 않음",
+    "Over 95%": "95% 이상"
   }
 }

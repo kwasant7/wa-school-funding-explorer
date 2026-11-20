@@ -1,6 +1,7 @@
 import { districtSeries, yearData, LATEST, YEARS } from '@/lib/data';
 import { metricsFor, percentileOf, type Metrics } from '@/lib/diagnosis';
 import { fmtMoney, fmtMoneyFull, fmtInt } from '@/lib/format';
+import { groupCount, groupShare, withheldByOspi } from '@/lib/privacy';
 import { big3For, big3Gap } from '@/lib/big3';
 import districtsJson from '@/data/districts.json';
 
@@ -65,6 +66,9 @@ export type DemographicRow = {
   reported: boolean;
   districtRate: number;
   statewideRate: number;
+  /** The count and share as displayed, after OSPI's small-group rules. */
+  countText: string;
+  rateText: string;
 };
 
 export type DistrictProfile = {
@@ -117,21 +121,23 @@ function demographics(m: Metrics): DemographicRow[] {
     { lowIncome: 0, ell: 0, sped: 0, highlyCapable: 0, homeless: 0, migrant: 0 }
   );
 
-  const rows: [string, number, number][] = [
-    ['Low income', d.lowIncome, sw.lowIncome],
-    ['English learners', d.ell, sw.ell],
-    ['Students with disabilities', d.sped, sw.sped],
-    ['Highly capable', d.highlyCapable, sw.highlyCapable],
-    ['Experiencing homelessness', d.homeless, sw.homeless],
-    ['Migrant', d.migrant, sw.migrant],
+  const rows: [string, number, number, boolean][] = [
+    ['Low income', d.lowIncome, sw.lowIncome, withheldByOspi(d, 'lowIncome')],
+    ['English learners', d.ell, sw.ell, false],
+    ['Students with disabilities', d.sped, sw.sped, false],
+    ['Highly capable', d.highlyCapable, sw.highlyCapable, false],
+    ['Experiencing homelessness', d.homeless, sw.homeless, false],
+    ['Migrant', d.migrant, sw.migrant, false],
   ];
 
-  return rows.map(([label, count, swCount]) => ({
+  return rows.map(([label, count, swCount, hidden]) => ({
     label,
     count,
     reported: !(label === 'Students with disabilities' && count === 0 && (m.alloc?.specialEd ?? 0) > 0),
     districtRate: (100 * count) / head,
     statewideRate: (100 * swCount) / swHead,
+    countText: groupCount(count, head, hidden),
+    rateText: groupShare(count, head, 1, hidden),
   }));
 }
 

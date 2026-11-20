@@ -487,6 +487,14 @@ async function buildYear({ label, enrollmentId, revenueFile, expenditureFile, re
         homeless: num(row.homeless),
         migrant: num(row.migrant),
         highlyCapable: num(row.highly_capable),
+        // OSPI's ">95%" top-range rule blanks low_income AND non_low_income to
+        // 0 and names the rule in `dat`. Reading the 0 as a count showed
+        // Mount Adams 2023-24 as 0% low income instead of "over 95%", so the
+        // suppressed group is listed here and the pages say so.
+        suppressed:
+          /95%/.test(row.dat || '') && num(row.low_income) === 0 && num(row.non_low_income) === 0
+            ? ['lowIncome']
+            : [],
       },
       rev: {
         local: roundedLocal,

@@ -141,11 +141,12 @@ export type ContextDistrict = {
   fundBalanceChange: number | null;
   reserveRatio: number | null;
   demographics: {
-    lowIncomePct: number;
-    ellPct: number;
-    spedPct: number;
-    homelessPct: number;
-    highlyCapablePct: number;
+    /** Null where OSPI's small-group rules withhold the share. */
+    lowIncomePct: number | null;
+    ellPct: number | null;
+    spedPct: number | null;
+    homelessPct: number | null;
+    highlyCapablePct: number | null;
   };
   oversight: string | null;
 };

@@ -25,6 +25,8 @@ export type District = {
     homeless: number;
     migrant: number;
     highlyCapable: number;
+    /** Groups OSPI withheld under its ">95%" rule; their count reads 0 but is not. */
+    suppressed: string[];
   };
   rev: {
     local: number;

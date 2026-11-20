@@ -4,6 +4,7 @@ import { useState } from 'react';
 import type { District } from '@/lib/data';
 import allocationData from '@/data/allocation.json';
 import { fmtInt, fmtMoney, fmtMoneyFull, pctLabel } from '@/lib/format';
+import { groupShare } from '@/lib/privacy';
 import { MSOC, PROTOTYPES } from '@/lib/prototypical-model';
 
 type Allocation = (typeof allocationData.districts)[keyof typeof allocationData.districts];
@@ -271,11 +272,11 @@ const STEPS: Step[] = [
         const needs = a.specialEd + a.bilingual + a.learningAssistance + a.highlyCapable;
         return <Stat big={fmtMoney(needs)} cap="special ed, multilingual, LAP, highly capable" />;
       }
-      const pct = (n: number) => Math.round((n / d.enrollment) * 100);
+      const pct = (n: number, hidden = false) => groupShare(n, d.enrollment, 0, hidden);
       const chips = [
-        [`${pct(d.demo.sped)}%`, 'special ed'],
-        [`${pct(d.demo.ell)}%`, 'multilingual'],
-        [`${pct(d.demo.lowIncome)}%`, 'low-income'],
+        [pct(d.demo.sped), 'special ed'],
+        [pct(d.demo.ell), 'multilingual'],
+        [pct(d.demo.lowIncome, d.demo.suppressed.includes('lowIncome')), 'low-income'],
       ];
       return (
         <div className="flex flex-wrap gap-2">

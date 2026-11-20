@@ -30,7 +30,9 @@ const SOURCE_DIRS = ['src/app', 'src/components'];
   sat in English on every translated page. Naming them `label` and
   `description` puts them in TEXT_PROPERTIES and fixes that.
 */
-const SOURCE_FILES = ['src/lib/diagnosis.ts', 'src/lib/prototypical-model.ts'];
+// privacy.ts holds the stand-ins ("Fewer than 10", "Over 95%") that replace
+// small student-group counts on the district page and the explorer.
+const SOURCE_FILES = ['src/lib/diagnosis.ts', 'src/lib/prototypical-model.ts', 'src/lib/privacy.ts'];
 const OUTPUT = path.join(ROOT, 'src/data/translations.json');
 const LANGUAGES = {
   es: 'es',

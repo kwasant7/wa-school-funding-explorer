@@ -7,6 +7,7 @@ import { District, LATEST, YEARS, districtCount, districtSeries, isCharter, stat
 import StatTile from '@/components/StatTile';
 import SourceShareBar from '@/components/charts/SourceShareBar';
 import CompareBar from '@/components/charts/CompareBar';
+import { groupShare, groupStatus } from '@/lib/privacy';
 import TrendChart from '@/components/charts/TrendChart';
 import RevenueTrendChart from '@/components/charts/RevenueTrendChart';
 import NeedVsFundingChart, { NeedPoint } from '@/components/charts/NeedVsFundingChart';
@@ -871,9 +872,17 @@ function DistrictDetail({
   const data = yearData(year);
   const s = data.statewide;
 
+  type DemoKey = Exclude<keyof District['demo'], 'suppressed'>;
   const demoPct = (n: number) => (100 * n) / d.enrollment;
-  const statePct = (key: keyof District['demo']) =>
+  const statePct = (key: DemoKey) =>
     (100 * data.districts.reduce((sum, x) => sum + x.demo[key], 0)) / s.enrollment;
+  // OSPI's small-group rules (src/lib/privacy.ts), and its own ">95%" blanks.
+  const withheld = (key: DemoKey) => {
+    const hidden = d.demo.suppressed.includes(key);
+    return groupStatus(d.demo[key], d.enrollment, hidden) === 'ok'
+      ? undefined
+      : groupShare(d.demo[key], d.enrollment, 0, hidden);
+  };
 
   // Charter and compact schools that opened after 2019-20 have a shorter
   // series, so label the charts with the first year this district reported.
@@ -923,7 +932,9 @@ function DistrictDetail({
           code: x.code,
           name: x.name,
           perStudent: x.rev.state / x.fundingEnrollment,
-          lowIncome: x.demo.lowIncome / x.enrollment,
+          // OSPI blanked these to 0 under its ">95%" rule; 0.96 keeps the point
+          // at the edge where it belongs instead of at zero.
+          lowIncome: x.demo.suppressed.includes('lowIncome') ? 0.96 : x.demo.lowIncome / x.enrollment,
           ell: x.demo.ell / x.enrollment,
           sped: x.demo.sped / x.enrollment,
           enrollment: x.enrollment,
@@ -1127,12 +1138,12 @@ function DistrictDetail({
             Share of enrolled students · dark tick = state average
           </p>
           <div className="space-y-4">
-            <CompareBar label="Low income" value={demoPct(d.demo.lowIncome)} reference={statePct('lowIncome')} />
-            <CompareBar label="English language learners" value={demoPct(d.demo.ell)} reference={statePct('ell')} />
-            <CompareBar label="Students with disabilities" value={demoPct(d.demo.sped)} reference={statePct('sped')} />
-            <CompareBar label="Highly capable" value={demoPct(d.demo.highlyCapable)} reference={statePct('highlyCapable')} />
-            <CompareBar label="Experiencing homelessness" value={demoPct(d.demo.homeless)} reference={statePct('homeless')} />
-            <CompareBar label="Migrant" value={demoPct(d.demo.migrant)} reference={statePct('migrant')} />
+            <CompareBar label="Low income" value={demoPct(d.demo.lowIncome)} reference={statePct('lowIncome')} withheld={withheld('lowIncome')} />
+            <CompareBar label="English language learners" value={demoPct(d.demo.ell)} reference={statePct('ell')} withheld={withheld('ell')} />
+            <CompareBar label="Students with disabilities" value={demoPct(d.demo.sped)} reference={statePct('sped')} withheld={withheld('sped')} />
+            <CompareBar label="Highly capable" value={demoPct(d.demo.highlyCapable)} reference={statePct('highlyCapable')} withheld={withheld('highlyCapable')} />
+            <CompareBar label="Experiencing homelessness" value={demoPct(d.demo.homeless)} reference={statePct('homeless')} withheld={withheld('homeless')} />
+            <CompareBar label="Migrant" value={demoPct(d.demo.migrant)} reference={statePct('migrant')} withheld={withheld('migrant')} />
           </div>
         </div>
       </div>

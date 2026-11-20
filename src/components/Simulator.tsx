@@ -8,6 +8,7 @@ import spendingData from '@/data/spending.json';
 import allocationData from '@/data/allocation.json';
 import DistrictCombobox from '@/components/DistrictCombobox';
 import { fmtInt, fmtMoney, fmtMoneyFull, fmtSignedMoney } from '@/lib/format';
+import { groupCount, withheldByOspi } from '@/lib/privacy';
 import { big3For } from '@/lib/big3';
 import {
   BASELINE_TRANSPORTATION_PER_STUDENT,
@@ -1140,7 +1141,7 @@ function LeverBar({
           <div className="w-28 shrink-0 text-right">
             <p className="font-bold leading-tight" data-no-translate>{name}</p>
             <p className="text-[11px] text-ink-muted">
-              {fmtInt(district.record.demo.sped)} students served
+              {groupCount(district.record.demo.sped, district.record.enrollment)} students served
             </p>
           </div>
           <div className="relative flex-1 h-16 pt-6">
@@ -1236,12 +1237,12 @@ function LeverBar({
     povertyBonus: {
       base: 0,
       now: values.povertyBonus,
-      who: `${fmtInt(district.record.demo.lowIncome)} low-income students`,
+      who: `${groupCount(district.record.demo.lowIncome, district.record.enrollment, withheldByOspi(district.record.demo, 'lowIncome'))} low-income students`,
     },
     ellWeight: {
       base: BASELINE_ELL_PER_STUDENT,
       now: BASELINE_ELL_PER_STUDENT * values.ellWeight,
-      who: `${fmtInt(district.record.demo.ell)} English learners`,
+      who: `${groupCount(district.record.demo.ell, district.record.enrollment)} English learners`,
     },
     msoc: {
       base: 1_614,

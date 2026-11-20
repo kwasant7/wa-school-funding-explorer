@@ -480,10 +480,10 @@ export default function DistrictPage({ params }: Params) {
                     {d.label}
                   </th>
                   <td className="py-2 pr-4 text-right tabular-nums">
-                    {d.reported ? fmtInt(d.count) : 'Not reported'}
+                    {d.reported ? d.countText : 'Not reported'}
                   </td>
                   <td className="py-2 pr-4 text-right tabular-nums">
-                    {d.reported ? `${d.districtRate.toFixed(1)}%` : '-'}
+                    {d.reported ? d.rateText : '-'}
                   </td>
                   <td className="py-2 text-right tabular-nums text-ink-secondary">
                     {d.statewideRate.toFixed(1)}%

@@ -27,6 +27,7 @@ import {
 } from '@/lib/diagnosis';
 import { BIG3_KEYS, big3Totals, type Big3Key } from '@/lib/big3';
 import { fmtInt, fmtMoney, fmtMoneyFull } from '@/lib/format';
+import { groupStatus, withheldByOspi } from '@/lib/privacy';
 import { balanceGapIsMaterial, fundBalanceChange, RESERVE_MARGINAL_NEGATIVE_PCT, reserveDays } from '@/lib/reserves';
 import { isSchoolDistrict } from '@/lib/entity';
 
@@ -227,6 +228,15 @@ function citeFor(issue: Issue): string {
   return issue.refs.map((ref) => ref.bill).join('  ·  ');
 }
 
+/** The low-income tile, after OSPI's small-group rules (src/lib/privacy.ts). */
+function lowIncomeTile(count: number, total: number, hidden: boolean): Tile {
+  const status = groupStatus(count, total, hidden);
+  if (status === 'high') return { label: 'Low-income students', value: 'Over 95%', note: 'Exact count not shown' };
+  if (status === 'small') return { label: 'Low-income students', value: 'Fewer than 10', note: 'Exact count not shown' };
+  if (status === 'complement') return { label: 'Low-income students', value: 'Not shown', note: 'Too few students outside the group to show' };
+  return { label: 'Low-income students', value: `${Math.round((100 * count) / Math.max(total, 1))}%`, note: `${fmtInt(count)} students` };
+}
+
 export function onePageFor(code: string): OnePage | null {
   const brief = briefFor(code);
   const metrics = metricsFor(code);
@@ -262,11 +272,7 @@ export function onePageFor(code: string): OnePage | null {
       value: fmtMoneyFull(Math.round(record.perPupil)),
       note: `Statewide median ${fmtMoneyFull(Math.round(medianNow))}`,
     },
-    {
-      label: 'Low-income students',
-      value: `${Math.round(metrics.lowIncomeRate)}%`,
-      note: `${fmtInt(record.demo.lowIncome)} students`,
-    },
+    lowIncomeTile(record.demo.lowIncome, metrics.headcount, withheldByOspi(record.demo, 'lowIncome')),
     // Revenue booked to the dollar to match spending, with no fund balance
     // reported, is an accounting convention rather than a balanced budget
     // (Paschal Sherman), so it is not shown as a surplus.

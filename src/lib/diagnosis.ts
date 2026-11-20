@@ -33,6 +33,7 @@ import levyJson from '@/data/levy.json';
 import baselineJson from '@/data/enrollment-baseline.json';
 import { oversightFor, type Oversight } from '@/data/oversight';
 import { LEVY_ELECTIONS_THROUGH } from '@/lib/levy-coverage';
+import { groupStatus, withheldByOspi } from '@/lib/privacy';
 import { fmtMoney, fmtMoneyFull, fmtInt, alignPair } from '@/lib/format';
 import { big3For, big3Gap, big3Totals, type Big3Record } from '@/lib/big3';
 import { PROTOTYPES } from '@/lib/prototypical-model';
@@ -605,7 +606,12 @@ const oversightIssue: Builder = (m) => {
     title: enhanced ? 'The state took over the budget' : 'The state is watching the budget',
     fact: enhanced
       ? `${m.name} could not fix its budget on its own, so the state sent in someone to help run it.`
-      : `${m.name} could not pass a balanced budget, so the state stepped in. ${m.oversight.detail}`,
+      : // OSPI's letters: most of these boards adopted a budget showing a
+        // negative balance and asked OSPI to approve it, which it did under
+        // binding conditions (RCW 28A.505.110); Shelton ended a year negative.
+        // "Could not pass a balanced budget, so the state stepped in" said
+        // otherwise for all nine.
+        `${m.name} faced a negative general-fund balance, so its budget now runs under OSPI's binding conditions - fund-balance targets and regular state reviews. ${m.oversight.detail}`,
     visual: {
       kind: 'steps',
       steps: ['Healthy', 'Warning', 'State steps in', 'State takes over'],
@@ -896,10 +902,10 @@ const ellIssue: Builder = (m) => {
   return {
     id: 'ell',
     title: 'Many students are still learning English',
-    fact: `${fmtInt(m.record.demo.ell)} students here are learning English. State money for them ends two years after a student passes the English proficiency test, even when new students keep arriving.`,
+    fact: `${groupStatus(m.record.demo.ell, m.headcount) === 'ok' ? `${fmtInt(m.record.demo.ell)} students here are` : 'A large share of students here are'} learning English. State money for them ends two years after a student passes the English proficiency test, even when new students keep arriving.`,
     visual: {
       kind: 'dots',
-      filled: perHundred(m.ellRate),
+      filled: Math.min(perHundred(m.ellRate), 95),
       label: 'students here',
       compare: perHundred(STATEWIDE.ellRate),
       compareLabel: 'statewide',
@@ -926,10 +932,11 @@ const lowIncomeIssue: Builder = (m) => {
       correction - LAP is small next to what the need costs, and basic education
       itself is not adjusted for poverty at all.
     */
-    fact: `${fmtInt(m.record.demo.lowIncome)} students here are low income, which means more counselors, meals and family support. The state sends ${m.lapPerLowIncome == null ? 'only a few hundred dollars' : `about ${fmtMoneyFull(Math.round(m.lapPerLowIncome))}`} per low-income student for that, and the basic education formula behind everything else is not adjusted for poverty at all.`,
+    fact: `${{ ok: `${fmtInt(m.record.demo.lowIncome)} students here are`, small: 'Most students here are', complement: 'Nearly every student here is', high: 'Nearly every student here is' }[groupStatus(m.record.demo.lowIncome, m.headcount, withheldByOspi(m.record.demo, 'lowIncome'))]} low income, which means more counselors, meals and family support. The state sends ${m.lapPerLowIncome == null ? 'only a few hundred dollars' : `about ${fmtMoneyFull(Math.round(m.lapPerLowIncome))}`} per low-income student for that, and the basic education formula behind everything else is not adjusted for poverty at all.`,
     visual: {
       kind: 'dots',
-      filled: perHundred(m.lowIncomeRate),
+      // Capped like the text: OSPI shows a share over 95% only as "over 95%".
+      filled: Math.min(perHundred(m.lowIncomeRate), 95),
       label: 'students here',
       compare: perHundred(STATEWIDE.lowIncomeRate),
       compareLabel: 'statewide',

@@ -6,19 +6,22 @@ export default function CompareBar({
   label,
   value,
   reference,
+  withheld,
 }: {
   label: string;
   value: number; // 0-100
   reference: number; // 0-100 state average
+  /** Text shown instead of the value when OSPI's small-group rules apply. */
+  withheld?: string;
 }) {
-  const v = Math.max(0, Math.min(100, value));
+  const v = withheld ? 0 : Math.max(0, Math.min(100, value));
   const r = Math.max(0, Math.min(100, reference));
   return (
     <div>
       <div className="flex items-baseline justify-between gap-2 text-sm">
         <span className="text-ink-secondary">{label}</span>
         <span className="font-medium tabular-nums">
-          {v.toFixed(0)}%{' '}
+          {withheld ?? `${v.toFixed(0)}%`}{' '}
           <span className="text-ink-muted font-normal">
             (state {r.toFixed(0)}%)
           </span>
