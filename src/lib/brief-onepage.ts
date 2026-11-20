@@ -245,7 +245,7 @@ export function onePageFor(code: string): OnePage | null {
   const balanceChange = fundBalanceChange(record);
   const balanceNote =
     balanceGapIsMaterial(surplus, balanceChange, record.exp) && balanceChange != null
-      ? `${balanceChange < 0 ? 'Fell' : 'Rose'} ${fmtMoney(Math.abs(balanceChange))} last year`
+      ? `${balanceChange < 0 ? 'Fell' : 'Rose'} ${fmtMoney(Math.abs(balanceChange))} in ${DIAGNOSIS_YEAR}`
       : record.reserveRatio == null
         ? ''
         : record.reserveRatio <= RESERVE_MARGINAL_NEGATIVE_PCT

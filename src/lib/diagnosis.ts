@@ -668,23 +668,23 @@ const reservesIssue: Builder = (m) => {
       ? 'The savings are gone'
       : marginalNegative
         ? materialDeficit
-          ? 'Spending outran revenue last year'
+          ? 'Spending outran revenue'
           : 'Savings dipped just below zero'
         : materialDeficit
           ? balanceChange != null
-            ? 'Savings fell last year'
-            : 'Spending outran revenue last year'
+            ? 'Savings fell'
+            : 'Spending outran revenue'
           : 'Savings are running low',
     fact: deepNegative
       ? `${m.name} ended ${LATEST_YEAR} with a negative fund balance - it has spent its savings and is carrying a shortfall forward.`
       : marginalNegative
         ? materialDeficit
-          ? `${m.name} spent ${plainMoney(Math.abs(m.surplus))} more than it took in last year, ending with its general-fund balance just below zero (${rr.toFixed(1)}% of spending).`
-          : `${m.name} ended ${LATEST_YEAR} with its general-fund balance just below zero (${rr.toFixed(1)}% of spending) - a small year-end shortfall rather than depleted savings.`
+          ? `${m.name} spent ${plainMoney(Math.abs(m.surplus))} more than it took in during ${LATEST_YEAR}, ending with its general-fund balance just below zero (${rr.toFixed(1)}% of spending).`
+          : `${m.name} ended ${LATEST_YEAR} with its general-fund balance just below zero (${rr.toFixed(1)}% of spending) - its savings were used up, leaving a small shortfall.`
         : materialDeficit
           ? balanceChange != null
-            ? `${m.name}'s fund balance fell by ${plainMoney(drop)} last year, leaving about ${reserveDays(rr)} days of spending in savings.`
-            : `${m.name} spent ${plainMoney(Math.abs(m.surplus))} more than it took in last year, covering the difference out of savings.`
+            ? `${m.name}'s fund balance fell by ${plainMoney(drop)} in ${LATEST_YEAR}, leaving about ${reserveDays(rr)} days of spending in savings.`
+            : `${m.name} spent ${plainMoney(Math.abs(m.surplus))} more than it took in during ${LATEST_YEAR}, covering the difference out of savings.`
           : `${m.name} has enough savings to run for only about ${reserveDays(rr)} days, less than one month of spending.`,
     visual: {
       kind: 'gauge',
@@ -1058,8 +1058,8 @@ function summaryFor(m: Metrics, issues: Issue[]): string {
 // The reserves card has three variants; the summary names the one shown.
 const RESERVES_SHORT: Record<string, string> = {
   'The savings are gone': 'a negative fund balance',
-  'Savings fell last year': 'falling savings',
-  'Spending outran revenue last year': 'spending that outran revenue',
+  'Savings fell': 'falling savings',
+  'Spending outran revenue': 'spending that outran revenue',
   'Savings are running low': 'thin savings',
 };
 

@@ -25,6 +25,7 @@
 import type { DistrictBrief, IssueVisual } from '@/lib/diagnosis';
 import { onePageFor, ordinal, type OnePage } from '@/lib/brief-onepage';
 import { alignPair, fmtInt, fmtMoney, fmtMoneyFull, fmtMoneyOnGrid } from '@/lib/format';
+import { RESERVE_BENCHMARK_PCT, RESERVE_THIN_PCT, reserveDays } from '@/lib/reserves';
 
 /* ------------------------------------------------------------------ *
  * Font metrics
@@ -938,7 +939,7 @@ function drawBrief(
     const colW = (panelW - colGap * (n - 1)) / n;
     const chartTop = y + 17;
     const chartH = 44;
-    const benchPct = 16.4;
+    const benchPct = RESERVE_BENCHMARK_PCT;
     const scaleMax = Math.max(benchPct, ...rr.ratios.filter((v): v is number => v != null), 1) * 1.08;
     const base = chartTop + chartH;
     const benchY = base - (benchPct / scaleMax) * chartH;
@@ -948,9 +949,9 @@ function drawBrief(
       const bx = rx + i * (colW + colGap);
       if (v != null) {
         const h = Math.max(1, (v / scaleMax) * chartH);
-        const thin = v < 8.2;
+        const thin = v < RESERVE_THIN_PCT;
         pdf.round(bx, base - h, colW, h, 1.5, thin ? ([0.918, 0.702, 0.541] as const) : ([0.624, 0.671, 0.902] as const));
-        const days = Math.round((v * 365) / 100);
+        const days = reserveDays(v);
         centerText(`${v}%`, bx - 3, base - h - 14, colW + 6, 6.4, true, thin ? AMBER : INK_SECONDARY);
         centerText(`${days}d`, bx - 3, base - h - 7, colW + 6, 5.8, false, thin ? AMBER : SLATE);
       }

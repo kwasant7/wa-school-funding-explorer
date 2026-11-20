@@ -508,7 +508,7 @@ export default function DistrictPage({ params }: Params) {
               <dd className="mt-1 text-xs text-ink-muted">
                 {p.levy.levy === 0 && p.levy.lastLevy
                   ? `No levy approved for ${LEVY_CALENDAR_YEAR}. The last one, for ${p.levy.lastLevyYear}, was ${fmtMoneyFull(p.levy.lastLevy)}.`
-                  : `Calendar year ${LEVY_CALENDAR_YEAR} collections, as approved by voters`}
+                  : `Calendar year ${LEVY_CALENDAR_YEAR} amount, as approved by voters`}
               </dd>
             </div>
             <div className="card p-4">
@@ -520,11 +520,26 @@ export default function DistrictPage({ params }: Params) {
                 </span>
               </dd>
               <dd className="mt-1 text-xs text-ink-muted">
+                {/*
+                  Voters approve a dollar amount, not a rate, so this never
+                  says "voters approved $X per $1,000": levy / current
+                  assessed value is our arithmetic, not the ballot's
+                  estimated rate (Spokane's ballot said $2.50; that division
+                  gave $2.78).
+                */}
                 {levyCapped ? (
-                  <>
-                    The most state law allows. Voters approved $
-                    {p.levy.levyRate.toFixed(2)}.
-                  </>
+                  rateCapBinds ? (
+                    <>
+                      The $2.50 rate limit. OSPI estimate, from current property
+                      values.
+                    </>
+                  ) : (
+                    <>
+                      Set by the state&apos;s per-student limit (
+                      {fmtMoneyFull(p.levy.payableLevy)}), not the $2.50 rate
+                      limit. OSPI estimate, from current property values.
+                    </>
+                  )
                 ) : p.levy.levy === 0 ? (
                   <>No enrichment levy approved for this year</>
                 ) : p.levy.maxLevy > 0 && p.levy.levy >= 0.95 * p.levy.maxLevy ? (
@@ -552,7 +567,7 @@ export default function DistrictPage({ params }: Params) {
           </dl>
           {levyCapped && (
             <p className="mt-4">
-              State law blocks about{' '}
+              On OSPI&apos;s current projection, state law blocks about{' '}
               <strong>{fmtMoney(p.levy.levy - p.levy.payableLevy)}</strong> of the
               levy voters approved here for {LEVY_CALENDAR_YEAR}: that much is above
               the{' '}
@@ -622,10 +637,11 @@ export default function DistrictPage({ params }: Params) {
                 p.reserveRatio > RESERVE_MARGINAL_NEGATIVE_PCT ? (
                   <>
                     The district&apos;s general-fund balance ended {p.schoolYear}{' '}
-                    marginally below zero ({p.reserveRatio}% of spending) - a
-                    small year-end balance rather than depleted savings
+                    just below zero ({p.reserveRatio}% of spending): its savings
+                    were used up, leaving a small shortfall to carry into the
+                    next year
                     {p.surplus < 0
-                      ? `, though the year still ran a ${fmtMoney(Math.abs(p.surplus))} deficit`
+                      ? `, after a ${fmtMoney(Math.abs(p.surplus))} deficit for the year`
                       : ''}
                     .
                   </>

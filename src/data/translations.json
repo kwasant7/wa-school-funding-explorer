@@ -1665,7 +1665,17 @@
     "Fees, donations, interest, payments from other districts and agencies, and transfers in": "Tarifas, donaciones, intereses, pagos de otros distritos y agencias y transferencias en",
     "Local support, non-tax (fees, donations, interest)": "Apoyo local, no tributario (honorarios, donaciones, intereses)",
     "Local property taxes - nearly all of them voter-approved enrichment levies - raised": "Se aumentaron los impuestos locales a la propiedad, casi todos ellos impuestos de enriquecimiento aprobados por los votantes.",
-    "Total funding = codes 1000-9000, general fund only. The four sources use fiscal.wa.gov's own groupings, so every figure matches a row on its district report: Local is code 1000 (“Local Taxes”), and Other is codes 2000 and 7000-9000 (“Other Revenues”).": "Financiamiento total = códigos 1000-9000, fondo general únicamente. Las cuatro fuentes utilizan las propias agrupaciones de fiscal.wa.gov, por lo que cada cifra coincide con una fila en su informe de distrito: Local es el código 1000 (“Impuestos locales”) y Otros son los códigos 2000 y 7000-9000 (“Otros ingresos”)."
+    "Total funding = codes 1000-9000, general fund only. The four sources use fiscal.wa.gov's own groupings, so every figure matches a row on its district report: Local is code 1000 (“Local Taxes”), and Other is codes 2000 and 7000-9000 (“Other Revenues”).": "Financiamiento total = códigos 1000-9000, fondo general únicamente. Las cuatro fuentes utilizan las propias agrupaciones de fiscal.wa.gov, por lo que cada cifra coincide con una fila en su informe de distrito: Local es el código 1000 (“Impuestos locales”) y Otros son los códigos 2000 y 7000-9000 (“Otros ingresos”).",
+    "deficit for the year": "déficit del año",
+    "% of spending): its savings were used up, leaving a small shortfall to carry into the next year": "% del gasto): sus ahorros se agotaron, dejando un pequeño déficit para trasladar al próximo año",
+    "% of spending) - its savings were used up, leaving a small shortfall.": "% del gasto): sus ahorros se agotaron, dejando un pequeño déficit.",
+    "), not the $2.50 rate limit. OSPI estimate, from current property values.": "), no el límite de tarifa de $2.50. Estimación de OSPI, a partir de los valores de propiedad actuales.",
+    "amount, as approved by voters": "cantidad, según lo aprobado por los votantes",
+    "On OSPI's current projection, state law blocks about": "Según la proyección actual de OSPI, la ley estatal bloquea aproximadamente",
+    "Savings fell": "Los ahorros cayeron",
+    "Spending outran revenue": "Gastar más que ingresos",
+    "The $2.50 rate limit. OSPI estimate, from current property values.": "El límite de tarifa de $2.50. Estimación de OSPI, a partir de los valores de propiedad actuales.",
+    "Set by the state's per-student limit (": "Establecido por el límite estatal por estudiante ("
   },
   "zh": {
     "- a flat per-student amount covering everything that is not staff pay.": "- 每个学生的固定金额，涵盖员工工资以外的所有费用。",
@@ -3333,7 +3343,17 @@
     "Fees, donations, interest, payments from other districts and agencies, and transfers in": "其他地区和机构的费用、捐赠、利息、付款以及转账",
     "Local support, non-tax (fees, donations, interest)": "本地支持，非税（费用、捐赠、利息）",
     "Local property taxes - nearly all of them voter-approved enrichment levies - raised": "地方财产税——几乎全部都是选民批准的富豪税——提高了",
-    "Total funding = codes 1000-9000, general fund only. The four sources use fiscal.wa.gov's own groupings, so every figure matches a row on its district report: Local is code 1000 (“Local Taxes”), and Other is codes 2000 and 7000-9000 (“Other Revenues”).": "总资金 = 代码 1000-9000，仅限普通资金。这四个来源使用财政.wa.gov 自己的分组，因此每个数字都与其地区报告中的一行相匹配：本地是代码 1000（“地方税”），其他是代码 2000 和 7000-9000（“其他收入”）。"
+    "Total funding = codes 1000-9000, general fund only. The four sources use fiscal.wa.gov's own groupings, so every figure matches a row on its district report: Local is code 1000 (“Local Taxes”), and Other is codes 2000 and 7000-9000 (“Other Revenues”).": "总资金 = 代码 1000-9000，仅限普通资金。这四个来源使用财政.wa.gov 自己的分组，因此每个数字都与其地区报告中的一行相匹配：本地是代码 1000（“地方税”），其他是代码 2000 和 7000-9000（“其他收入”）。",
+    "deficit for the year": "本年赤字",
+    "% of spending): its savings were used up, leaving a small shortfall to carry into the next year": "支出的百分比）：其储蓄已用完，留下一小部分缺口可结转到下一年",
+    "% of spending) - its savings were used up, leaving a small shortfall.": "支出的百分比） - 其储蓄已用完，留下小额缺口。",
+    "), not the $2.50 rate limit. OSPI estimate, from current property values.": ")，而不是 2.50 美元的利率限制。 OSPI 根据当前财产价值进行估算。",
+    "amount, as approved by voters": "经选民批准的金额",
+    "On OSPI's current projection, state law blocks about": "根据 OSPI 目前的预测，州法律禁止",
+    "Savings fell": "储蓄下降",
+    "Spending outran revenue": "支出超过收入",
+    "The $2.50 rate limit. OSPI estimate, from current property values.": "2.50 美元的利率限制。 OSPI 根据当前财产价值进行估算。",
+    "Set by the state's per-student limit (": "由州每个学生的限额设定（"
   },
   "vi": {
     "- a flat per-student amount covering everything that is not staff pay.": "- một khoản tiền cố định cho mỗi học sinh bao gồm mọi thứ không phải là lương của nhân viên.",
@@ -5001,7 +5021,17 @@
     "Fees, donations, interest, payments from other districts and agencies, and transfers in": "Phí, quyên góp, lãi, các khoản thanh toán từ các quận và cơ quan khác và chuyển khoản trong",
     "Local support, non-tax (fees, donations, interest)": "Hỗ trợ địa phương, phi thuế (phí, quyên góp, lãi suất)",
     "Local property taxes - nearly all of them voter-approved enrichment levies - raised": "Thuế tài sản địa phương - gần như tất cả đều là thuế làm giàu được cử tri chấp thuận - đã được tăng",
-    "Total funding = codes 1000-9000, general fund only. The four sources use fiscal.wa.gov's own groupings, so every figure matches a row on its district report: Local is code 1000 (“Local Taxes”), and Other is codes 2000 and 7000-9000 (“Other Revenues”).": "Tổng kinh phí = mã 1000-9000, chỉ quỹ chung. Bốn nguồn sử dụng các nhóm riêng của Financial.wa.gov nên mỗi số liệu khớp với một hàng trong báo cáo của quận: Địa phương là mã 1000 (“Thuế địa phương”) và Khác là mã 2000 và 7000-9000 (“Doanh thu khác”)."
+    "Total funding = codes 1000-9000, general fund only. The four sources use fiscal.wa.gov's own groupings, so every figure matches a row on its district report: Local is code 1000 (“Local Taxes”), and Other is codes 2000 and 7000-9000 (“Other Revenues”).": "Tổng kinh phí = mã 1000-9000, chỉ quỹ chung. Bốn nguồn sử dụng các nhóm riêng của Financial.wa.gov nên mỗi số liệu khớp với một hàng trong báo cáo của quận: Địa phương là mã 1000 (“Thuế địa phương”) và Khác là mã 2000 và 7000-9000 (“Doanh thu khác”).",
+    "deficit for the year": "thâm hụt trong năm",
+    "% of spending): its savings were used up, leaving a small shortfall to carry into the next year": "% chi tiêu): số tiền tiết kiệm đã được sử dụng hết, để lại một khoản thiếu hụt nhỏ để chuyển sang năm tiếp theo",
+    "% of spending) - its savings were used up, leaving a small shortfall.": "% chi tiêu) - số tiền tiết kiệm được đã dùng hết, để lại một khoản thiếu hụt nhỏ.",
+    "), not the $2.50 rate limit. OSPI estimate, from current property values.": "), không phải giới hạn tỷ giá $2,50. Ước tính OSPI, từ giá trị thuộc tính hiện tại.",
+    "amount, as approved by voters": "số tiền, theo sự chấp thuận của cử tri",
+    "On OSPI's current projection, state law blocks about": "Theo dự báo hiện tại của OSPI, luật tiểu bang ngăn chặn khoảng",
+    "Savings fell": "Tiết kiệm giảm",
+    "Spending outran revenue": "Chi tiêu vượt doanh thu",
+    "The $2.50 rate limit. OSPI estimate, from current property values.": "Giới hạn tỷ giá $ 2,50. Ước tính OSPI, từ giá trị thuộc tính hiện tại.",
+    "Set by the state's per-student limit (": "Được đặt theo giới hạn của tiểu bang cho mỗi học sinh ("
   },
   "ru": {
     "- a flat per-student amount covering everything that is not staff pay.": "- фиксированная сумма на одного учащегося, покрывающая все, кроме заработной платы персонала.",
@@ -5272,7 +5302,7 @@
     "An enhancement for two lab science classes per high school student, at a course factor of 0.0833.": "Надбавка за два занятия по лабораторным наукам на одного старшеклассника с коэффициентом курса 0,0833.",
     "An enhancement for two laboratory science classes per high school student.": "Надбавка за два лабораторных занятия по естественным наукам на одного старшеклассника при курсовом коэффициенте 0,0833.",
     "An enrichment levy is a local property tax a district's voters approve to pay for things beyond basic education. After the": "Надбавка на два лабораторных занятия по естественным наукам на одного старшеклассника.",
-    "An independent civic education project. Not affiliated with OSPI or the Washington State Legislature. Simulator results are educational estimates, not official fiscal projections.": "Сбор на обогащение — это местный налог на недвижимость, который избиратели округа одобряют, чтобы платить за то, что выходит за рамки базового образования. После",
+    "An independent civic education project. Not affiliated with OSPI or the Washington State Legislature. Simulator results are educational estimates, not official fiscal projections.": "Независимый гражданский образовательный проект. Не связан с OSPI или Законодательным собранием штата Вашингтон. Результаты симулятора — это образовательные оценки, а не официальные финансовые прогнозы.",
     "an isolated school OSPI has judged remote and necessary": "изолированная школа, которую OSPI признал удалённой и необходимой",
     "and federal programs fund positions and services on top of it, and the model does not attempt to describe those.": "а федеральные программы финансируют должности и услуги сверх этого; модель не пытается их описывать.",
     "and it keeps the full amount:": "и он сохраняет полную сумму:",
@@ -6669,7 +6699,17 @@
     "Fees, donations, interest, payments from other districts and agencies, and transfers in": "Сборы, пожертвования, проценты, выплаты из других округов и агентств, а также переводы в",
     "Local support, non-tax (fees, donations, interest)": "Местная поддержка, не связанная с налогами (сборы, пожертвования, проценты)",
     "Local property taxes - nearly all of them voter-approved enrichment levies - raised": "Местные налоги на недвижимость (почти все из которых представляют собой одобренные избирателями сборы на обогащение) повышены",
-    "Total funding = codes 1000-9000, general fund only. The four sources use fiscal.wa.gov's own groupings, so every figure matches a row on its district report: Local is code 1000 (“Local Taxes”), and Other is codes 2000 and 7000-9000 (“Other Revenues”).": "Общее финансирование = коды 1000–9000, только общий фонд. Четыре источника используют собственные группы сайта Financial.wa.gov, поэтому каждая цифра соответствует строке в отчете по округу: «Местный» — это код 1000 («Местные налоги»), а «Другой» — коды 2000 и 7000–9000 («Прочие доходы»)."
+    "Total funding = codes 1000-9000, general fund only. The four sources use fiscal.wa.gov's own groupings, so every figure matches a row on its district report: Local is code 1000 (“Local Taxes”), and Other is codes 2000 and 7000-9000 (“Other Revenues”).": "Общее финансирование = коды 1000–9000, только общий фонд. Четыре источника используют собственные группы сайта Financial.wa.gov, поэтому каждая цифра соответствует строке в отчете по округу: «Местный» — это код 1000 («Местные налоги»), а «Другой» — коды 2000 и 7000–9000 («Прочие доходы»).",
+    "deficit for the year": "дефицит за год",
+    "% of spending): its savings were used up, leaving a small shortfall to carry into the next year": "% расходов): его сбережения были израсходованы, и остался небольшой дефицит, который нужно перенести на следующий год.",
+    "% of spending) - its savings were used up, leaving a small shortfall.": "% расходов) — его сбережения были израсходованы, оставив небольшой дефицит.",
+    "), not the $2.50 rate limit. OSPI estimate, from current property values.": "), а не предел ставки в 2,50 доллара США. Оценка OSPI на основе текущей стоимости недвижимости.",
+    "amount, as approved by voters": "сумма, одобренная избирателями",
+    "On OSPI's current projection, state law blocks about": "По текущему прогнозу OSPI, закон штата блокирует",
+    "Savings fell": "Сбережения упали",
+    "Spending outran revenue": "Расходы превысили доходы",
+    "The $2.50 rate limit. OSPI estimate, from current property values.": "Ограничение ставки в размере 2,50 доллара США. Оценка OSPI на основе текущей стоимости недвижимости.",
+    "Set by the state's per-student limit (": "Устанавливается в соответствии с лимитом штата на одного учащегося ("
   },
   "tl": {
     "- a flat per-student amount covering everything that is not staff pay.": "- isang flat na halagang bawat mag-aaral na sumasaklaw sa lahat ng hindi suweldo ng kawani.",
@@ -8337,7 +8377,17 @@
     "Fees, donations, interest, payments from other districts and agencies, and transfers in": "Mga bayarin, donasyon, interes, bayad mula sa ibang mga distrito at ahensya, at paglipat sa",
     "Local support, non-tax (fees, donations, interest)": "Lokal na suporta, hindi buwis (bayad, donasyon, interes)",
     "Local property taxes - nearly all of them voter-approved enrichment levies - raised": "Ang mga buwis sa lokal na ari-arian - halos lahat ng mga ito ay inaprubahan ng botante sa pagpapayaman - itinaas",
-    "Total funding = codes 1000-9000, general fund only. The four sources use fiscal.wa.gov's own groupings, so every figure matches a row on its district report: Local is code 1000 (“Local Taxes”), and Other is codes 2000 and 7000-9000 (“Other Revenues”).": "Kabuuang pagpopondo = mga code 1000-9000, pangkalahatang pondo lamang. Ang apat na pinagmumulan ay gumagamit ng sariling pagpapangkat ng fiscal.wa.gov, kaya ang bawat figure ay tumutugma sa isang hilera sa ulat ng distrito nito: Ang lokal ay code 1000 (“Mga Lokal na Buwis”), at Ang Iba ay mga code 2000 at 7000-9000 (“Iba Pang Kita”)."
+    "Total funding = codes 1000-9000, general fund only. The four sources use fiscal.wa.gov's own groupings, so every figure matches a row on its district report: Local is code 1000 (“Local Taxes”), and Other is codes 2000 and 7000-9000 (“Other Revenues”).": "Kabuuang pagpopondo = mga code 1000-9000, pangkalahatang pondo lamang. Ang apat na pinagmumulan ay gumagamit ng sariling pagpapangkat ng fiscal.wa.gov, kaya ang bawat figure ay tumutugma sa isang hilera sa ulat ng distrito nito: Ang lokal ay code 1000 (“Mga Lokal na Buwis”), at Ang Iba ay mga code 2000 at 7000-9000 (“Iba Pang Kita”).",
+    "deficit for the year": "depisit para sa taon",
+    "% of spending): its savings were used up, leaving a small shortfall to carry into the next year": "% ng paggasta): naubos ang mga ipon nito, na nag-iiwan ng maliit na kakulangan na dadalhin sa susunod na taon",
+    "% of spending) - its savings were used up, leaving a small shortfall.": "% ng paggasta) - naubos ang ipon nito, na nag-iiwan ng maliit na kakulangan.",
+    "), not the $2.50 rate limit. OSPI estimate, from current property values.": "), hindi ang $2.50 na limitasyon sa rate. pagtatantya ng OSPI, mula sa kasalukuyang mga halaga ng ari-arian.",
+    "amount, as approved by voters": "halaga, ayon sa inaprubahan ng mga botante",
+    "On OSPI's current projection, state law blocks about": "Sa kasalukuyang projection ng OSPI, hinaharangan ng batas ng estado ang tungkol sa",
+    "Savings fell": "Bumagsak ang ipon",
+    "Spending outran revenue": "Paggastos ng higit sa kita",
+    "The $2.50 rate limit. OSPI estimate, from current property values.": "Ang $2.50 na limitasyon sa rate. pagtatantya ng OSPI, mula sa kasalukuyang mga halaga ng ari-arian.",
+    "Set by the state's per-student limit (": "Itinakda ng estado sa bawat-estudyante na limitasyon ("
   },
   "ko": {
     "- a flat per-student amount covering everything that is not staff pay.": "- 교직원 급여가 아닌 모든 금액을 포함하는 학생당 정액 금액입니다.",
@@ -10005,6 +10055,16 @@
     "Fees, donations, interest, payments from other districts and agencies, and transfers in": "수수료, 기부금, 이자, 다른 지역 및 기관으로부터의 지불 및 이전",
     "Local support, non-tax (fees, donations, interest)": "현지지원, 비과세(수수료, 기부금, 이자)",
     "Local property taxes - nearly all of them voter-approved enrichment levies - raised": "지방 재산세(거의 대부분이 유권자가 승인한 농축세) 인상",
-    "Total funding = codes 1000-9000, general fund only. The four sources use fiscal.wa.gov's own groupings, so every figure matches a row on its district report: Local is code 1000 (“Local Taxes”), and Other is codes 2000 and 7000-9000 (“Other Revenues”).": "총 자금 = 코드 1000-9000, 일반 자금만 해당. 네 가지 소스는 fiscal.wa.gov의 자체 그룹을 사용하므로 모든 수치는 지역 보고서의 행과 일치합니다. Local은 코드 1000(“지방세”)이고 Other는 코드 2000 및 7000-9000(“기타 수익”)입니다."
+    "Total funding = codes 1000-9000, general fund only. The four sources use fiscal.wa.gov's own groupings, so every figure matches a row on its district report: Local is code 1000 (“Local Taxes”), and Other is codes 2000 and 7000-9000 (“Other Revenues”).": "총 자금 = 코드 1000-9000, 일반 자금만 해당. 네 가지 소스는 fiscal.wa.gov의 자체 그룹을 사용하므로 모든 수치는 지역 보고서의 행과 일치합니다. Local은 코드 1000(“지방세”)이고 Other는 코드 2000 및 7000-9000(“기타 수익”)입니다.",
+    "deficit for the year": "올해 적자",
+    "% of spending): its savings were used up, leaving a small shortfall to carry into the next year": "지출 비율(%): 저축한 금액이 모두 소진되어 다음 해에 사용할 수 있는 약간의 부족액이 남았습니다.",
+    "% of spending) - its savings were used up, leaving a small shortfall.": "지출 비율(%) - 절감액이 모두 소진되어 약간의 부족분이 남았습니다.",
+    "), not the $2.50 rate limit. OSPI estimate, from current property values.": "), $2.50 요금 제한이 아닙니다. 현재 속성 값을 기준으로 한 OSPI 추정치입니다.",
+    "amount, as approved by voters": "유권자가 승인한 금액",
+    "On OSPI's current projection, state law blocks about": "OSPI의 현재 예측에 따르면 주법은 다음을 차단합니다.",
+    "Savings fell": "저축액 감소",
+    "Spending outran revenue": "지출이 수익을 초과함",
+    "The $2.50 rate limit. OSPI estimate, from current property values.": "$2.50 요율 제한. 현재 속성 값을 기준으로 한 OSPI 추정치입니다.",
+    "Set by the state's per-student limit (": "해당 주의 학생 1인당 한도에 따라 설정됩니다("
   }
 }
