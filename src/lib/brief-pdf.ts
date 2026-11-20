@@ -1013,10 +1013,10 @@ function drawBrief(
 
     problems.forEach((problem, index) => {
       const h = row(problem, index, 0, false);
-      need(h + 12);
+      need(h + 10);
       if (index > 0) pdf.box(X, y, W, 0.5, CARD_LINE);
-      row(problem, index, y + (index > 0 ? 9 : 2), true);
-      y += h + (index > 0 ? 14 : 8);
+      row(problem, index, y + (index > 0 ? 8 : 2), true);
+      y += h + (index > 0 ? 12 : 6);
     });
   }
 
@@ -1029,9 +1029,9 @@ function drawBrief(
     const legW = (W - legGap * 2) / 3;
     const mostMembers = Math.max(...page.delegations.map((d) => d.members.length));
     const legH = 20 + mostMembers * 10;
-    need(headingHeight('Who to ask', whoSubtitle) + legH + 18);
+    need(headingHeight('Who to ask', whoSubtitle) + legH + 22);
     heading('Who to ask', whoSubtitle);
-    y += 1;
+    y += 6;
     page.delegations.forEach((d, i) => {
       const lx = X + i * (legW + legGap);
       pdf.at(`${ordinal(d.district)} District`, { x: lx, top: y, width: legW, size: 9.5, bold: true, colour: INK });
@@ -1042,7 +1042,7 @@ function drawBrief(
         pdf.at(member.name, { x: lx + 26, top: my, width: legW - 26, size: 8.2, colour: INK });
       });
     });
-    y += legH + 2;
+    y += legH + 10;
   }
   const how: Run[] = [
     { text: 'School and legislative boundaries do not match, so ' },
@@ -1062,16 +1062,16 @@ function drawBrief(
 
   // --- Something to say -----------------------------------------------------------------------------
   if (attempt.message) {
-    y += 9;
+    y += 4;
     const innerW = W - 32;
     const quote = `“${page.message}”`;
     const quoteH = pdf.at(quote, { x: 0, top: 0, width: innerW, size: 8.8, leading: 11.6, measureOnly: true });
-    const boxH = 10 + 8 + quoteH + 10;
+    const boxH = 8 + 7 + quoteH + 8;
     need(boxH);
     pdf.ring(X, y, W, boxH, 6, CARD_LINE, CARD_BG);
-    pdf.box(X + 12, y + 10, 3.5, boxH - 20, INDIGO);
-    pdf.at('SAY IT IN THIRTY SECONDS', { x: X + 23, top: y + 10, width: innerW, size: 6.3, bold: true, colour: SLATE });
-    pdf.at(quote, { x: X + 23, top: y + 20, width: innerW - 8, size: 8.8, colour: INK, leading: 11.6 });
+    pdf.box(X + 12, y + 8, 3.5, boxH - 16, INDIGO);
+    pdf.at('SAY IT IN THIRTY SECONDS', { x: X + 23, top: y + 8, width: innerW, size: 6.3, bold: true, colour: SLATE });
+    pdf.at(quote, { x: X + 23, top: y + 17, width: innerW - 8, size: 8.8, colour: INK, leading: 11.6 });
     y += boxH;
   }
 
