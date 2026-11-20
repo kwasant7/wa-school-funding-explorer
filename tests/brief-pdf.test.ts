@@ -226,7 +226,7 @@ describe('brief PDF content', () => {
       'Reserve ratio by year',
       'the state median',
       '$2.56M', // transportation, as AESD's dashboard prints it
-      'Covered', // special education verdict chip
+      'Operating costs (MSOC)', // a Big 3 program name
       'covered about', // the locally-covered sentence
     ]) {
       assert.ok(text.includes(expected), `missing "${expected}"`);

@@ -221,12 +221,13 @@ const WASH = [0.933, 0.957, 0.984] as const;
 const DEEP = [0.063, 0.259, 0.506] as const;
 const TILE = [0.988, 0.988, 0.984] as const;
 const WHITE = [1, 1, 1] as const;
-// Revenue sources as one indigo ramp, darkest first (state is the largest).
+// The revenue-source colours the site's charts use (state blue, local green,
+// federal orange, other green) - varied so the mix reads at a glance.
 const SERIES: Record<'state' | 'local' | 'federal' | 'other', Rgb> = {
-  state: [0.188, 0.337, 0.827],
-  local: [0.42, 0.52, 0.88],
-  federal: [0.655, 0.706, 0.93],
-  other: [0.843, 0.871, 0.969],
+  state: [0.165, 0.471, 0.839],
+  local: [0.106, 0.686, 0.478],
+  federal: [0.929, 0.631, 0],
+  other: [0, 0.514, 0],
 };
 
 // Modern brief palette.
@@ -800,7 +801,7 @@ function drawBrief(
     : 0;
   const row1H = 39;
   const b3RowH = 24;
-  const b3H = page.big3 ? 13 + page.big3.columns.length * b3RowH : 0;
+  const b3H = page.big3 ? 34 + page.big3.columns.length * b3RowH : 0;
   const footH = page.big3 ? 8 + coverH : 0;
   const cardH = hpad + row1H + b3H + footH + hpad;
   need(cardH + 6);
@@ -832,11 +833,16 @@ function drawBrief(
 
   // Big 3 funding vs. cost, one shared bar scale so lengths compare
   if (page.big3) {
-    pdf.at('THE "BIG 3"', { x: cx0, top: hy, width: 120, size: 6.1, bold: true, colour: SLATE });
-    pdf.at('GAP', { x: cx0, top: hy, width: iw, size: 6.1, bold: true, colour: SLATE, align: 'right' });
-    hy += 9;
+    // Set the Big 3 apart from the per-student scale above, with a bigger title.
+    hy += 10;
     pdf.box(cx0, hy, iw, 0.5, CARD_LINE);
-    hy += 3;
+    hy += 8;
+    pdf.at('The Big 3 gap', { x: cx0, top: hy, width: 200, size: 11, bold: true, colour: INK });
+    pdf.at('funding vs. what it costs', {
+      x: cx0 + measure('The Big 3 gap', 'bold', 11) + 8, top: hy + 3.5, width: iw, size: 6.6, colour: SLATE,
+    });
+    pdf.at('GAP', { x: cx0, top: hy + 3.5, width: iw, size: 6.6, bold: true, colour: SLATE, align: 'right' });
+    hy += 16;
     const nameW3 = 118;
     const verdW = 86;
     const barsX = cx0 + nameW3;
@@ -854,13 +860,12 @@ function drawBrief(
       pdf.box(barsX + labW, ry + 1.5, Math.max(2, barMax * (col.funding / maxVal)), 6.5, INDIGO_SOFT);
       pdf.at(fmtMoney(col.funding), { x: barsX + barsW - amtW, top: ry + 0.8, width: amtW, size: 6.6, bold: true, colour: INK, align: 'right' });
       pdf.at('COST', { x: barsX, top: ry + 12.5, width: labW, size: 5.8, colour: SLATE });
-      pdf.box(barsX + labW, ry + 12.5, Math.max(2, barMax * (col.cost / maxVal)), 6.5, covered ? ([0.62, 0.65, 0.7] as const) : INDIGO);
+      pdf.box(barsX + labW, ry + 12.5, Math.max(2, barMax * (col.cost / maxVal)), 6.5, INDIGO);
       pdf.at(fmtMoney(col.cost), { x: barsX + barsW - amtW, top: ry + 11.8, width: amtW, size: 6.6, bold: true, colour: INK, align: 'right' });
-      const vx = cx0 + iw - verdW;
-      if (covered) {
-        pdf.round(vx, ry + 2, 50, 13, 4, EMERALD_SOFT);
-        centerText('Covered', vx, ry + 4.6, 50, 7.6, true, EMERALD);
-      } else {
+      // Only flag a shortfall; where funding covers the cost the gap column is
+      // left blank (the bars already show funding at or above cost).
+      if (!covered) {
+        const vx = cx0 + iw - verdW;
         const chip = `${fmtMoneyOnGrid(col.gap, 10000)} short`;
         const cw = measure(chip, 'bold', 7.6) + 12;
         pdf.round(vx + verdW - cw, ry + 2, cw, 13, 4, AMBER_SOFT);
@@ -899,6 +904,7 @@ function drawBrief(
   }
 
   // --- Where the money comes from  |  Reserve ratio by year ---------------------------
+  y += 18;
   const panelGap = 24;
   const panelW = (W - panelGap) / 2;
   const mixX = X;
