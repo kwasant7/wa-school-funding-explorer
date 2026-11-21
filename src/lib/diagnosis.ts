@@ -605,13 +605,14 @@ const oversightIssue: Builder = (m) => {
     id: 'oversight',
     title: enhanced ? 'The state took over the budget' : 'The state is watching the budget',
     fact: enhanced
-      ? `${m.name} could not fix its budget on its own, so the state sent in someone to help run it.`
-      : // OSPI's letters: most of these boards adopted a budget showing a
-        // negative balance and asked OSPI to approve it, which it did under
-        // binding conditions (RCW 28A.505.110); Shelton ended a year negative.
-        // "Could not pass a balanced budget, so the state stepped in" said
-        // otherwise for all nine.
-        `${m.name} faced a negative general-fund balance, so its budget now runs under OSPI's binding conditions - fund-balance targets and regular state reviews. ${m.oversight.detail}`,
+      ? `${m.name} could not fix its budget on its own, so the state sent in someone to help run it. ${m.oversight.detail}`
+      : // Why each district is here differs - most boards adopted a budget
+        // projecting a negative balance, Shelton actually ended a year
+        // negative - and most never went negative in their books, so the
+        // reason lives in each district's `detail`, taken from its letter.
+        // "Faced a negative general-fund balance" read as "went into the red"
+        // for Mount Baker, Marysville and Mabton, which never did.
+        `${m.name} is under OSPI's binding conditions - fund-balance targets and regular state reviews. ${m.oversight.detail}`,
     visual: {
       kind: 'steps',
       steps: ['Healthy', 'Warning', 'State steps in', 'State takes over'],
