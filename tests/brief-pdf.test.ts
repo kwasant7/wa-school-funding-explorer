@@ -209,7 +209,7 @@ describe('brief PDF fits in two pages for every district', () => {
     const words = drawnText(await bytesFor(TACOMA));
     const sizes = words.map((w) => w.size * pdfScaleForTest);
     assert.ok(Math.min(...sizes) >= 8, `smallest type is ${Math.min(...sizes).toFixed(1)}pt`);
-    const fact = words.find((w) => w.text === 'voted');
+    const fact = words.find((w) => w.text === 'uncollected.');
     assert.ok(fact, 'levy-cap sentence not found');
     assert.ok(fact.size * pdfScaleForTest >= 10, `body type is ${(fact.size * pdfScaleForTest).toFixed(1)}pt`);
   });
@@ -237,7 +237,7 @@ describe('brief PDF content', () => {
     const text = readable(await bytesFor(TACOMA));
     for (const expected of [
       'ASK',
-      'Raise the local levy cap.',
+      'Raise the per-student levy limit.',
       'Yasmin Trudeau',
       'Laurie Jinkins',
       '27th District',

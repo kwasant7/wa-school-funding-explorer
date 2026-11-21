@@ -1705,7 +1705,8 @@
     "faced a negative general-fund balance, so its budget now runs under OSPI's binding conditions - fund-balance targets and regular state reviews.": "enfrentó un saldo negativo del fondo general, por lo que su presupuesto ahora se ejecuta bajo las condiciones vinculantes de OSPI: objetivos de equilibrio de fondos y revisiones estatales periódicas.",
     "Fewer than 10": "Menos de 10",
     "Not shown": "No mostrado",
-    "Over 95%": "Más del 95%"
+    "Over 95%": "Más del 95%",
+    "State limits cap the levy voters approved": "Los límites estatales limitan el impuesto aprobado por los votantes"
   },
   "zh": {
     "- a flat per-student amount covering everything that is not staff pay.": "- 每个学生的固定金额，涵盖员工工资以外的所有费用。",
@@ -3413,7 +3414,8 @@
     "faced a negative general-fund balance, so its budget now runs under OSPI's binding conditions - fund-balance targets and regular state reviews.": "面临一般基金负余额，因此其预算现在按照 OSPI 的约束条件运行 - 基金余额目标和定期国家审查。",
     "Fewer than 10": "少于10个",
     "Not shown": "未显示",
-    "Over 95%": "95%以上"
+    "Over 95%": "95%以上",
+    "State limits cap the levy voters approved": "州限制选民批准的征税上限"
   },
   "vi": {
     "- a flat per-student amount covering everything that is not staff pay.": "- một khoản tiền cố định cho mỗi học sinh bao gồm mọi thứ không phải là lương của nhân viên.",
@@ -5121,7 +5123,8 @@
     "faced a negative general-fund balance, so its budget now runs under OSPI's binding conditions - fund-balance targets and regular state reviews.": "phải đối mặt với số dư quỹ chung âm, vì vậy ngân sách của nó hiện đang hoạt động theo các điều kiện ràng buộc của OSPI - các mục tiêu cân bằng quỹ và các đợt đánh giá thường xuyên của tiểu bang.",
     "Fewer than 10": "Ít hơn 10",
     "Not shown": "Không hiển thị",
-    "Over 95%": "Trên 95%"
+    "Over 95%": "Trên 95%",
+    "State limits cap the levy voters approved": "Giới hạn của tiểu bang giới hạn mức thuế mà cử tri đã phê duyệt"
   },
   "ru": {
     "- a flat per-student amount covering everything that is not staff pay.": "- фиксированная сумма на одного учащегося, покрывающая все, кроме заработной платы персонала.",
@@ -6829,7 +6832,8 @@
     "faced a negative general-fund balance, so its budget now runs under OSPI's binding conditions - fund-balance targets and regular state reviews.": "столкнулся с отрицательным общим балансом фондов, поэтому его бюджет теперь подчиняется обязательным условиям OSPI - целевым показателям баланса фондов и регулярным государственным проверкам.",
     "Fewer than 10": "Менее 10",
     "Not shown": "Не показано",
-    "Over 95%": "Более 95%"
+    "Over 95%": "Более 95%",
+    "State limits cap the levy voters approved": "Государственные лимиты, одобренные избирателями"
   },
   "tl": {
     "- a flat per-student amount covering everything that is not staff pay.": "- isang flat na halagang bawat mag-aaral na sumasaklaw sa lahat ng hindi suweldo ng kawani.",
@@ -8537,7 +8541,8 @@
     "faced a negative general-fund balance, so its budget now runs under OSPI's binding conditions - fund-balance targets and regular state reviews.": "humarap sa negatibong balanse sa pangkalahatang pondo, kaya ang badyet nito ay tumatakbo na ngayon sa ilalim ng umiiral na mga kondisyon ng OSPI - mga target sa balanse ng pondo at regular na pagsusuri ng estado.",
     "Fewer than 10": "Mas kaunti sa 10",
     "Not shown": "Hindi ipinakita",
-    "Over 95%": "Higit sa 95%"
+    "Over 95%": "Higit sa 95%",
+    "State limits cap the levy voters approved": "Nililimitahan ng mga limitasyon ng estado ang pagpapataw ng mga botante na naaprubahan"
   },
   "ko": {
     "- a flat per-student amount covering everything that is not staff pay.": "- 교직원 급여가 아닌 모든 금액을 포함하는 학생당 정액 금액입니다.",
@@ -10245,6 +10250,7 @@
     "faced a negative general-fund balance, so its budget now runs under OSPI's binding conditions - fund-balance targets and regular state reviews.": "일반 기금 잔액이 마이너스에 직면했기 때문에 예산은 이제 OSPI의 구속력 있는 조건인 기금 잔액 목표 및 정기적인 주 검토에 따라 운영됩니다.",
     "Fewer than 10": "10개 미만",
     "Not shown": "표시되지 않음",
-    "Over 95%": "95% 이상"
+    "Over 95%": "95% 이상",
+    "State limits cap the levy voters approved": "주정부의 추가 부담금 상한선 유권자가 승인함"
   }
 }

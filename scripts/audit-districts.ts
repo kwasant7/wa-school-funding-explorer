@@ -116,6 +116,7 @@ const BAD_TEXT: [RegExp, string][] = [
   [/taken from every student/, '"taken from every student"'],
   [/Watching a shortfall/, '"Watching a shortfall"'],
   [/could not pass a balanced budget/, '"could not pass a balanced budget"'],
+  [/needs no new vote|Voters said yes/, '"needs no new vote" levy framing'],
 ];
 
 /*

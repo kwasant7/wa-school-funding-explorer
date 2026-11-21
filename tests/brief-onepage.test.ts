@@ -158,7 +158,7 @@ describe('one-page problems and asks', () => {
       problems.map((p) => p.id),
       ['levyCap', 'reserves']
     );
-    assert.equal(problems[0].ask, 'Raise the local levy cap. This money needs no new vote.');
+    assert.equal(problems[0].ask, 'Raise the per-student levy limit.');
     assert.equal(problems[0].cite, 'RCW 84.52.0531');
   });
 });
@@ -202,8 +202,10 @@ describe('one-page message', () => {
     assert.ok(message.startsWith('I live in Tacoma.'));
     assert.ok(message.includes('$127 million'));
     assert.ok(message.includes('$14 million'));
-    assert.ok(message.includes('$3.7 million'));
-    assert.ok(message.includes('Please raise the levy cap and fund buses and everyday operating costs'));
+    // Tacoma's transport and operating-cost gaps are below the web brief's
+    // card thresholds, so the message names only the levy (as the brief does).
+    assert.ok(message.includes('Please revisit the state levy limits.'));
+    assert.equal(/buses|operating costs/.test(message), false);
   });
 
   it('agrees in number: special education is singular, buses and costs plural', () => {

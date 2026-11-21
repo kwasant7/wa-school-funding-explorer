@@ -1,5 +1,5 @@
 import { districtSeries, yearData, LATEST, YEARS } from '@/lib/data';
-import { metricsFor, percentileOf, type Metrics } from '@/lib/diagnosis';
+import { aleContractsMaterial, metricsFor, percentileOf, type Metrics } from '@/lib/diagnosis';
 import { fmtMoney, fmtMoneyFull, fmtInt } from '@/lib/format';
 import { groupCount, groupShare, withheldByOspi } from '@/lib/privacy';
 import { big3For, big3Gap } from '@/lib/big3';
@@ -275,7 +275,10 @@ export function districtMetaDescription(p: DistrictProfile): string {
   ];
   if (p.coveredLocally > 0) {
     parts.push(
-      `with ${fmtMoney(p.coveredLocally)} of Big 3 program shortfalls covered from other general-fund money`
+      `with ${fmtMoney(p.coveredLocally)} of Big 3 program shortfalls covered from other general-fund money` +
+        (aleContractsMaterial(p.metrics)
+          ? ` (incl. ${fmtMoney(p.metrics.spend?.msocBig3AleContracts ?? 0)} of online teaching contracts)`
+          : '')
     );
   }
   return `${parts.join(', ')}. State, local levy and federal breakdown from official OSPI data.`;

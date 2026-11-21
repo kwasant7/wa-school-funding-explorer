@@ -798,6 +798,9 @@ function drawBrief(
           { text: `Where funding fell short, ${page.shortName} covered about ` },
           { text: fmtMoney(page.big3.total), bold: true, colour: AMBER },
           { text: ' from other general-fund money beyond what dedicated funding paid for.' },
+          ...(page.big3.aleContracts > 0
+            ? [{ text: ` That includes ${fmtMoney(page.big3.aleContracts)} the online program paid outside providers to teach its students, which AESD counts as operating cost.` }]
+            : []),
           ...(page.big3.msocAhead > 0
             ? [{
                 text: ` MSOC funding, which is not restricted to its own use, exceeded its cost by ${fmtMoney(page.big3.msocAhead)}; ` +
@@ -1053,7 +1056,10 @@ function drawBrief(
     page.delegations.forEach((d, i) => {
       const lx = X + i * (legW + legGap);
       pdf.at(`${ordinal(d.district)} District`, { x: lx, top: y, width: legW, size: 9.5, bold: true, colour: INK });
-      pdf.at(`${d.percent}% of ${page.shortName}`, { x: lx, top: y + 11, width: legW, size: 6.8, colour: SLATE });
+      // An area share, not a population share (legislators.json): "4% of
+      // Pasco" hid that the 14th District holds dense east Pasco. The web page
+      // already says "area"; the printed copy now does too.
+      pdf.at(`${d.percent}% of ${page.shortName}'s area`, { x: lx, top: y + 11, width: legW, size: 6.8, colour: SLATE });
       d.members.forEach((member, r) => {
         const my = y + 21 + r * 10;
         pdf.at(member.chamber, { x: lx, top: my, width: 26, size: 8.2, bold: true, colour: SLATE });

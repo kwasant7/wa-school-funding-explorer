@@ -15,6 +15,7 @@ import representation from '@/data/legislators.json';
 import trendJson from '@/data/per-pupil-trend.json';
 import reserveTrendJson from '@/data/reserve-ratio-trend.json';
 import {
+  aleContractsMaterial,
   allIssuesFor,
   briefFor,
   DIAGNOSIS_YEAR,
@@ -105,6 +106,8 @@ export type OnePage = {
     total: number;
     /** MSOC funding above MSOC cost; see Big3Totals.msocAhead. */
     msocAhead: number;
+    /** Contracted online (ALE) teaching inside AESD's MSOC cost, when material; else 0. */
+    aleContracts: number;
     perStudent: number;
   } | null;
   problems: ProblemRow[];
@@ -194,9 +197,9 @@ function messageFor(
 
   if (metrics && metrics.levy && metrics.capBlocked > 0) {
     sentences.push(
-      `Our voters approved ${plainMoney(metrics.levy.levy)} in school taxes for ${levyJson.calendarYear}, but state law blocks ${plainMoney(metrics.capBlocked)} of it.`
+      `Our voters approved a ${plainMoney(metrics.levy.levy)} levy for ${levyJson.calendarYear}, but on current projections a state limit leaves about ${plainMoney(metrics.capBlocked)} of it uncollected.`
     );
-    requests.push('raise the levy cap');
+    requests.push('revisit the state levy limits');
   }
 
   if (shortPrograms.length > 0) {
@@ -330,10 +333,22 @@ export function onePageFor(code: string): OnePage | null {
   const shortPrograms: { key: Big3Key; gap: number }[] = [];
   if (metrics.big3) {
     const totals = big3Totals(metrics.big3);
+    /*
+      The thirty-second message names a program only when the web brief gives
+      it a card - the same materiality test, so a $10-per-student transport gap
+      (Everett) no longer turns into "please fund buses". Its MSOC figure is
+      the card's, net of contracted online (ALE) teaching (Toppenish: $2.7M,
+      not AESD's $7.5M).
+    */
+    const carded = new Set(allIssuesFor(code).map((issue) => issue.id));
+    const messageGap = (key: Big3Key, gap: number) =>
+      key === 'msoc' ? metrics.big3MsocCost - metrics.big3!.msoc.revenue : gap;
     const columns: Big3Column[] = BIG3_KEYS.map((key) => {
       const program = metrics.big3![key];
       const gap = totals.gaps[key];
-      if (gap > 0) shortPrograms.push({ key, gap });
+      if (gap > 0 && carded.has(key) && messageGap(key, gap) > 0) {
+        shortPrograms.push({ key, gap: messageGap(key, gap) });
+      }
       const covered = gap <= 0;
       const note =
         covered && key === 'sped' && record.demo.sped > 0
@@ -359,6 +374,7 @@ export function onePageFor(code: string): OnePage | null {
       columns,
       total: totals.total,
       msocAhead: totals.msocAhead,
+      aleContracts: aleContractsMaterial(metrics) ? (metrics.spend?.msocBig3AleContracts ?? 0) : 0,
       perStudent: totals.perStudent,
     };
   }

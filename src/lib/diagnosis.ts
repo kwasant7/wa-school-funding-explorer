@@ -732,13 +732,22 @@ const levyCapIssue: Builder = (m) => {
 
   return {
     id: 'levyCap',
-    title: 'Voters said yes. State law says no.',
-    fact: `People here voted to pay ${plainMoney(m.levy.levy)} in school taxes. State law blocks ${plainMoney(fig.gap)} of it${
-      rateBound ? `, because it is more than $${LEA.maxLevyRate.toFixed(2)} per $1,000 of property value` : ''
-    }.`,
+    /*
+      Voters approve a dollar amount and are told an estimated rate. Where the
+      $2.50 rate limit binds, the "blocked" amount is mostly the gap between
+      the property values the levy assumed and OSPI's projection - Spokane's
+      and Federal Way's ballots both said $2.50 - so it is not money voters
+      agreed to pay at a higher rate, and the old "Voters said yes. State law
+      says no ... This money needs no new vote" read as a rate increase asked
+      for in the district's name.
+    */
+    title: 'State limits cap the levy voters approved',
+    fact: rateBound
+      ? `Voters approved a ${plainMoney(m.levy.levy)} levy, but at projected property values the $${LEA.maxLevyRate.toFixed(2)} rate limit allows about ${plainMoney(allowed)}, leaving ${plainMoney(fig.gap)} uncollected.`
+      : `Voters approved a ${plainMoney(m.levy.levy)} levy, but the state's per-student limit allows about ${plainMoney(allowed)}, leaving ${plainMoney(fig.gap)} uncollected.`,
     visual: fig.visual,
     ask: rateBound
-      ? `Raise the $${LEA.maxLevyRate.toFixed(2)} levy rate limit. This money needs no new vote.`
+      ? `Revisit the $${LEA.maxLevyRate.toFixed(2)} levy rate limit.`
       : undefined,
     refs: [LEVY_STATUTE],
     // A cap that blocks a lot per student matters more than one blocking a
@@ -1095,7 +1104,7 @@ const ISSUE_SHORT: Record<IssueId, string> = {
 export const ISSUE_ASKS: Record<IssueId, string> = {
   oversight: 'Steady funding while districts under state oversight rebuild their reserves.',
   reserves: 'Steady funding every year, not a one-time patch.',
-  levyCap: 'Raise the local levy cap. This money needs no new vote.',
+  levyCap: 'Raise the per-student levy limit.',
   noLevy: 'Fund more of basic education, so losing a levy does not cut what every school needs.',
   leaDependence: 'Protect and raise the money that evens this out.',
   sped: 'Pay what special education actually costs.',
